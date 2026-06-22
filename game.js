@@ -349,6 +349,7 @@ function createCharacter(x, y, type, tag) {
     area(),
     anchor("center"),
     scale(1),
+    z(10),
     "char",
     tag,
     {
@@ -384,6 +385,13 @@ function createCharacter(x, y, type, tag) {
   const aw = char.armW, ah = char.armH;
   const lw = char.legW, lh = char.legH;
 
+  // --- IMPROVED BODY STRUCTURE ---
+  // Neck
+  const neck = char.add([
+    rect(4 * DS, 4 * DS), outline(3), color(WHITE),
+    pos(0, -bh / 2), anchor("center"),
+  ]);
+
   // Head
   const head = char.add([
     rect(hw, hh),
@@ -394,228 +402,287 @@ function createCharacter(x, y, type, tag) {
   ]);
   char.parts.push({ name: "head", obj: head, x0: 0, y0: -bh / 2 - hh + 2 });
 
-  // Body
-  const body = char.add([
-    rect(bw, bh),
-    outline(5),
-    color(WHITE),
-    pos(0, 0),
+  // Upper body (shoulders/torso, wider)
+  const upperBody = char.add([
+    rect(bw + 4 * DS, Math.floor(bh * 0.55)),
+    outline(5), color(WHITE),
+    pos(0, -Math.floor(bh * 0.22)),
     anchor("center"),
   ]);
-  char.parts.push({ name: "body", obj: body, x0: 0, y0: 0 });
+  char.parts.push({ name: "upperBody", obj: upperBody, x0: 0, y0: -Math.floor(bh * 0.22) });
 
-  // Left arm
+  // Lower body (waist/hips, narrower)
+  const lowerBody = char.add([
+    rect(bw - 2 * DS, Math.floor(bh * 0.5)),
+    outline(5), color(WHITE),
+    pos(0, Math.floor(bh * 0.27)),
+    anchor("center"),
+  ]);
+  char.parts.push({ name: "lowerBody", obj: lowerBody, x0: 0, y0: Math.floor(bh * 0.27) });
+
+  // Left arm (attached to shoulder)
   const lArm = char.add([
     rect(aw, ah),
     outline(5),
     color(WHITE),
-    pos(-bw / 2 - aw / 2 + 1, -bh / 2 + 4),
+    pos(-bw / 2 - aw / 2 - 1, -bh / 2 + 6),
     anchor("left"),
   ]);
-  char.parts.push({
-    name: "lArm",
-    obj: lArm,
-    x0: -bw / 2 - aw / 2 + 1,
-    y0: -bh / 2 + 4,
-  });
+  char.parts.push({ name: "lArm", obj: lArm, x0: -bw / 2 - aw / 2 - 1, y0: -bh / 2 + 6 });
 
   // Right arm
   const rArm = char.add([
     rect(aw, ah),
     outline(5),
     color(WHITE),
-    pos(bw / 2 + aw / 2 - 1, -bh / 2 + 4),
+    pos(bw / 2 + aw / 2 + 1, -bh / 2 + 6),
     anchor("right"),
   ]);
-  char.parts.push({
-    name: "rArm",
-    obj: rArm,
-    x0: bw / 2 + aw / 2 - 1,
-    y0: -bh / 2 + 4,
-  });
+  char.parts.push({ name: "rArm", obj: rArm, x0: bw / 2 + aw / 2 + 1, y0: -bh / 2 + 6 });
 
-  // Left leg
+  // Left leg (attached to hip)
   const lLeg = char.add([
     rect(lw, lh),
     outline(5),
     color(WHITE),
-    pos(-lw / 2 - 1, bh / 2),
+    pos(-lw / 2 - 2, Math.floor(bh * 0.5)),
     anchor("top"),
   ]);
-  char.parts.push({
-    name: "lLeg",
-    obj: lLeg,
-    x0: -lw / 2 - 1,
-    y0: bh / 2,
-  });
+  char.parts.push({ name: "lLeg", obj: lLeg, x0: -lw / 2 - 2, y0: Math.floor(bh * 0.5) });
 
   // Right leg
   const rLeg = char.add([
     rect(lw, lh),
     outline(5),
     color(WHITE),
-    pos(lw / 2 + 1, bh / 2),
+    pos(lw / 2 + 2, Math.floor(bh * 0.5)),
     anchor("top"),
   ]);
-  char.parts.push({
-    name: "rLeg",
-    obj: rLeg,
-    x0: lw / 2 + 1,
-    y0: bh / 2,
-  });
+  char.parts.push({ name: "rLeg", obj: rLeg, x0: lw / 2 + 2, y0: Math.floor(bh * 0.5) });
 
-  // Extra details per type
+  // --- PER-TYPE DETAILS ---
+  const hx = -bh / 2 - hh + 2;
+
   if (type === "punkette") {
-    // Hair spikes (scaled by DS)
-    const hx = -bh / 2 - hh + 2;
-    const spike = char.add([
-      polygon([vec2(-8*DS, -2*DS), vec2(-14*DS, -10*DS), vec2(-4*DS, -4*DS)]),
+    // Spiky hair (3 spikes + side tail)
+    const spikeL = char.add([
+      polygon([vec2(-8*DS, -2*DS), vec2(-16*DS, -12*DS), vec2(-4*DS, -4*DS)]),
       outline(3), color(WHITE), pos(0, hx), anchor("center"),
     ]);
-    char.parts.push({ name: "spikeL", obj: spike, x0: 0, y0: hx });
-    const spike2 = char.add([
-      polygon([vec2(0, -4*DS), vec2(0, -14*DS), vec2(4*DS, -4*DS)]),
+    char.parts.push({ name: "spikeL", obj: spikeL, x0: 0, y0: hx });
+    const spikeT = char.add([
+      polygon([vec2(0, -4*DS), vec2(0, -16*DS), vec2(5*DS, -4*DS)]),
       outline(3), color(WHITE), pos(0, hx), anchor("center"),
     ]);
-    char.parts.push({ name: "spikeT", obj: spike2, x0: 0, y0: hx });
-    const spike3 = char.add([
-      polygon([vec2(8*DS, -2*DS), vec2(14*DS, -10*DS), vec2(4*DS, -4*DS)]),
+    char.parts.push({ name: "spikeT", obj: spikeT, x0: 0, y0: hx });
+    const spikeR = char.add([
+      polygon([vec2(8*DS, -2*DS), vec2(16*DS, -12*DS), vec2(4*DS, -4*DS)]),
       outline(3), color(WHITE), pos(0, hx), anchor("center"),
     ]);
-    char.parts.push({ name: "spikeR", obj: spike3, x0: 0, y0: hx });
-    // Side tail
+    char.parts.push({ name: "spikeR", obj: spikeR, x0: 0, y0: hx });
+    // Side tail (ponytail hanging right)
     const tail = char.add([
-      polygon([vec2(6*DS, -2*DS), vec2(12*DS, -6*DS), vec2(8*DS, 4*DS)]),
-      outline(2), color(WHITE), pos(0, hx), anchor("center"),
+      polygon([vec2(6*DS, 0), vec2(14*DS, -4*DS), vec2(10*DS, 8*DS)]),
+      outline(3), color(WHITE), pos(0, hx), anchor("center"),
     ]);
     char.parts.push({ name: "tail", obj: tail, x0: 0, y0: hx });
-    // Jacket line
-    char.add([rect(bw - 6, bh - 4), outline(2), color(WHITE), pos(0, 2), anchor("center")]);
+    // Open jacket (inner layer visible)
+    char.add([rect(bw - 4, Math.floor(bh * 0.6)), outline(2), color(WHITE), pos(0, -2), anchor("center")]);
     // Choker
-    char.add([rect(bw * 0.5, 3 * DS), outline(2), color(WHITE), pos(0, -bh/2 - 2), anchor("center")]);
+    char.add([rect(bw * 0.5, 3 * DS), outline(3), color(INK), pos(0, -bh/2 - 2), anchor("center")]);
     // Angry eye
     const eye = char.add([
       rect(6*DS, 2*DS), color(INK),
       pos(4*DS, hx + 3*DS), anchor("center"), rotate(-15),
     ]);
     char.parts.push({ name: "eye", obj: eye, x0: 4*DS, y0: hx + 3*DS });
-    // Boots
-    const by = bh / 2 + lh - lh * 0.15;
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(-lw/2 - 1, by), anchor("center")]);
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(lw/2 + 1, by), anchor("center")]);
+    // Fishnet arm detail (lines on arms)
+    char.add([rect(aw + 2, 2*DS), outline(1), color(INK), pos(-bw/2 - aw/2 - 1, -bh/2 + 8), anchor("center")]);
+    char.add([rect(aw + 2, 2*DS), outline(1), color(INK), pos(-bw/2 - aw/2 - 1, -bh/2 + 14), anchor("center")]);
+    // Belt
+    char.add([rect(bw - 2, 3*DS), outline(2), color(WHITE), pos(0, 0), anchor("center")]);
+    // Boots (taller)
+    const by = Math.floor(bh * 0.5) + lh - 2;
+    char.add([rect(lw + 4, Math.ceil(lh * 0.4)), outline(3), color(WHITE), pos(-lw/2 - 2, by), anchor("center")]);
+    char.add([rect(lw + 4, Math.ceil(lh * 0.4)), outline(3), color(WHITE), pos(lw/2 + 2, by), anchor("center")]);
+    // Boot sole line
+    char.add([rect(lw + 6, 2*DS), outline(2), color(INK), pos(-lw/2 - 2, by + Math.ceil(lh * 0.2)), anchor("center")]);
+    char.add([rect(lw + 6, 2*DS), outline(2), color(INK), pos(lw/2 + 2, by + Math.ceil(lh * 0.2)), anchor("center")]);
   }
 
   if (type === "antagonic") {
-    const hx = -bh / 2 - hh + 2;
-    // Gas mask visor
-    char.add([rect(hw - 4, 5*DS), outline(3), color(WHITE), pos(0, hx - 2*DS), anchor("center")]);
-    // Eye pieces (two circles with cross)
-    for (const ex of [-4*DS, 4*DS]) {
+    // Gas mask visor (full face plate)
+    char.add([rect(hw - 2, hh - 4), outline(3), color(WHITE), pos(0, hx + 1), anchor("center")]);
+    // Visor line across eyes
+    char.add([rect(hw, 3*DS), outline(3), color(INK), pos(0, hx - 2*DS), anchor("center")]);
+    // Eye pieces (two circles)
+    for (const ex of [-5*DS, 5*DS]) {
       char.add([circle(3*DS), outline(3), color(WHITE), pos(ex, hx - 2*DS), anchor("center")]);
+      // Eye cross
+      char.add([rect(4*DS, 1), color(WHITE), pos(ex, hx - 2*DS), anchor("center")]);
+      char.add([rect(1, 4*DS), color(WHITE), pos(ex, hx - 2*DS), anchor("center")]);
     }
-    // Filter canister
-    char.add([circle(5*DS), outline(3), color(WHITE), pos(0, hx + 5*DS), anchor("center")]);
-    // Breathing tube
-    char.add([rect(2*DS, 8*DS), outline(2), color(WHITE), pos(-hw/2 - 2*DS, hx), anchor("top"), rotate(20)]);
-    // Shoulder pads (bigger)
-    char.add([rect(8*DS, 8*DS), outline(3), color(WHITE), pos(-bw/2 - 5*DS, -bh/2 + 2), anchor("center")]);
-    char.add([rect(8*DS, 8*DS), outline(3), color(WHITE), pos(bw/2 + 5*DS, -bh/2 + 2), anchor("center")]);
-    // Belt pouches
-    char.add([rect(6*DS, 4*DS), outline(2), color(WHITE), pos(-6*DS, bh/2), anchor("center")]);
-    char.add([rect(6*DS, 4*DS), outline(2), color(WHITE), pos(6*DS, bh/2), anchor("center")]);
-    // Boots
-    const by = bh/2 + lh - lh * 0.15;
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(-lw/2 - 1, by), anchor("center")]);
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(lw/2 + 1, by), anchor("center")]);
+    // Filter canister (on cheek)
+    char.add([circle(4*DS), outline(3), color(WHITE), pos(8*DS, hx + 5*DS), anchor("center")]);
+    // Breathing tube from mask to filter
+    char.add([rect(2*DS, 6*DS), outline(2), color(WHITE), pos(6*DS, hx + 2*DS), anchor("center"), rotate(15)]);
+    // Left tube (hanging)
+    char.add([rect(2*DS, 8*DS), outline(2), color(WHITE), pos(-hw/2 - 2*DS, hx + 2*DS), anchor("center"), rotate(-20)]);
+    // Shoulder pads (armored)
+    char.add([rect(10*DS, 10*DS), outline(3), color(WHITE), pos(-bw/2 - 6*DS, -bh/2 + 2), anchor("center")]);
+    char.add([rect(10*DS, 10*DS), outline(3), color(WHITE), pos(bw/2 + 6*DS, -bh/2 + 2), anchor("center")]);
+    // Shoulder pad detail lines
+    char.add([rect(8*DS, 2*DS), outline(1), color(INK), pos(-bw/2 - 6*DS, -bh/2 + 1), anchor("center")]);
+    char.add([rect(8*DS, 2*DS), outline(1), color(INK), pos(bw/2 + 6*DS, -bh/2 + 1), anchor("center")]);
+    // Utility vest pockets
+    char.add([rect(6*DS, 5*DS), outline(2), color(WHITE), pos(-7*DS, 3), anchor("center")]);
+    char.add([rect(6*DS, 5*DS), outline(2), color(WHITE), pos(7*DS, 3), anchor("center")]);
+    // Belt with buckle
+    char.add([rect(bw, 3*DS), outline(3), color(WHITE), pos(0, bh/2 - 2), anchor("center")]);
+    char.add([rect(4*DS, 5*DS), outline(2), color(WHITE), pos(0, bh/2 - 2), anchor("center")]);
+    // Pants (lower body is already there, add knee pads)
+    char.add([rect(lw + 2, 3*DS), outline(2), color(WHITE), pos(-lw/2 - 2, Math.floor(bh * 0.5) + Math.floor(lh * 0.3)), anchor("center")]);
+    char.add([rect(lw + 2, 3*DS), outline(2), color(WHITE), pos(lw/2 + 2, Math.floor(bh * 0.5) + Math.floor(lh * 0.3)), anchor("center")]);
+    // Combat boots
+    const by = Math.floor(bh * 0.5) + lh - 2;
+    char.add([rect(lw + 6, Math.ceil(lh * 0.45)), outline(3), color(WHITE), pos(-lw/2 - 2, by), anchor("center")]);
+    char.add([rect(lw + 6, Math.ceil(lh * 0.45)), outline(3), color(WHITE), pos(lw/2 + 2, by), anchor("center")]);
+    // Boot sole
+    char.add([rect(lw + 8, 2*DS), outline(2), color(INK), pos(-lw/2 - 2, by + Math.ceil(lh * 0.25)), anchor("center")]);
+    char.add([rect(lw + 8, 2*DS), outline(2), color(INK), pos(lw/2 + 2, by + Math.ceil(lh * 0.25)), anchor("center")]);
   }
 
   if (type === "xero") {
-    const hx = -bh / 2 - hh + 2;
-    // Visor
+    // Visor (full width of face)
     const visor = char.add([
-      rect(hw + 2, 5*DS), outline(3), color(WHITE),
+      rect(hw + 4, 5*DS), outline(3), color(WHITE),
       pos(0, hx + 2*DS), anchor("center"),
     ]);
     char.parts.push({ name: "visor", obj: visor, x0: 0, y0: hx + 2*DS });
-    // Cyber lines on body
-    char.add([rect(4*DS, bh - 6), outline(2), color(WHITE), pos(-5*DS, 1), anchor("center")]);
-    char.add([rect(4*DS, bh - 6), outline(2), color(WHITE), pos(5*DS, 1), anchor("center")]);
-    // Cyber eye (red dot)
-    const cEye = char.add([circle(2*DS), color(INK), pos(2*DS, hx + 2*DS), anchor("center")]);
-    char.parts.push({ name: "cEye", obj: cEye, x0: 2*DS, y0: hx + 2*DS });
-    // Bigger right arm (cyborg)
-    rArm.width = aw * 1.5;
-    rArm.height = ah * 1.2;
-    char.parts.find((p) => p.name === "rArm").obj.width = aw * 1.5;
-    char.parts.find((p) => p.name === "rArm").obj.height = ah * 1.2;
-    // Boots
-    const bx = bh/2 + lh - lh * 0.15;
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(-lw/2 - 1, bx), anchor("center")]);
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(lw/2 + 1, bx), anchor("center")]);
+    // Visor shine line
+    char.add([rect(hw + 2, 1), color(WHITE), pos(0, hx + 1*DS), anchor("center")]);
+    // Cyber eye (glowing red dot)
+    const cEye = char.add([circle(3*DS), color(INK), pos(3*DS, hx + 2*DS), anchor("center")]);
+    char.parts.push({ name: "cEye", obj: cEye, x0: 3*DS, y0: hx + 2*DS });
+    // Cyber lines on face
+    char.add([rect(2*DS, 6*DS), outline(1), color(WHITE), pos(-hw/2, hx + 4*DS), anchor("center"), rotate(-10)]);
+    // Body cyber lines (circuit pattern)
+    char.add([rect(4*DS, bh - 8), outline(2), color(WHITE), pos(-6*DS, 1), anchor("center")]);
+    char.add([rect(4*DS, bh - 8), outline(2), color(WHITE), pos(6*DS, 1), anchor("center")]);
+    // Horizontal circuit lines
+    char.add([rect(2*DS, 2*DS), outline(1), color(WHITE), pos(-6*DS, -6), anchor("center")]);
+    char.add([rect(2*DS, 2*DS), outline(1), color(WHITE), pos(6*DS, 6), anchor("center")]);
+    // Bigger right arm (cyborg) with detail
+    rArm.width = aw * 1.6;
+    rArm.height = ah * 1.3;
+    char.parts.find((p) => p.name === "rArm").obj.width = aw * 1.6;
+    char.parts.find((p) => p.name === "rArm").obj.height = ah * 1.3;
+    // Cyborg arm panel lines
+    const rAx = bw / 2 + aw * 0.8 + 1;
+    const rAy = -bh / 2 + 6;
+    char.add([rect(4*DS, ah * 0.6), outline(1), color(INK), pos(rAx, rAy + 4), anchor("center")]);
+    char.add([rect(2*DS, ah * 0.3), outline(1), color(INK), pos(rAx, rAy + ah * 0.8), anchor("center")]);
+    // Belt
+    char.add([rect(bw - 2, 3*DS), outline(2), color(WHITE), pos(0, bh/2 - 2), anchor("center")]);
+    // Sleek boots
+    const bx = Math.floor(bh * 0.5) + lh - 2;
+    char.add([rect(lw + 4, Math.ceil(lh * 0.35)), outline(3), color(WHITE), pos(-lw/2 - 2, bx), anchor("center")]);
+    char.add([rect(lw + 4, Math.ceil(lh * 0.35)), outline(3), color(WHITE), pos(lw/2 + 2, bx), anchor("center")]);
+    // Boot tech lines
+    char.add([rect(lw + 2, 2*DS), outline(1), color(INK), pos(-lw/2 - 2, bx + 2), anchor("center")]);
+    char.add([rect(lw + 2, 2*DS), outline(1), color(INK), pos(lw/2 + 2, bx + 2), anchor("center")]);
   }
 
   if (type === "grunt") {
-    const hx = -bh / 2 - hh + 2;
-    // Spiky hair (scaled by DS)
+    // Spiky hair
     const h1 = char.add([
-      polygon([vec2(-6*DS, -hh/2), vec2(-8*DS, -hh/2 - 6*DS), vec2(-2*DS, -hh/2)]),
+      polygon([vec2(-6*DS, -hh/2), vec2(-10*DS, -hh/2 - 8*DS), vec2(-2*DS, -hh/2)]),
       outline(3), color(WHITE), pos(0, hx), anchor("center"),
     ]);
     char.parts.push({ name: "h1", obj: h1, x0: 0, y0: hx });
-    // Boots
-    const bx = bh/2 + lh - lh * 0.15;
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(-lw/2 - 1, bx), anchor("center")]);
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(lw/2 + 1, bx), anchor("center")]);
+    const h2 = char.add([
+      polygon([vec2(6*DS, -hh/2), vec2(10*DS, -hh/2 - 8*DS), vec2(2*DS, -hh/2)]),
+      outline(3), color(WHITE), pos(0, hx), anchor("center"),
+    ]);
+    char.parts.push({ name: "h2", obj: h2, x0: 0, y0: hx });
+    // Simple boots
+    const bx = Math.floor(bh * 0.5) + lh - 2;
+    char.add([rect(lw + 4, Math.ceil(lh * 0.35)), outline(3), color(WHITE), pos(-lw/2 - 2, bx), anchor("center")]);
+    char.add([rect(lw + 4, Math.ceil(lh * 0.35)), outline(3), color(WHITE), pos(lw/2 + 2, bx), anchor("center")]);
   }
 
   if (type === "punk") {
-    const hx = -bh / 2 - hh + 2;
-    // Mohawk (scaled)
+    // Tall mohawk
     const m1 = char.add([
-      rect(6*DS, 14*DS), outline(3), color(WHITE),
-      pos(0, hx - 7*DS), anchor("center"),
+      rect(8*DS, 18*DS), outline(3), color(WHITE),
+      pos(0, hx - 9*DS), anchor("center"),
     ]);
-    char.parts.push({ name: "mohawk", obj: m1, x0: 0, y0: hx - 7*DS });
+    char.parts.push({ name: "mohawk", obj: m1, x0: 0, y0: hx - 9*DS });
+    // Mohawk line detail
+    char.add([rect(6*DS, 16*DS), outline(1), color(INK), pos(0, hx - 9*DS), anchor("center")]);
+    // Earring
+    char.add([circle(2*DS), outline(2), color(WHITE), pos(-hw/2 - 1, hx + 3*DS), anchor("center")]);
     // Boots
-    const bx = bh/2 + lh - lh * 0.15;
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(-lw/2 - 1, bx), anchor("center")]);
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(lw/2 + 1, bx), anchor("center")]);
+    const bx = Math.floor(bh * 0.5) + lh - 2;
+    char.add([rect(lw + 4, Math.ceil(lh * 0.35)), outline(3), color(WHITE), pos(-lw/2 - 2, bx), anchor("center")]);
+    char.add([rect(lw + 4, Math.ceil(lh * 0.35)), outline(3), color(WHITE), pos(lw/2 + 2, bx), anchor("center")]);
   }
 
   if (type === "tough") {
-    const hx = -bh / 2 - hh + 2;
     // Forehead wrinkle
-    char.add([rect(4*DS, 2*DS), color(INK), pos(0, hx + 2*DS), anchor("center")]);
-    // Chest scar
-    char.add([rect(2*DS, 8*DS), outline(2), color(WHITE), pos(0, 2), anchor("center")]);
+    char.add([rect(6*DS, 2*DS), color(INK), pos(0, hx + 2*DS), anchor("center")]);
+    // Angry eyes
+    char.add([rect(4*DS, 2*DS), color(INK), pos(-5*DS, hx + 5*DS), anchor("center"), rotate(-10)]);
+    char.add([rect(4*DS, 2*DS), color(INK), pos(5*DS, hx + 5*DS), anchor("center"), rotate(10)]);
+    // Big chest scar (X shape)
+    char.add([rect(2*DS, 10*DS), outline(2), color(WHITE), pos(0, 2), anchor("center"), rotate(20)]);
+    char.add([rect(2*DS, 10*DS), outline(2), color(WHITE), pos(0, 2), anchor("center"), rotate(-20)]);
+    // Bandolier across chest
+    char.add([rect(bw + 4, 3*DS), outline(2), color(WHITE), pos(0, -2), anchor("center")]);
+    // Knuckle wraps on hands
+    char.add([rect(aw + 1, 3*DS), outline(2), color(WHITE), pos(-bw/2 - aw/2 - 1, -bh/2 + 6 + ah), anchor("center")]);
+    char.add([rect(aw + 1, 3*DS), outline(2), color(WHITE), pos(bw/2 + aw/2 + 1, -bh/2 + 6 + ah), anchor("center")]);
     // Boots
-    const bx = bh/2 + lh - lh * 0.15;
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(-lw/2 - 1, bx), anchor("center")]);
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(lw/2 + 1, bx), anchor("center")]);
+    const bx = Math.floor(bh * 0.5) + lh - 2;
+    char.add([rect(lw + 6, Math.ceil(lh * 0.4)), outline(3), color(WHITE), pos(-lw/2 - 2, bx), anchor("center")]);
+    char.add([rect(lw + 6, Math.ceil(lh * 0.4)), outline(3), color(WHITE), pos(lw/2 + 2, bx), anchor("center")]);
   }
 
   if (type === "boss") {
-    const hx = -bh / 2 - hh + 2;
-    // Horns (scaled by DS)
+    // Big horns
     const hornL = char.add([
-      polygon([vec2(-8*DS, -6*DS), vec2(-12*DS, -16*DS), vec2(-4*DS, -8*DS)]),
+      polygon([vec2(-8*DS, -6*DS), vec2(-14*DS, -20*DS), vec2(-4*DS, -10*DS)]),
       outline(3), color(WHITE), pos(0, hx), anchor("center"),
     ]);
     char.parts.push({ name: "hornL", obj: hornL, x0: 0, y0: hx });
     const hornR = char.add([
-      polygon([vec2(8*DS, -6*DS), vec2(12*DS, -16*DS), vec2(4*DS, -8*DS)]),
+      polygon([vec2(8*DS, -6*DS), vec2(14*DS, -20*DS), vec2(4*DS, -10*DS)]),
       outline(3), color(WHITE), pos(0, hx), anchor("center"),
     ]);
     char.parts.push({ name: "hornR", obj: hornR, x0: 0, y0: hx });
-    // Chest scar
-    char.add([rect(4*DS, 12*DS), outline(2), color(WHITE), pos(0, 2), anchor("center")]);
+    // Horn rings
+    char.add([rect(4*DS, 2*DS), outline(1), color(INK), pos(-12*DS, hx - 12*DS), anchor("center"), rotate(30)]);
+    char.add([rect(4*DS, 2*DS), outline(1), color(INK), pos(12*DS, hx - 12*DS), anchor("center"), rotate(-30)]);
     // Angry eyes
-    char.add([rect(4*DS, 2*DS), color(INK), pos(-6*DS, hx + 4*DS), anchor("center"), rotate(-10)]);
-    char.add([rect(4*DS, 2*DS), color(INK), pos(6*DS, hx + 4*DS), anchor("center"), rotate(10)]);
-    // Boots
-    const bx = bh/2 + lh - lh * 0.15;
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(-lw/2 - 1, bx), anchor("center")]);
-    char.add([rect(lw + 4, Math.ceil(lh * 0.3)), outline(3), color(WHITE), pos(lw/2 + 1, bx), anchor("center")]);
+    char.add([rect(6*DS, 2*DS), color(INK), pos(-6*DS, hx + 4*DS), anchor("center"), rotate(-12)]);
+    char.add([rect(6*DS, 2*DS), color(INK), pos(6*DS, hx + 4*DS), anchor("center"), rotate(12)]);
+    // Scar over eye
+    char.add([rect(8*DS, 1), color(WHITE), pos(-4*DS, hx + 3*DS), anchor("center"), rotate(-25)]);
+    // Large chest scar
+    char.add([rect(4*DS, 16*DS), outline(2), color(WHITE), pos(0, 2), anchor("center")]);
+    // Shoulder spikes
+    char.add([polygon([vec2(-4*DS, 0), vec2(-6*DS, -6*DS), vec2(0, 0)]), outline(3), color(WHITE), pos(-bw/2 - 6*DS, -bh/2 + 2), anchor("center")]);
+    char.add([polygon([vec2(4*DS, 0), vec2(6*DS, -6*DS), vec2(0, 0)]), outline(3), color(WHITE), pos(bw/2 + 6*DS, -bh/2 + 2), anchor("center")]);
+    // Belt with skull buckle
+    char.add([rect(bw + 4, 4*DS), outline(3), color(WHITE), pos(0, bh/2 - 2), anchor("center")]);
+    char.add([circle(3*DS), outline(2), color(WHITE), pos(0, bh/2 - 2), anchor("center")]);
+    // Boots (bigger)
+    const bx = Math.floor(bh * 0.5) + lh - 2;
+    char.add([rect(lw + 8, Math.ceil(lh * 0.5)), outline(3), color(WHITE), pos(-lw/2 - 2, bx), anchor("center")]);
+    char.add([rect(lw + 8, Math.ceil(lh * 0.5)), outline(3), color(WHITE), pos(lw/2 + 2, bx), anchor("center")]);
+    // Boot spikes
+    char.add([polygon([vec2(-2*DS, 0), vec2(-6*DS, -4*DS), vec2(0, -2*DS)]), outline(2), color(WHITE), pos(-lw/2 - 4, bx + Math.ceil(lh * 0.25)), anchor("center")]);
+    char.add([polygon([vec2(2*DS, 0), vec2(6*DS, -4*DS), vec2(0, -2*DS)]), outline(2), color(WHITE), pos(lw/2 + 4, bx + Math.ceil(lh * 0.25)), anchor("center")]);
   }
 
   return char;
@@ -735,8 +802,10 @@ function setPunchPose(char) {
     lArm.obj.pos = vec2(lArm.x0, lArm.y0 + 8);
   }
   // Lean forward slightly
-  const body = char.parts.find((p) => p.name === "body");
-  if (body) body.obj.pos = vec2(body.x0 + 6, body.y0);
+  const ub = char.parts.find((p) => p.name === "upperBody");
+  const lb = char.parts.find((p) => p.name === "lowerBody");
+  if (ub) ub.obj.pos = vec2(ub.x0 + 6, ub.y0);
+  if (lb) lb.obj.pos = vec2(lb.x0 + 4, lb.y0);
 }
 
 function setKickPose(char) {
@@ -747,14 +816,18 @@ function setKickPose(char) {
     rLeg.obj.angle = 30;
   }
   // Lean back
-  const body = char.parts.find((p) => p.name === "body");
-  if (body) body.obj.pos = vec2(body.x0 - 6, body.y0);
+  const ub = char.parts.find((p) => p.name === "upperBody");
+  const lb = char.parts.find((p) => p.name === "lowerBody");
+  if (ub) ub.obj.pos = vec2(ub.x0 - 6, ub.y0);
+  if (lb) lb.obj.pos = vec2(lb.x0 - 4, lb.y0);
 }
 
 function setHitPose(char) {
   resetPose(char);
-  const body = char.parts.find((p) => p.name === "body");
-  if (body) body.obj.pos = vec2(body.x0, body.y0 + 4);
+  const ub = char.parts.find((p) => p.name === "upperBody");
+  const lb = char.parts.find((p) => p.name === "lowerBody");
+  if (ub) ub.obj.pos = vec2(ub.x0, ub.y0 + 4);
+  if (lb) lb.obj.pos = vec2(lb.x0, lb.y0 + 4);
   const head = char.parts.find((p) => p.name === "head");
   if (head) head.obj.pos = vec2(head.x0, head.y0 + 4);
 }
@@ -772,8 +845,11 @@ function setWalkPose(char, t) {
 }
 
 function setIdlePose(char, t) {
-  const body = char.parts.find((p) => p.name === "body");
-  if (body) body.obj.pos = vec2(body.x0, body.y0 + Math.sin(t * 0.05) * 2);
+  const ub = char.parts.find((p) => p.name === "upperBody");
+  const lb = char.parts.find((p) => p.name === "lowerBody");
+  const breath = Math.sin(t * 0.05) * 2;
+  if (ub) ub.obj.pos = vec2(ub.x0, ub.y0 + breath);
+  if (lb) lb.obj.pos = vec2(lb.x0, lb.y0 + breath * 0.5);
 }
 
 // ============================================================
@@ -880,6 +956,7 @@ function spawnHitEffect(x, y) {
       opacity(1),
       lifespan(rand(0.3, 0.6)),
       anchor("center"),
+      z(15),
     ]);
   }
 }
@@ -894,6 +971,7 @@ function spawnAttackArc(x, y, dir) {
       anchor("center"),
       opacity(1),
       lifespan(0.1),
+      z(15),
     ]);
   }
 }
@@ -907,6 +985,7 @@ function spawnInkSplat(x, y) {
       opacity(0.6),
       lifespan(rand(0.3, 0.7)),
       anchor("center"),
+      z(15),
     ]);
   }
 }
@@ -920,6 +999,7 @@ function spawnWalkDust(x, y, dir) {
     move(vec2(-dir * rand(20, 50), 0)),
     lifespan(rand(0.15, 0.3)),
     anchor("center"),
+    z(15),
   ]);
 }
 
@@ -1101,10 +1181,22 @@ scene("select", () => {
   let p1Locked = false, p2Locked = false;
   let started = false;
 
+  function nextAvail(current, dir, taken) {
+    let c = current;
+    for (let tries = 0; tries < CHAR_OPTIONS.length; tries++) {
+      c = (c + dir + CHAR_OPTIONS.length) % CHAR_OPTIONS.length;
+      if (CHAR_OPTIONS[c] !== taken) return c;
+    }
+    return current;
+  }
+
   const previews = [];
   function renderSelect() {
     for (const p of previews) destroy(p);
     previews.length = 0;
+
+    const p1Taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
+    const p2Taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
 
     const p1Label = add([
       text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"), { size: 12, font: "sans-serif" }),
@@ -1116,15 +1208,43 @@ scene("select", () => {
     p1Char.scale.x = 1;
     previews.push(p1Char);
 
+    // Show P2 locked char as X if same as P1
+    const p2LabelTxt = (p2Locked && p2Taken === CHAR_OPTIONS[p1Choice])
+      ? "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + " (LOCKED)"
+      : "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? " (LOCKED)" : " (< >)");
     const p2Label = add([
-      text("P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? " (LOCKED)" : " (< >)"), { size: 12, font: "sans-serif" }),
+      text(p2LabelTxt, { size: 12, font: "sans-serif" }),
       pos(W / 2, 130), anchor("center"), color(INK), fixed(), z(10),
     ]);
     previews.push(p2Label);
 
     const p2Char = createCharacter(600, 250, CHAR_OPTIONS[p2Choice], "preview");
     p2Char.scale.x = -1;
+    if (p2Locked && p2Taken === CHAR_OPTIONS[p1Choice]) p2Char.opacity = 0.3;
     previews.push(p2Char);
+
+    // Available characters bar
+    const barY = 340;
+    add([text("--- CHARACTERS ---", { size: 10, font: "sans-serif" }), pos(W / 2, barY - 15), anchor("center"), color(INK), fixed(), z(10)]);
+    for (let i = 0; i < CHAR_OPTIONS.length; i++) {
+      const taken = (p1Locked && CHAR_OPTIONS[i] === CHAR_OPTIONS[p1Choice]) ||
+                    (p2Locked && CHAR_OPTIONS[i] === CHAR_OPTIONS[p2Choice]);
+      const bx = W / 2 - 130 + i * 90;
+      const bg = add([rect(70, 20), outline(taken ? 2 : 2), color(taken ? GRAY : WHITE), pos(bx, barY), anchor("center"), fixed(), z(10)]);
+      previews.push(bg);
+      const tx = add([
+        text(CHAR_NAMES[CHAR_OPTIONS[i]], { size: 7, font: "sans-serif" }),
+        pos(bx, barY), anchor("center"), color(taken ? GRAY : INK), fixed(), z(11),
+      ]);
+      previews.push(tx);
+      if (taken) {
+        const xMark = add([
+          text("X", { size: 10, font: "sans-serif" }),
+          pos(bx + 25, barY - 8), anchor("center"), color(INK), fixed(), z(11),
+        ]);
+        previews.push(xMark);
+      }
+    }
 
     let msg = "P1: J to lock | P2: 1 to lock | SPACE: start";
     if (started) msg = "STARTING...";
@@ -1139,13 +1259,38 @@ scene("select", () => {
 
   renderSelect();
 
-  // Navigation
-  onKeyPress("a", () => { if (!p1Locked && !started) { p1Choice = (p1Choice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length; renderSelect(); } });
-  onKeyPress("d", () => { if (!p1Locked && !started) { p1Choice = (p1Choice + 1) % CHAR_OPTIONS.length; renderSelect(); } });
+  // Navigation with duplicate prevention
+  onKeyPress("a", () => {
+    if (p1Locked || started) return;
+    const taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
+    p1Choice = nextAvail(p1Choice, -1, taken);
+    // If same as P2 (when P2 not locked), try again
+    if (!p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, -1, null);
+    renderSelect();
+  });
+  onKeyPress("d", () => {
+    if (p1Locked || started) return;
+    const taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
+    p1Choice = nextAvail(p1Choice, 1, taken);
+    if (!p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, 1, null);
+    renderSelect();
+  });
   onKeyPress("j", () => { if (!p1Locked && !started) { p1Locked = true; renderSelect(); } });
 
-  onKeyPress("left", () => { if (!p2Locked && !started) { p2Choice = (p2Choice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length; renderSelect(); } });
-  onKeyPress("right", () => { if (!p2Locked && !started) { p2Choice = (p2Choice + 1) % CHAR_OPTIONS.length; renderSelect(); } });
+  onKeyPress("left", () => {
+    if (p2Locked || started) return;
+    const taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
+    p2Choice = nextAvail(p2Choice, -1, taken);
+    if (!p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, -1, null);
+    renderSelect();
+  });
+  onKeyPress("right", () => {
+    if (p2Locked || started) return;
+    const taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
+    p2Choice = nextAvail(p2Choice, 1, taken);
+    if (!p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, 1, null);
+    renderSelect();
+  });
   onKeyPress("1", () => { if (!p2Locked && !started) { p2Locked = true; renderSelect(); } });
 
   // Start game
