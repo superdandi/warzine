@@ -1611,6 +1611,7 @@ scene("game", (p1Type, p2Type) => {
 
   // ---- MID-GAME P2 JOIN ----
   if (!p2Type) {
+    const availChars = CHAR_OPTIONS.filter((c) => c !== p1Type);
     let joinChoice = 0;
     let joinOverlay = null;
     function destroyJoinOverlay() {
@@ -1622,35 +1623,41 @@ scene("game", (p1Type, p2Type) => {
     function showJoinOverlay() {
       destroyJoinOverlay();
       joinOverlay = [];
-      const ox = W / 2, oy = H / 2 - 40;
-      const bg = add([rect(220, 80), color(PAPER), outline(3, INK), pos(ox, oy), anchor("center"), fixed(), z(80)]);
-      joinOverlay.push(bg);
-      const title = add([
-        text("P2 JOIN - SELECT", { size: 10, font: "sans-serif" }),
-        pos(ox, oy - 28), anchor("center"), color(INK), fixed(), z(81),
+      const baseY = 51;
+      // Dark bar across top
+      const bar = add([rect(W, 24), color(INK), pos(0, baseY), fixed(), z(95), opacity(0.85)]);
+      joinOverlay.push(bar);
+      // Label
+      const label = add([
+        text("P2 JOIN  ", { size: 10, font: "sans-serif" }),
+        pos(W / 2 - 80, baseY + 6), anchor("left"), color(WHITE), fixed(), z(96),
       ]);
-      joinOverlay.push(title);
-      const name = add([
-        text(CHAR_NAMES[CHAR_OPTIONS[joinChoice]], { size: 14, font: "sans-serif" }),
-        pos(ox, oy + 2), anchor("center"), color(INK), fixed(), z(81),
+      joinOverlay.push(label);
+      // Character options
+      const charNames = availChars.map((c) => CHAR_NAMES[c]);
+      let charsText = charNames.map((n, i) => i === joinChoice ? "[" + n + "]" : n).join("  ");
+      const chars = add([
+        text(charsText, { size: 10, font: "sans-serif" }),
+        pos(W / 2 - 40, baseY + 6), anchor("left"), color(WHITE), fixed(), z(96),
       ]);
-      joinOverlay.push(name);
-      const instr = add([
+      joinOverlay.push(chars);
+      // Hint
+      const hint = add([
         text("< > choose  1 - JOIN", { size: 8, font: "sans-serif" }),
-        pos(ox, oy + 22), anchor("center"), color(INK), fixed(), z(81),
+        pos(W / 2 + 60, baseY + 7), anchor("left"), color(WHITE), fixed(), z(96),
       ]);
-      joinOverlay.push(instr);
+      joinOverlay.push(hint);
     }
     // P2 navigate left/right, confirm with 1
     onKeyPress("left", () => {
-      if (joinOverlay) { joinChoice = (joinChoice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length; showJoinOverlay(); }
+      if (joinOverlay) { joinChoice = (joinChoice - 1 + availChars.length) % availChars.length; showJoinOverlay(); }
     });
     onKeyPress("right", () => {
-      if (joinOverlay) { joinChoice = (joinChoice + 1) % CHAR_OPTIONS.length; showJoinOverlay(); }
+      if (joinOverlay) { joinChoice = (joinChoice + 1) % availChars.length; showJoinOverlay(); }
     });
     onKeyPress("1", () => {
       if (joinOverlay) {
-        const chosenType = CHAR_OPTIONS[joinChoice];
+        const chosenType = availChars[joinChoice];
         destroyJoinOverlay();
         p2 = createPlayer(chosenType, 250, H - 100, {
           left: "left", right: "right", up: "up", down: "down",
