@@ -61,80 +61,253 @@ function generatePaperTexture() {
 loadSprite("paperTex", generatePaperTexture());
 
 // ============================================================
-// STREET BACKGROUND
+// PARALLAX BACKGROUND GENERATORS
 // ============================================================
 
-function generateStreetBg() {
+const BG_W = 1600; // wider than screen for parallax scroll
+
+function bgCanvas(w, h) {
   const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
-  const ctx = c.getContext("2d");
+  c.width = w;
+  c.height = h;
+  c.ctx = c.getContext("2d");
+  return c;
+}
 
-  // Sky / upper area
-  ctx.fillStyle = "#e6e6d6";
-  ctx.fillRect(0, 0, W, H);
+function generateBgLayer(type, layer) {
+  const c = bgCanvas(BG_W, H);
+  const ctx = c.ctx;
 
-  // Buildings silhouette
-  ctx.strokeStyle = "#000";
-  ctx.lineWidth = 3;
-  ctx.fillStyle = "#f0ede0";
-
-  const bldgs = [
-    [10, 20, 120, 200],
-    [150, 40, 100, 180],
-    [270, 10, 140, 210],
-    [430, 30, 90, 190],
-    [540, 50, 90, 170],
-  ];
-  for (const [bx, by, bw, bh] of bldgs) {
-    ctx.fillRect(bx, by, bw, bh);
-    ctx.strokeRect(bx, by, bw, bh);
-    // Windows
-    for (let wy = by + 15; wy < by + bh - 15; wy += 30) {
-      for (let wx = bx + 10; wx < bx + bw - 15; wx += 25) {
-        ctx.strokeRect(wx, wy, 12, 16);
+  if (type === "street") {
+    if (layer === 0) {
+      // Far: sky + silhouette distant buildings
+      ctx.fillStyle = "#dad5c5";
+      ctx.fillRect(0, 0, BG_W, H);
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+      ctx.fillStyle = "#e6e0d0";
+      const bldgs = [
+        [30, 30, 100, 180], [180, 50, 80, 160], [300, 20, 130, 190],
+        [470, 40, 90, 170], [600, 60, 90, 150], [750, 25, 120, 185],
+        [920, 45, 80, 165], [1050, 35, 110, 175], [1220, 55, 80, 155],
+        [1380, 30, 100, 180],
+      ];
+      for (const [bx, by, bw, bh] of bldgs) {
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeRect(bx, by, bw, bh);
+        for (let wy = by + 15; wy < by + bh - 15; wy += 25) {
+          for (let wx = bx + 8; wx < bx + bw - 12; wx += 20) {
+            ctx.strokeRect(wx, wy, 8, 12);
+          }
+        }
+      }
+    } else if (layer === 1) {
+      // Mid: closer buildings with details
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 3;
+      ctx.fillStyle = "#f5f0e0";
+      const bldgs = [
+        [-20, 15, 140, 195], [150, 35, 110, 175], [290, 10, 160, 200],
+        [480, 25, 100, 185], [610, 45, 110, 165], [760, 20, 140, 190],
+        [940, 30, 100, 180], [1080, 15, 130, 195], [1260, 40, 100, 170],
+        [1400, 25, 120, 185],
+      ];
+      for (const [bx, by, bw, bh] of bldgs) {
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeRect(bx, by, bw, bh);
+        for (let wy = by + 18; wy < by + bh - 18; wy += 32) {
+          for (let wx = bx + 12; wx < bx + bw - 18; wx += 28) {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(wx, wy, 14, 18);
+            ctx.strokeRect(wx, wy, 14, 18);
+            ctx.fillStyle = "#f5f0e0";
+          }
+        }
+        // Rooftop antenna
+        ctx.beginPath();
+        ctx.moveTo(bx + bw / 2 - 5, by);
+        ctx.lineTo(bx + bw / 2 - 5, by - 20);
+        ctx.lineTo(bx + bw / 2 + 5, by - 20);
+        ctx.lineTo(bx + bw / 2 + 5, by);
+        ctx.stroke();
+        ctx.strokeRect(bx + bw / 2 - 3, by - 25, 6, 5);
+      }
+    } else if (layer === 2) {
+      // Foreground: ground, road, details
+      ctx.fillStyle = "#d4cfc0";
+      ctx.fillRect(0, H - 80, BG_W, 80);
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(0, H - 80, BG_W, 80);
+      // Road lines
+      ctx.lineWidth = 2;
+      ctx.setLineDash([20, 20]);
+      ctx.beginPath();
+      ctx.moveTo(0, H - 40);
+      ctx.lineTo(BG_W, H - 40);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Graffiti
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 10; i++) {
+        const gx = 40 + i * 140;
+        const gy = H - 130 + (i % 3) * 10;
+        ctx.beginPath();
+        ctx.moveTo(gx, gy);
+        ctx.lineTo(gx + 20, gy - 15);
+        ctx.lineTo(gx + 40, gy + 5);
+        ctx.lineTo(gx + 60, gy - 10);
+        ctx.lineTo(gx + 80, gy + 10);
+        ctx.stroke();
+      }
+      // Manhole covers
+      for (let i = 0; i < 4; i++) {
+        const mx = 120 + i * 350;
+        ctx.strokeRect(mx, H - 55, 30, 30);
+        ctx.strokeRect(mx + 2, H - 53, 26, 26);
       }
     }
+  } else if (type === "rooftop") {
+    if (layer === 0) {
+      // Far: night sky + distant city silhouette
+      ctx.fillStyle = "#c8c4b4";
+      ctx.fillRect(0, 0, BG_W, H);
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+      ctx.fillStyle = "#ddd8c8";
+      const bldgs = [
+        [20, 60, 90, 150], [140, 80, 80, 130], [250, 50, 110, 160],
+        [390, 70, 80, 140], [500, 55, 100, 155], [640, 75, 90, 135],
+        [760, 45, 120, 165], [920, 65, 90, 145], [1050, 50, 100, 160],
+        [1200, 70, 80, 140], [1320, 55, 110, 155], [1460, 65, 100, 145],
+      ];
+      for (const [bx, by, bw, bh] of bldgs) {
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeRect(bx, by, bw, bh);
+        for (let wy = by + 12; wy < by + bh - 12; wy += 22) {
+          for (let wx = bx + 6; wx < bx + bw - 10; wx += 18) {
+            ctx.strokeRect(wx, wy, 8, 12);
+          }
+        }
+      }
+      // Moon
+      ctx.beginPath();
+      ctx.arc(200, 80, 30, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(190, 75, 22, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (layer === 1) {
+      // Mid: rooftop structures, water towers
+      ctx.fillStyle = "#f0ebda";
+      ctx.fillRect(0, H - 180, BG_W, 180);
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 3;
+      // Roof edge line
+      ctx.beginPath();
+      ctx.moveTo(0, H - 180);
+      ctx.lineTo(BG_W, H - 180);
+      ctx.stroke();
+      // Rooftop structures
+      const structs = [
+        [20, H - 200, 80, 20], [130, H - 210, 60, 30], [220, H - 195, 100, 15],
+        [360, H - 215, 70, 35], [470, H - 200, 90, 20], [590, H - 205, 70, 25],
+        [700, H - 195, 110, 15], [850, H - 210, 70, 30], [960, H - 200, 80, 20],
+        [1080, H - 215, 60, 35], [1200, H - 195, 90, 15], [1330, H - 205, 80, 25],
+        [1450, H - 200, 100, 20],
+      ];
+      for (const [sx, sy, sw, sh] of structs) {
+        ctx.fillRect(sx, sy, sw, sh);
+        ctx.strokeRect(sx, sy, sw, sh);
+      }
+      // Water tower
+      for (let i = 0; i < 3; i++) {
+        const wx = 50 + i * 500;
+        ctx.strokeRect(wx, H - 235, 40, 50);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(wx + 4, H - 235);
+        ctx.lineTo(wx + 4, H - 250);
+        ctx.moveTo(wx + 36, H - 235);
+        ctx.lineTo(wx + 36, H - 250);
+        ctx.moveTo(wx - 5, H - 250);
+        ctx.lineTo(wx + 45, H - 250);
+        ctx.stroke();
+        ctx.lineWidth = 3;
+      }
+      // Clothes lines
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 4; i++) {
+        const lx = 40 + i * 350;
+        ctx.beginPath();
+        ctx.moveTo(lx, H - 160);
+        ctx.lineTo(lx + 70, H - 155);
+        ctx.stroke();
+        ctx.strokeRect(lx + 10, H - 162, 8, 10);
+        ctx.strokeRect(lx + 30, H - 158, 8, 12);
+        ctx.strokeRect(lx + 50, H - 160, 8, 8);
+      }
+      ctx.lineWidth = 3;
+    } else if (layer === 2) {
+      // Foreground: roof tiles + edge
+      ctx.fillStyle = "#d4cfc0";
+      ctx.fillRect(0, 0, BG_W, H);
+      // Roof tiles pattern
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 1;
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 20; col++) {
+          const tx = col * 80 + (row % 2) * 40;
+          const ty = row * 20 + H - 160;
+          ctx.strokeRect(tx, ty, 80, 20);
+        }
+      }
+      ctx.lineWidth = 3;
+      // AC units
+      for (let i = 0; i < 5; i++) {
+        const ax = 60 + i * 320;
+        ctx.strokeRect(ax, H - 130, 50, 30);
+        ctx.lineWidth = 1;
+        for (let f = 0; f < 4; f++) {
+          ctx.strokeRect(ax + 5 + f * 11, H - 125, 8, 20);
+        }
+        ctx.lineWidth = 3;
+      }
+      // Railing edge
+      ctx.beginPath();
+      ctx.moveTo(0, H - 80);
+      ctx.lineTo(BG_W, H - 80);
+      ctx.stroke();
+      for (let i = 0; i < 30; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * 55, H - 80);
+        ctx.lineTo(i * 55, H - 65);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.moveTo(0, H - 65);
+      ctx.lineTo(BG_W, H - 65);
+      ctx.stroke();
+      ctx.fillStyle = "#e0dbcb";
+      ctx.fillRect(0, H - 65, BG_W, 65);
+      ctx.strokeRect(0, H - 65, BG_W, 65);
+    }
   }
-
-  // Ground
-  ctx.fillStyle = "#d4cfc0";
-  ctx.fillRect(0, H - 80, W, 80);
-  ctx.strokeRect(0, H - 80, W, 80);
-
-  // Road lines
-  ctx.strokeStyle = "#000";
-  ctx.lineWidth = 2;
-  ctx.setLineDash([20, 20]);
-  ctx.beginPath();
-  ctx.moveTo(0, H - 40);
-  ctx.lineTo(W, H - 40);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Graffiti details
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "#000";
-  for (let i = 0; i < 5; i++) {
-    const gx = 50 + i * 120;
-    const gy = H - 130 + Math.random() * 20;
-    ctx.beginPath();
-    ctx.moveTo(gx, gy);
-    ctx.lineTo(gx + 20, gy - 15);
-    ctx.lineTo(gx + 40, gy + 5);
-    ctx.lineTo(gx + 60, gy - 10);
-    ctx.lineTo(gx + 80, gy + 10);
-    ctx.stroke();
-  }
-
-  // Manhole cover
-  ctx.strokeRect(300, H - 55, 30, 30);
-  ctx.strokeRect(302, H - 53, 26, 26);
 
   return c;
 }
 
-loadSprite("streetBg", generateStreetBg());
+const bgSprites = {};
+function loadBgType(type) {
+  bgSprites[type] = [];
+  for (let layer = 0; layer < 3; layer++) {
+    const name = type + "_" + layer;
+    loadSprite(name, generateBgLayer(type, layer));
+    bgSprites[type].push(name);
+  }
+}
+loadBgType("street");
+loadBgType("rooftop");
 
 // ============================================================
 // HELPERS
@@ -859,15 +1032,87 @@ scene("title", () => {
   });
 
   onKeyPress("space", () => {
-    go("game");
+    go("select");
   });
+});
+
+// ============================================================
+// SELECT SCENE
+// ============================================================
+
+const CHAR_OPTIONS = ["punkette", "antagonic", "xero"];
+const CHAR_NAMES = { punkette: "PUNKETTE", antagonic: "ANTAGONIC", xero: "X-ERO" };
+
+scene("select", () => {
+  add([sprite("paperTex"), opacity(0.15), z(100), fixed()]);
+  add([rect(W, H), color(PAPER), fixed()]);
+
+  add([
+    text("SELECT YOUR CHARACTER", { size: 18, font: "sans-serif" }),
+    pos(W / 2, 40), anchor("center"), color(INK), fixed(), z(10),
+  ]);
+
+  let p1Choice = 0, p2Choice = 1;
+  let p1Locked = false, p2Locked = false;
+
+  const previews = [];
+  function renderSelect() {
+    for (const p of previews) destroy(p);
+    previews.length = 0;
+
+    // P1 selection
+    const p1Label = add([
+      text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " [LOCKED]" : " [A/D]"), { size: 12, font: "sans-serif" }),
+      pos(W / 2, 80), anchor("center"), color(INK), fixed(), z(10),
+    ]);
+    previews.push(p1Label);
+
+    const p1Char = createCharacter(200, 250, CHAR_OPTIONS[p1Choice], "preview");
+    p1Char.scale.x = 1;
+    previews.push(p1Char);
+
+    // P2 selection
+    const p2Label = add([
+      text("P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? " [LOCKED]" : " [< >]"), { size: 12, font: "sans-serif" }),
+      pos(W / 2, 130), anchor("center"), color(INK), fixed(), z(10),
+    ]);
+    previews.push(p2Label);
+
+    const p2Char = createCharacter(600, 250, CHAR_OPTIONS[p2Choice], "preview");
+    p2Char.scale.x = -1;
+    previews.push(p2Char);
+
+    const instr = add([
+      text(p1Locked && p2Locked ? "FIGHT!" : "P1: J to lock   P2: 1 to lock", { size: 12, font: "sans-serif" }),
+      pos(W / 2, 380), anchor("center"), color(INK), fixed(), z(10),
+    ]);
+    previews.push(instr);
+
+    if (p1Locked && p2Locked) {
+      wait(0.5, () => go("game", CHAR_OPTIONS[p1Choice], CHAR_OPTIONS[p2Choice]));
+    }
+  }
+
+  renderSelect();
+
+  // P1 controls
+  onKeyPress("a", () => { if (!p1Locked) { p1Choice = (p1Choice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length; renderSelect(); } });
+  onKeyPress("d", () => { if (!p1Locked) { p1Choice = (p1Choice + 1) % CHAR_OPTIONS.length; renderSelect(); } });
+  onKeyPress("j", () => { if (!p1Locked) { p1Locked = true; renderSelect(); } });
+
+  // P2 controls
+  onKeyPress("left", () => { if (!p2Locked) { p2Choice = (p2Choice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length; renderSelect(); } });
+  onKeyPress("right", () => { if (!p2Locked) { p2Choice = (p2Choice + 1) % CHAR_OPTIONS.length; renderSelect(); } });
+  onKeyPress("1", () => { if (!p2Locked) { p2Locked = true; renderSelect(); } });
 });
 
 // ============================================================
 // GAME SCENE
 // ============================================================
 
-scene("game", () => {
+scene("game", (p1Type, p2Type) => {
+  if (!p1Type) p1Type = "punkette";
+  if (!p2Type) p2Type = "antagonic";
   events.clear();
 
   // ---- STATE ----
@@ -890,8 +1135,13 @@ scene("game", () => {
   };
   curState = state;
 
-  // ---- BACKGROUND ----
-  add([sprite("streetBg"), z(0)]);
+  // ---- BACKGROUND (parallax layers) ----
+  state.bgType = "street";
+  const bgLayers = [];
+  for (let i = 0; i < 3; i++) {
+    const layer = add([sprite(bgSprites[state.bgType][i]), z(i)]);
+    bgLayers.push(layer);
+  }
   add([sprite("paperTex"), opacity(0.18), z(90), fixed()]);
 
   // ---- PLAYER CREATION ----
@@ -1063,15 +1313,15 @@ scene("game", () => {
     return char;
   }
 
-  // Create players
-  const p1 = createPlayer("punkette", 150, H - 100, {
+  // Create players from selection
+  const p1 = createPlayer(p1Type || "punkette", 150, H - 100, {
     left: "a", right: "d", up: "w", down: "s",
     punch: "j", jump: "k",
   }, "player");
 
   p1.playerId = 1;
 
-  const p2 = createPlayer("antagonic", 250, H - 100, {
+  const p2 = createPlayer(p2Type || "antagonic", 250, H - 100, {
     left: "left", right: "right", up: "up", down: "down",
     punch: "1", jump: "2",
   }, "player");
@@ -1091,17 +1341,39 @@ scene("game", () => {
     enemy.aiTimer = 0;
     enemy.facing = -1;
     enemy.walkTime = rand(0, 100);
+    enemy.isAirborne = false;
+    enemy.jumpVy = 0;
+    enemy.jumpStartY = y;
+    enemy.jumpTimer = 0;
 
     // Clamp position
     enemy.onUpdate(() => {
       if (enemy.dead || state.hitPause > 0) return;
       enemy.pos.x = clamp(enemy.pos.x, 30, W - 30);
-      enemy.pos.y = clamp(enemy.pos.y, H - 180, H - 60);
+      if (!enemy.isAirborne) {
+        enemy.pos.y = clamp(enemy.pos.y, H - 180, H - 60);
+      }
+    });
+
+    // Gravity
+    enemy.onUpdate(() => {
+      if (enemy.dead || state.hitPause > 0) return;
+      if (enemy.isAirborne) {
+        enemy.jumpVy += GRAVITY * dt();
+        enemy.pos.y += enemy.jumpVy * dt();
+        if (enemy.pos.y >= enemy.jumpStartY) {
+          enemy.pos.y = enemy.jumpStartY;
+          enemy.jumpVy = 0;
+          enemy.isAirborne = false;
+        }
+      }
     });
 
     // AI
     enemy.onUpdate(() => {
       if (enemy.dead || state.gameOver || state.victory || state.hitPause > 0) return;
+
+      if (enemy.isAirborne) return; // no AI while airborne
 
       if (enemy.hitTimer > 0) {
         enemy.hitTimer -= dt();
@@ -1111,6 +1383,7 @@ scene("game", () => {
       enemy.invincible = Math.max(0, enemy.invincible - dt());
       enemy.attackCooldown -= dt();
       enemy.aiTimer -= dt();
+      enemy.jumpTimer -= dt();
 
       // Find nearest player
       let target = null;
@@ -1140,7 +1413,16 @@ scene("game", () => {
       const dy = target.pos.y - enemy.pos.y + repelY * 20;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      if (dist < enemy.attackRange && enemy.attackCooldown <= 0) {
+      // Jump if far away and cooldown ready
+      if (dist > 80 && enemy.jumpTimer <= 0 && Math.random() < 0.02) {
+        enemy.isAirborne = true;
+        enemy.jumpStartY = enemy.pos.y;
+        enemy.jumpVy = JUMP_FORCE * rand(0.8, 1.0);
+        enemy.pos.x += dx > 0 ? 20 : -20; // lunge forward
+        enemy.jumpTimer = rand(2, 4);
+      }
+
+      if (dist < enemy.attackRange && enemy.attackCooldown <= 0 && !enemy.isAirborne) {
         // Attack!
         enemy.aiState = "attack";
         enemy.attackCooldown = rand(0.8, 1.8);
@@ -1200,6 +1482,14 @@ scene("game", () => {
     state.enemiesThisWave = 0;
     const config = waveConfigs[index];
     state.enemiesInWave = config.enemies.reduce((a, e) => a + e.count, 0);
+
+    // Switch background for later waves
+    if (index >= 2 && state.bgType !== "rooftop") {
+      state.bgType = "rooftop";
+      for (let i = 0; i < 3; i++) {
+        bgLayers[i].use(sprite(bgSprites.rooftop[i]));
+      }
+    }
 
     // Wave transition flash
     const flash = add([rect(W, H), color(INK), fixed(), opacity(0), z(45)]);
@@ -1572,26 +1862,78 @@ scene("game", () => {
     if (state.hitPause > 0) state.hitPause -= dt();
     state.time += dt();
     hud.update();
+
+    // Parallax scrolling
+    const alive = state.players.filter((p) => !p.dead);
+    if (alive.length > 0) {
+      const avgX = alive.reduce((s, p) => s + p.pos.x, 0) / alive.length;
+      const camX = (avgX / W - 0.5) * 2; // -1 to 1
+      for (let i = 0; i < 3; i++) {
+        const speed = [0.05, 0.12, 0.25][i];
+        bgLayers[i].pos.x = -camX * speed * (BG_W - W) / 2;
+      }
+    }
   });
 
   // Pause overlay
+  onKeyPress("c", () => {
+    if (!state.paused) return;
+    state.showControls = !state.showControls;
+  });
+
   onUpdate(() => {
     if (state.paused) {
       if (!state.pauseUI) {
+        state.showControls = false;
         state.pauseUI = add([fixed(), z(100)]);
-        state.pauseUI.add([rect(W, H), color(INK), opacity(0.5)]);
+        state.pauseUI.add([rect(W, H), color(INK), opacity(0.7)]);
         state.pauseUI.add([
           text("PAUSED", { size: 48, font: "sans-serif" }),
-          pos(W / 2, H / 2 - 20), anchor("center"), color(WHITE), fixed(), z(101),
+          pos(W / 2, H / 2 - 80), anchor("center"), color(WHITE), fixed(), z(101),
         ]);
         state.pauseUI.add([
-          text("PRESS ESC TO CONTINUE", { size: 14, font: "sans-serif" }),
-          pos(W / 2, H / 2 + 30), anchor("center"), color(WHITE), fixed(), z(101),
+          text("ESC: Resume     C: Controls", { size: 12, font: "sans-serif" }),
+          pos(W / 2, H / 2 - 30), anchor("center"), color(WHITE), fixed(), z(101),
         ]);
+      }
+      // Controls sub-screen toggle
+      if (state.showControls && !state.controlsUI) {
+        state.controlsUI = state.pauseUI.add([fixed(), z(102)]);
+        const lines = [
+          "--- CONTROLS ---",
+          "",
+          "P1 (WASD + J/K):",
+          "  WASD    Move",
+          "  K       Jump",
+          "  J       Punch",
+          "  J+K     Super Attack",
+          "",
+          "P2 (ARROWS + 1/2):",
+          "  Arrows  Move",
+          "  2       Jump",
+          "  1       Punch",
+          "  1+2     Super Attack",
+          "",
+          "ESC      Pause",
+          "C        Toggle Controls",
+        ];
+        let yOff = H / 2 - 60;
+        for (const line of lines) {
+          state.controlsUI.add([
+            text(line, { size: 10, font: "sans-serif" }),
+            pos(W / 2, yOff), anchor("center"), color(WHITE), fixed(), z(103),
+          ]);
+          yOff += 13;
+        }
+      } else if (!state.showControls && state.controlsUI) {
+        destroy(state.controlsUI);
+        state.controlsUI = null;
       }
     } else if (state.pauseUI) {
       destroy(state.pauseUI);
       state.pauseUI = null;
+      state.controlsUI = null;
+      state.showControls = false;
     }
   });
 
@@ -1650,7 +1992,7 @@ scene("gameover", () => {
     retry.opacity = blink % 1 < 0.6 ? 1 : 0.3;
   });
 
-  onKeyPress("space", () => go("game"));
+  onKeyPress("space", () => go("select"));
 });
 
 // ============================================================

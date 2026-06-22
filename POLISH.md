@@ -32,7 +32,7 @@
 | ⚡ | Más variedad de enemigos por wave | ✅ | Wave 1: grunts+punk, W2: +tough, W3: 3grunt+3punk+2tough |
 | ⚡ | Enemigos que atacan en grupo | ✅ | Anti-stacking AI, cooldowns reducidos, chase cooperativo |
 | ⚡ | Tough: que sea realmente amenazante | ✅ | Daño 18 (antes 15), speed 130, range 35 |
-| 💧 | Que los enemigos puedan saltar | ⬜ | AI con salto básico |
+| 💧 | Que los enemigos puedan saltar | ✅ | AI salta si distancia > 80px, con cooldown 2-4s |
 | 💧 | Indicador visual de wave + transición | ✅ | Flash de tinta + texto + fade |
 | 🌱 | Enemigo con escudo | ⬜ | Romper escudo con combo o super |
 | 🌱 | Enemigo que spawnea otros | ⬜ | "Líder" de wave |
@@ -58,8 +58,8 @@
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
 | 🔥 | Sprite sheets para personajes (futuro) | ⬜ | Reemplazar rect() por bitmaps dibujados |
-| ⚡ | Background con parallax | ⬜ | 2-3 capas a distinta velocidad |
-| ⚡ | Más variedad de fondos | ⬜ | Callejón, azotea, club, etc. |
+| ⚡ | Background con parallax | ✅ | 3 capas (far/mid/fore) a velocidad 0.05/0.12/0.25 |
+| ⚡ | Más variedad de fondos | ✅ | Street (W1-2) → Rooftop (W3+) con parallax |
 | 💧 | Efecto de sangre / tinta al golpear | ✅ | spawnInkSplat: 5 círculos negros semi-transparentes |
 | 💧 | Partículas al caminar (polvo) | ✅ | spawnWalkDust: rects INK que se alejan al caminar |
 | 💧 | Transición entre waves (flash) | ✅ | Flash de tinta + fade antes del texto de wave |
@@ -91,8 +91,8 @@
 |------|------|--------|-------|
 | ⚡ | Pantalla de título más vistosa | ✅ | Título con drift animado, líneas pulsantes, decoración |
 | ⚡ | Pausa (ESC / P) | ✅ | ESC toggle, overlay oscuro + PAUSED + continuar |
-| 💧 | Pantalla de controles | ⬜ | Antes del juego o en pausa |
-| 💧 | Character select (Punkette / Antagonic vs random) | ⬜ | Elegir personaje antes de empezar |
+| 💧 | Pantalla de controles | ✅ | Pausa + C toggle, lista completa de teclas |
+| 💧 | Character select (Punkette / Antagonic vs random) | ✅ | 3 personajes seleccionables, preview en vivo |
 | 🌱 | High score / records | ⬜ | localStorage |
 | 🌱 | Pantalla de créditos | ⬜ | Con scrolling tipo cine |
 | 🌱 | Dificultad (Fácil / Normal / Duro) | ⬜ | HP, daño, velocidad enemiga |
@@ -117,7 +117,7 @@
 |------|------|--------|-------|
 | 🔥 | Limpiar listeners al cambiar de scene | ✅ | events.clear() al entrar a game scene |
 | ⚡ | Resetear estado del juego al hacer retry | ✅ | Kaplay scene() crea estado fresco |
-| 💧 | FPS drop con muchos enemigos | ⬜ | Optimizar partículas |
+| 💧 | FPS drop con muchos enemigos | ✅ | Partículas usan lifespan, auto-destrucción rápida |
 | 💧 | Colisiones entre enemigos | ✅ | Anti-stacking: se repelen si distancia < 40px |
 | 🌱 | Responsive / escalado mobile | ⬜ | Touch + viewport |
 | 🌱 | Prevenir que P1 y P2 se empujen | ⬜ | O habilitar friendly fire toggle |
@@ -143,6 +143,11 @@
 - [x] Super ataque A+B (J+K / 1+2)
 - [x] Golpe en aire
 - [x] 3 waves + boss con 2 fases
+- [x] Background parallax (3 capas)
+- [x] Selector de personaje (Punkette / Antagonic / X-ERO)
+- [x] Pantalla de pausa con controles
+- [x] Enemigos saltan
+- [x] Cambio de fondo: Street → Rooftop
 - [x] 2 jugadores locales (mismo teclado)
 - [x] Sistema de combos (J-J-J)
 - [x] Personajes 2x más grandes (F=2, boss F=3)
