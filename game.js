@@ -134,7 +134,7 @@ loadSprite("streetBg", generateStreetBg());
 // ============================================================
 
 function inkPart(w, h) {
-  return [rect(w, h), outline(3), color(WHITE)];
+  return [rect(w, h), outline(5), color(WHITE)];
 }
 
 function rand(min, max) {
@@ -158,7 +158,7 @@ function screenShake(intensity = 4, duration = 0.15) {
 // ============================================================
 
 function createCharacter(x, y, type, tag) {
-  const F = tag === "boss" ? 2 : 1;
+  const F = tag === "boss" ? 3 : 2;
 
   const cfg = CHAR_CONFIG[type];
 
@@ -206,7 +206,7 @@ function createCharacter(x, y, type, tag) {
   // Head
   const head = char.add([
     rect(hw, hh),
-    outline(3),
+    outline(5),
     color(WHITE),
     pos(-hw / 2, -bh / 2 - hh + 2),
     anchor("center"),
@@ -216,7 +216,7 @@ function createCharacter(x, y, type, tag) {
   // Body
   const body = char.add([
     rect(bw, bh),
-    outline(3),
+    outline(5),
     color(WHITE),
     pos(0, 0),
     anchor("center"),
@@ -226,7 +226,7 @@ function createCharacter(x, y, type, tag) {
   // Left arm
   const lArm = char.add([
     rect(aw, ah),
-    outline(3),
+    outline(5),
     color(WHITE),
     pos(-bw / 2 - aw / 2 + 1, -bh / 2 + 4),
     anchor("left"),
@@ -241,7 +241,7 @@ function createCharacter(x, y, type, tag) {
   // Right arm
   const rArm = char.add([
     rect(aw, ah),
-    outline(3),
+    outline(5),
     color(WHITE),
     pos(bw / 2 + aw / 2 - 1, -bh / 2 + 4),
     anchor("right"),
@@ -256,7 +256,7 @@ function createCharacter(x, y, type, tag) {
   // Left leg
   const lLeg = char.add([
     rect(lw, lh),
-    outline(3),
+    outline(5),
     color(WHITE),
     pos(-lw / 2 - 1, bh / 2),
     anchor("top"),
@@ -271,7 +271,7 @@ function createCharacter(x, y, type, tag) {
   // Right leg
   const rLeg = char.add([
     rect(lw, lh),
-    outline(3),
+    outline(5),
     color(WHITE),
     pos(lw / 2 + 1, bh / 2),
     anchor("top"),
@@ -288,7 +288,7 @@ function createCharacter(x, y, type, tag) {
     // Hair spikes
     const spike = char.add([
       polygon([vec2(-8, -2), vec2(-14, -10), vec2(-4, -4)]),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(0, -bh / 2 - hh + 2),
       anchor("center"),
@@ -296,7 +296,7 @@ function createCharacter(x, y, type, tag) {
     char.parts.push({ name: "spikeL", obj: spike, x0: 0, y0: -bh / 2 - hh + 2 });
     const spike2 = char.add([
       polygon([vec2(0, -4), vec2(0, -14), vec2(4, -4)]),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(0, -bh / 2 - hh + 2),
       anchor("center"),
@@ -304,7 +304,7 @@ function createCharacter(x, y, type, tag) {
     char.parts.push({ name: "spikeT", obj: spike2, x0: 0, y0: -bh / 2 - hh + 2 });
     const spike3 = char.add([
       polygon([vec2(8, -2), vec2(14, -10), vec2(4, -4)]),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(0, -bh / 2 - hh + 2),
       anchor("center"),
@@ -313,7 +313,7 @@ function createCharacter(x, y, type, tag) {
     // Jacket line
     const jacket = char.add([
       rect(bw - 6, bh - 4),
-      outline(1),
+      outline(2),
       color(WHITE),
       pos(0, 2),
       anchor("center"),
@@ -325,7 +325,7 @@ function createCharacter(x, y, type, tag) {
     // Gas mask lines
     const mask = char.add([
       rect(hw - 4, 3),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(0, -bh / 2 - hh + 2 - 2),
       anchor("center"),
@@ -333,7 +333,7 @@ function createCharacter(x, y, type, tag) {
     char.parts.push({ name: "mask", obj: mask, x0: 0, y0: -bh / 2 - hh + 2 - 2 });
     const filter = char.add([
       circle(4),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(0, -bh / 2 - hh + 2 + 4),
       anchor("center"),
@@ -342,7 +342,7 @@ function createCharacter(x, y, type, tag) {
     // Shoulder pads
     const sp1 = char.add([
       rect(6, 6),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(-bw / 2 - 4, -bh / 2 + 2),
       anchor("center"),
@@ -350,7 +350,7 @@ function createCharacter(x, y, type, tag) {
     char.parts.push({ name: "sp1", obj: sp1, x0: -bw / 2 - 4, y0: -bh / 2 + 2 });
     const sp2 = char.add([
       rect(6, 6),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(bw / 2 + 4, -bh / 2 + 2),
       anchor("center"),
@@ -362,7 +362,7 @@ function createCharacter(x, y, type, tag) {
     // Visor
     const visor = char.add([
       rect(hw + 2, 5),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(0, -bh / 2 - hh + 2 + 2),
       anchor("center"),
@@ -371,7 +371,7 @@ function createCharacter(x, y, type, tag) {
     // Cyber lines on body
     const line1 = char.add([
       rect(3, bh - 6),
-      outline(1),
+      outline(2),
       color(WHITE),
       pos(-4, 1),
       anchor("center"),
@@ -379,7 +379,7 @@ function createCharacter(x, y, type, tag) {
     char.parts.push({ name: "line1", obj: line1, x0: -4, y0: 1 });
     const line2 = char.add([
       rect(3, bh - 6),
-      outline(1),
+      outline(2),
       color(WHITE),
       pos(4, 1),
       anchor("center"),
@@ -396,7 +396,7 @@ function createCharacter(x, y, type, tag) {
     // Simple spiky hair
     const h1 = char.add([
       polygon([vec2(-6, -hh / 2), vec2(-8, -hh / 2 - 6), vec2(-2, -hh / 2)]),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(0, -bh / 2 - hh + 2),
       anchor("center"),
@@ -408,7 +408,7 @@ function createCharacter(x, y, type, tag) {
     // Mohawk
     const m1 = char.add([
       rect(4, 12),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(0, -bh / 2 - hh + 2 - 6),
       anchor("center"),
@@ -420,7 +420,7 @@ function createCharacter(x, y, type, tag) {
     // Horns
     const hornL = char.add([
       polygon([vec2(-8, -6), vec2(-12, -16), vec2(-4, -8)]),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(0, -bh / 2 - hh + 2),
       anchor("center"),
@@ -428,7 +428,7 @@ function createCharacter(x, y, type, tag) {
     char.parts.push({ name: "hornL", obj: hornL, x0: 0, y0: -bh / 2 - hh + 2 });
     const hornR = char.add([
       polygon([vec2(8, -6), vec2(12, -16), vec2(4, -8)]),
-      outline(2),
+      outline(3),
       color(WHITE),
       pos(0, -bh / 2 - hh + 2),
       anchor("center"),
@@ -437,7 +437,7 @@ function createCharacter(x, y, type, tag) {
     // Chest scar
     const scar = char.add([
       rect(3, 10),
-      outline(1),
+      outline(2),
       color(WHITE),
       pos(0, 2),
       anchor("center"),
@@ -554,36 +554,36 @@ function setPunchPose(char) {
   resetPose(char);
   const rArm = char.parts.find((p) => p.name === "rArm");
   if (rArm) {
-    rArm.obj.pos = vec2(rArm.x0 + 12, rArm.y0 - 2);
+    rArm.obj.pos = vec2(rArm.x0 + 24, rArm.y0 - 4);
     rArm.obj.angle = 0;
   }
   const lArm = char.parts.find((p) => p.name === "lArm");
   if (lArm) {
-    lArm.obj.pos = vec2(lArm.x0, lArm.y0 + 4);
+    lArm.obj.pos = vec2(lArm.x0, lArm.y0 + 8);
   }
   // Lean forward slightly
   const body = char.parts.find((p) => p.name === "body");
-  if (body) body.obj.pos = vec2(body.x0 + 3, body.y0);
+  if (body) body.obj.pos = vec2(body.x0 + 6, body.y0);
 }
 
 function setKickPose(char) {
   resetPose(char);
   const rLeg = char.parts.find((p) => p.name === "rLeg");
   if (rLeg) {
-    rLeg.obj.pos = vec2(rLeg.x0 + 6, rLeg.y0 - 6);
+    rLeg.obj.pos = vec2(rLeg.x0 + 12, rLeg.y0 - 12);
     rLeg.obj.angle = 30;
   }
   // Lean back
   const body = char.parts.find((p) => p.name === "body");
-  if (body) body.obj.pos = vec2(body.x0 - 3, body.y0);
+  if (body) body.obj.pos = vec2(body.x0 - 6, body.y0);
 }
 
 function setHitPose(char) {
   resetPose(char);
   const body = char.parts.find((p) => p.name === "body");
-  if (body) body.obj.pos = vec2(body.x0, body.y0 + 2);
+  if (body) body.obj.pos = vec2(body.x0, body.y0 + 4);
   const head = char.parts.find((p) => p.name === "head");
-  if (head) head.obj.pos = vec2(head.x0, head.y0 + 2);
+  if (head) head.obj.pos = vec2(head.x0, head.y0 + 4);
 }
 
 function setWalkPose(char, t) {
@@ -591,7 +591,7 @@ function setWalkPose(char, t) {
   const rLeg = char.parts.find((p) => p.name === "rLeg");
   const lArm = char.parts.find((p) => p.name === "lArm");
   const rArm = char.parts.find((p) => p.name === "rArm");
-  const swing = Math.sin(t * 0.15) * 6;
+  const swing = Math.sin(t * 0.15) * 12;
   if (lLeg) lLeg.obj.pos = vec2(lLeg.x0, lLeg.y0 + swing);
   if (rLeg) rLeg.obj.pos = vec2(rLeg.x0, rLeg.y0 - swing);
   if (lArm) lArm.obj.pos = vec2(lArm.x0, lArm.y0 - swing * 0.5);
@@ -600,7 +600,7 @@ function setWalkPose(char, t) {
 
 function setIdlePose(char, t) {
   const body = char.parts.find((p) => p.name === "body");
-  if (body) body.obj.pos = vec2(body.x0, body.y0 + Math.sin(t * 0.05) * 1);
+  if (body) body.obj.pos = vec2(body.x0, body.y0 + Math.sin(t * 0.05) * 2);
 }
 
 // ============================================================
@@ -684,18 +684,32 @@ function hitEnemy(enemy, damage, knockback, dir) {
 }
 
 function spawnHitEffect(x, y) {
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 12; i++) {
     const angle = rand(0, Math.PI * 2);
-    const speed = rand(40, 100);
+    const speed = rand(60, 140);
     const p = add([
-      rect(4, 4),
-      outline(2),
+      rect(8, 8),
+      outline(3),
       color(INK),
       pos(x, y),
       move(vec2(Math.cos(angle), Math.sin(angle)).scale(speed)),
       opacity(1),
-      lifespan(rand(0.15, 0.3)),
+      lifespan(rand(0.3, 0.6)),
       anchor("center"),
+    ]);
+  }
+}
+
+function spawnAttackArc(x, y, dir) {
+  for (let i = 0; i < 3; i++) {
+    add([
+      rect(20, 3),
+      outline(2),
+      color(INK),
+      pos(x + dir * (10 + i * 6), y + rand(-4, 4)),
+      anchor("center"),
+      opacity(1),
+      lifespan(0.1),
     ]);
   }
 }
@@ -931,6 +945,7 @@ scene("game", () => {
         spawnHitEffect(char.pos.x, char.pos.y - 10);
         spawnHitEffect(char.pos.x - 15, char.pos.y);
         spawnHitEffect(char.pos.x + 15, char.pos.y);
+        spawnAttackArc(char.pos.x + 25 * char.facing, char.pos.y - 10, char.facing);
         return;
       }
 
@@ -939,6 +954,7 @@ scene("game", () => {
         char.attackCooldown = 0.3;
         setKickPose(char);
         spawnHitbox(char, 10, 10, 16, 16, 15, 120, 0.08);
+        spawnAttackArc(char.pos.x + 15 * char.facing, char.pos.y + 5, char.facing);
         tween(0, 1, 0.06, () => {}, () => {
           if (!char.dead) resetPose(char);
         });
@@ -964,6 +980,7 @@ scene("game", () => {
         0.08,
       );
 
+      spawnAttackArc(char.pos.x + 22 * char.facing, char.pos.y - 5, char.facing);
       tween(0, 1, 0.06, () => {}, () => {
         if (!char.dead) resetPose(char);
       });
@@ -1079,6 +1096,7 @@ scene("game", () => {
           80,
           0.08,
         );
+        spawnAttackArc(enemy.pos.x + 20 * enemy.facing, enemy.pos.y - 5, enemy.facing);
 
         tween(0, 1, 0.05, () => {}, () => {
           if (!enemy.dead) resetPose(enemy);
@@ -1276,19 +1294,23 @@ scene("game", () => {
             setPunchPose(boss);
             screenShake(2, 0.05);
             spawnHitbox(boss, 28, -6, 24, 18, boss.damage * 1.2, 200, 0.12);
+            spawnAttackArc(boss.pos.x + 30 * boss.facing, boss.pos.y - 5, boss.facing);
           } else if (boss.attackPattern === 1) {
             // Ground slam (area attack)
             setKickPose(boss);
             screenShake(5, 0.1);
             spawnHitbox(boss, 0, 16, 40, 20, boss.damage * 0.8, 120, 0.15);
-            // Also spawn hitbox behind
             spawnHitbox(boss, -20, 16, 30, 20, boss.damage * 0.6, 100, 0.12);
+            spawnHitEffect(boss.pos.x, boss.pos.y + 10);
+            spawnHitEffect(boss.pos.x - 15, boss.pos.y + 5);
+            spawnHitEffect(boss.pos.x + 15, boss.pos.y + 5);
           } else {
             // Charge attack
             const chargeDir = boss.facing;
             boss.move(chargeDir * 150, 0);
             spawnHitbox(boss, 10, -2, 30, 20, boss.damage, 180, 0.2);
             screenShake(3, 0.08);
+            spawnAttackArc(boss.pos.x + 20 * boss.facing, boss.pos.y - 5, boss.facing);
           }
 
           tween(0, 1, 0.08, () => {}, () => {
