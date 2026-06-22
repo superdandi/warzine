@@ -1116,11 +1116,19 @@ scene("title", () => {
   // Decorative arrows
   add([text("< >", { size: 24, font: "sans-serif" }), pos(W / 2, H / 3 + 65), anchor("center"), color(INK), fixed(), z(10)]);
 
-  // Press SPACE
+  // Push Start prompts
   let blink = 0;
-  const pressText = add([
-    text("PRESS SPACE TO FIGHT", { size: 16, font: "sans-serif" }),
-    pos(W / 2, H * 0.65),
+  const p1Start = add([
+    text("1 - PUSH START", { size: 18, font: "sans-serif" }),
+    pos(W / 2, H * 0.6),
+    anchor("center"),
+    color(INK),
+    fixed(),
+    z(10),
+  ]);
+  const p2Start = add([
+    text("2 - PUSH START", { size: 18, font: "sans-serif" }),
+    pos(W / 2, H * 0.66),
     anchor("center"),
     color(INK),
     fixed(),
@@ -1138,7 +1146,7 @@ scene("title", () => {
   ]);
 
   // Decorative lines
-  add([rect(180, 3), color(INK), pos(W / 2 - 90, H * 0.7), fixed(), z(10)]);
+  add([rect(180, 3), color(INK), pos(W / 2 - 90, H * 0.73), fixed(), z(10)]);
   add([rect(140, 2), color(INK), pos(W / 2 - 70, H * 0.85), fixed(), z(10)]);
 
   // Version
@@ -1147,18 +1155,20 @@ scene("title", () => {
     pos(W - 30, H - 15), anchor("center"), color(INK), fixed(), z(10),
   ]);
 
+  let p1Ready = false, p2Ready = false;
+
   onUpdate(() => {
     titleTime += dt();
     blink += dt();
-    pressText.opacity = blink % 1 < 0.6 ? 1 : 0.3;
+    p1Start.opacity = blink % 1 < 0.6 ? 1 : 0.3;
+    p2Start.opacity = p2Ready ? 0.15 : (blink % 1 < 0.6 ? 1 : 0.3);
     ctrlText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
     title.pos.x = W / 2 + Math.sin(titleTime * 0.5) * 3;
     title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
   });
 
-  onKeyPress("space", () => {
-    go("select");
-  });
+  onKeyPress("j", () => { if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: p2Ready }); } });
+  onKeyPress("1", () => { if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
 });
 
 // ============================================================
@@ -1168,7 +1178,11 @@ scene("title", () => {
 const CHAR_OPTIONS = ["punkette", "antagonic", "xero"];
 const CHAR_NAMES = { punkette: "PUNKETTE", antagonic: "ANTAGONIC", xero: "X-ERO" };
 
-scene("select", () => {
+scene("select", (opts) => {
+  if (!opts) opts = {};
+  const p1Active = opts.p1 !== false;
+  let p2Active = opts.p2 === true;
+
   add([sprite("paperTex"), opacity(0.15), z(100), fixed()]);
   add([rect(W, H), color(PAPER), fixed()]);
 
@@ -1177,7 +1191,7 @@ scene("select", () => {
     pos(W / 2, 40), anchor("center"), color(INK), fixed(), z(10),
   ]);
 
-  let p1Choice = 0, p2Choice = 1;
+  let p1Choice = 0, p2Choice = p1Active ? 1 : 0;
   let p1Locked = false, p2Locked = false;
   let started = false;
 
@@ -1198,39 +1212,42 @@ scene("select", () => {
     const p1Taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
     const p2Taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
 
-    const p1Label = add([
-      text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"), { size: 12, font: "sans-serif" }),
-      pos(W / 2, 80), anchor("center"), color(INK), fixed(), z(10),
-    ]);
-    previews.push(p1Label);
+    if (p1Active) {
+      const p1Label = add([
+        text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"), { size: 12, font: "sans-serif" }),
+        pos(W / 2, 80), anchor("center"), color(INK), fixed(), z(10),
+      ]);
+      previews.push(p1Label);
 
-    const p1Char = createCharacter(200, 250, CHAR_OPTIONS[p1Choice], "preview");
-    p1Char.scale.x = 1;
-    previews.push(p1Char);
+      const p1Char = createCharacter(200, 250, CHAR_OPTIONS[p1Choice], "preview");
+      p1Char.scale.x = 1;
+      previews.push(p1Char);
+    }
 
-    // Show P2 locked char as X if same as P1
-    const p2LabelTxt = (p2Locked && p2Taken === CHAR_OPTIONS[p1Choice])
-      ? "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + " (LOCKED)"
-      : "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? " (LOCKED)" : " (< >)");
-    const p2Label = add([
-      text(p2LabelTxt, { size: 12, font: "sans-serif" }),
-      pos(W / 2, 130), anchor("center"), color(INK), fixed(), z(10),
-    ]);
-    previews.push(p2Label);
+    if (p2Active) {
+      const p2LabelTxt = (p2Locked && p2Taken === CHAR_OPTIONS[p1Choice])
+        ? "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + " (LOCKED)"
+        : "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? " (LOCKED)" : " (< >)");
+      const p2Label = add([
+        text(p2LabelTxt, { size: 12, font: "sans-serif" }),
+        pos(W / 2, 130), anchor("center"), color(INK), fixed(), z(10),
+      ]);
+      previews.push(p2Label);
 
-    const p2Char = createCharacter(600, 250, CHAR_OPTIONS[p2Choice], "preview");
-    p2Char.scale.x = -1;
-    if (p2Locked && p2Taken === CHAR_OPTIONS[p1Choice]) p2Char.opacity = 0.3;
-    previews.push(p2Char);
+      const p2Char = createCharacter(600, 250, CHAR_OPTIONS[p2Choice], "preview");
+      p2Char.scale.x = -1;
+      if (p2Locked && p2Taken === CHAR_OPTIONS[p1Choice]) p2Char.opacity = 0.3;
+      previews.push(p2Char);
+    }
 
     // Available characters bar
     const barY = 340;
     add([text("--- CHARACTERS ---", { size: 10, font: "sans-serif" }), pos(W / 2, barY - 15), anchor("center"), color(INK), fixed(), z(10)]);
     for (let i = 0; i < CHAR_OPTIONS.length; i++) {
-      const taken = (p1Locked && CHAR_OPTIONS[i] === CHAR_OPTIONS[p1Choice]) ||
-                    (p2Locked && CHAR_OPTIONS[i] === CHAR_OPTIONS[p2Choice]);
+      const taken = (p1Active && p1Locked && CHAR_OPTIONS[i] === CHAR_OPTIONS[p1Choice]) ||
+                    (p2Active && p2Locked && CHAR_OPTIONS[i] === CHAR_OPTIONS[p2Choice]);
       const bx = W / 2 - 130 + i * 90;
-      const bg = add([rect(70, 20), outline(taken ? 2 : 2), color(taken ? GRAY : WHITE), pos(bx, barY), anchor("center"), fixed(), z(10)]);
+      const bg = add([rect(70, 20), outline(2), color(taken ? GRAY : WHITE), pos(bx, barY), anchor("center"), fixed(), z(10)]);
       previews.push(bg);
       const tx = add([
         text(CHAR_NAMES[CHAR_OPTIONS[i]], { size: 7, font: "sans-serif" }),
@@ -1246,10 +1263,19 @@ scene("select", () => {
       }
     }
 
-    let msg = "P1: J to lock | P2: 1 to lock | SPACE: start";
+    let msg = "";
     if (started) msg = "STARTING...";
-    else if (p1Locked && p2Locked) msg = "STARTING...";
-    else if (p1Locked) msg = "P2: 1 to lock or SPACE for 1P";
+    else if (p1Active && p2Active) {
+      if (p1Locked && p2Locked) msg = "STARTING...";
+      else if (p1Locked) msg = "P2: 1 to lock";
+      else msg = "P1: J to lock | P2: 1 to lock";
+    } else if (p1Active) {
+      if (p1Locked) msg = "STARTING...";
+      else msg = "P1: J to lock";
+    } else if (p2Active) {
+      if (p2Locked) msg = "STARTING...";
+      else msg = "P2: 1 to lock";
+    }
     const instr = add([
       text(msg, { size: 12, font: "sans-serif" }),
       pos(W / 2, 380), anchor("center"), color(INK), fixed(), z(10),
@@ -1259,52 +1285,69 @@ scene("select", () => {
 
   renderSelect();
 
-  // Navigation with duplicate prevention
+  // P1 Navigation & lock (always register, guard at runtime)
   onKeyPress("a", () => {
-    if (p1Locked || started) return;
-    const taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
+    if (!p1Active || p1Locked || started) return;
+    const taken = (p2Active && p2Locked) ? CHAR_OPTIONS[p2Choice] : null;
     p1Choice = nextAvail(p1Choice, -1, taken);
-    // If same as P2 (when P2 not locked), try again
-    if (!p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, -1, null);
+    if (p2Active && !p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, -1, null);
     renderSelect();
   });
   onKeyPress("d", () => {
-    if (p1Locked || started) return;
-    const taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
+    if (!p1Active || p1Locked || started) return;
+    const taken = (p2Active && p2Locked) ? CHAR_OPTIONS[p2Choice] : null;
     p1Choice = nextAvail(p1Choice, 1, taken);
-    if (!p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, 1, null);
+    if (p2Active && !p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, 1, null);
     renderSelect();
   });
-  onKeyPress("j", () => { if (!p1Locked && !started) { p1Locked = true; renderSelect(); } });
+  onKeyPress("j", () => {
+    if (started) return;
+    // Late join for P1
+    if (!p1Active) { p1Active = true; p1Choice = nextAvail(p1Choice, 0, p2Locked ? CHAR_OPTIONS[p2Choice] : null); renderSelect(); return; }
+    if (p1Locked) return;
+    p1Locked = true;
+    renderSelect();
+  });
 
+  // P2 Navigation & lock (always register, guard at runtime)
   onKeyPress("left", () => {
-    if (p2Locked || started) return;
-    const taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
+    if (!p2Active || p2Locked || started) return;
+    const taken = (p1Active && p1Locked) ? CHAR_OPTIONS[p1Choice] : null;
     p2Choice = nextAvail(p2Choice, -1, taken);
-    if (!p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, -1, null);
+    if (p1Active && !p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, -1, null);
     renderSelect();
   });
   onKeyPress("right", () => {
-    if (p2Locked || started) return;
-    const taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
+    if (!p2Active || p2Locked || started) return;
+    const taken = (p1Active && p1Locked) ? CHAR_OPTIONS[p1Choice] : null;
     p2Choice = nextAvail(p2Choice, 1, taken);
-    if (!p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, 1, null);
+    if (p1Active && !p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, 1, null);
     renderSelect();
   });
-  onKeyPress("1", () => { if (!p2Locked && !started) { p2Locked = true; renderSelect(); } });
+  onKeyPress("1", () => {
+    if (started) return;
+    // Late join for P2
+    if (!p2Active) { p2Active = true; p2Choice = nextAvail(p2Choice, 0, p1Locked ? CHAR_OPTIONS[p1Choice] : null); renderSelect(); return; }
+    if (p2Locked) return;
+    p2Locked = true;
+    renderSelect();
+  });
 
   // Start game
   function startGame() {
     if (started) return;
     started = true;
-    go("game", CHAR_OPTIONS[p1Choice], p2Locked ? CHAR_OPTIONS[p2Choice] : null);
+    go("game", p1Active ? CHAR_OPTIONS[p1Choice] : null, p2Active && p2Locked ? CHAR_OPTIONS[p2Choice] : null);
   }
 
   onKeyPress("space", startGame);
 
-  // Auto-start when both locked
+  // Auto-start when all active players locked, or single player locked
   onUpdate(() => {
-    if (p1Locked && p2Locked && !started) startGame();
+    if (started) return;
+    if (p1Active && p2Active && p1Locked && p2Locked) startGame();
+    else if (p1Active && !p2Active && p1Locked) startGame();
+    else if (p2Active && !p1Active && p2Locked) startGame();
   });
 });
 
@@ -1314,7 +1357,7 @@ scene("select", () => {
 
 scene("game", (p1Type, p2Type) => {
   if (!p1Type) p1Type = "punkette";
-  if (!p2Type) p2Type = "antagonic";
+  if (!p2Type) p2Type = null;
   events.clear();
 
   // ---- STATE ----
@@ -1550,18 +1593,80 @@ scene("game", (p1Type, p2Type) => {
   }
 
   // Create players from selection
-  const p1 = createPlayer(p1Type || "punkette", 150, H - 100, {
+  const p1 = createPlayer(p1Type, 150, H - 100, {
     left: "a", right: "d", up: "w", down: "s",
     punch: "j", jump: "k", dodge: "l",
   }, "player");
 
   p1.playerId = 1;
 
-  const p2 = createPlayer(p2Type || "antagonic", 250, H - 100, {
-    left: "left", right: "right", up: "up", down: "down",
-    punch: "1", jump: "2", dodge: "3",
-  }, "player");
-  p2.playerId = 2;
+  let p2 = null;
+  if (p2Type) {
+    p2 = createPlayer(p2Type, 250, H - 100, {
+      left: "left", right: "right", up: "up", down: "down",
+      punch: "1", jump: "2", dodge: "3",
+    }, "player");
+    p2.playerId = 2;
+  }
+
+  // ---- MID-GAME P2 JOIN ----
+  if (!p2Type) {
+    let joinChoice = 0;
+    let joinOverlay = null;
+    function destroyJoinOverlay() {
+      if (joinOverlay) {
+        for (const o of joinOverlay) { if (o.exists()) destroy(o); }
+        joinOverlay = null;
+      }
+    }
+    function showJoinOverlay() {
+      destroyJoinOverlay();
+      joinOverlay = [];
+      const ox = W / 2, oy = H / 2 - 40;
+      const bg = add([rect(220, 80), color(PAPER), outline(3, INK), pos(ox, oy), anchor("center"), fixed(), z(80)]);
+      joinOverlay.push(bg);
+      const title = add([
+        text("P2 JOIN - SELECT", { size: 10, font: "sans-serif" }),
+        pos(ox, oy - 28), anchor("center"), color(INK), fixed(), z(81),
+      ]);
+      joinOverlay.push(title);
+      const name = add([
+        text(CHAR_NAMES[CHAR_OPTIONS[joinChoice]], { size: 14, font: "sans-serif" }),
+        pos(ox, oy + 2), anchor("center"), color(INK), fixed(), z(81),
+      ]);
+      joinOverlay.push(name);
+      const instr = add([
+        text("< > choose  1 - JOIN", { size: 8, font: "sans-serif" }),
+        pos(ox, oy + 22), anchor("center"), color(INK), fixed(), z(81),
+      ]);
+      joinOverlay.push(instr);
+    }
+    // P2 navigate left/right, confirm with 1
+    onKeyPress("left", () => {
+      if (joinOverlay) { joinChoice = (joinChoice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length; showJoinOverlay(); }
+    });
+    onKeyPress("right", () => {
+      if (joinOverlay) { joinChoice = (joinChoice + 1) % CHAR_OPTIONS.length; showJoinOverlay(); }
+    });
+    onKeyPress("1", () => {
+      if (joinOverlay) {
+        const chosenType = CHAR_OPTIONS[joinChoice];
+        destroyJoinOverlay();
+        p2 = createPlayer(chosenType, 250, H - 100, {
+          left: "left", right: "right", up: "up", down: "down",
+          punch: "1", jump: "2", dodge: "3",
+        }, "player");
+        p2.playerId = 2;
+        p2Type = chosenType;
+      } else {
+        // Open join overlay if game is running and P2 not present
+        if (!p2 && !state.gameOver && !state.victory) {
+          joinChoice = 0;
+          showJoinOverlay();
+        }
+      }
+    });
+  }
 
   // ---- ENEMY SYSTEM ----
   function spawnEnemy(type, x, y) {
@@ -2049,8 +2154,8 @@ scene("game", (p1Type, p2Type) => {
     hud.add([rect(W, 1), color(WHITE), pos(0, 50), fixed()]);
 
     // Player 1 health
-    hud.add([
-      text("PUNKETTE", { size: 10, font: "sans-serif" }),
+    const p1Label = hud.add([
+      text(CHAR_NAMES[p1Type] || "P1", { size: 10, font: "sans-serif" }),
       color(WHITE),
       pos(15, 6),
       fixed(),
@@ -2058,15 +2163,16 @@ scene("game", (p1Type, p2Type) => {
     const p1BarBg = hud.add([rect(120, 16), color(GRAY), pos(15, 20), fixed()]);
     const p1Bar = hud.add([rect(120, 16), color(WHITE), pos(15, 20), fixed()]);
 
-    // Player 2 health
-    hud.add([
-      text("ANTAGONIC", { size: 10, font: "sans-serif" }),
+    // Player 2 health (hidden until P2 joins)
+    const p2Label = hud.add([
+      text("P2", { size: 10, font: "sans-serif" }),
       color(WHITE),
       pos(W - 135, 6),
       fixed(),
+      opacity(p2 ? 1 : 0),
     ]);
-    const p2BarBg = hud.add([rect(120, 16), color(GRAY), pos(W - 135, 20), fixed()]);
-    const p2Bar = hud.add([rect(120, 16), color(WHITE), pos(W - 135, 20), fixed()]);
+    const p2BarBg = hud.add([rect(120, 16), color(GRAY), pos(W - 135, 20), fixed(), opacity(p2 ? 1 : 0)]);
+    const p2Bar = hud.add([rect(120, 16), color(WHITE), pos(W - 135, 20), fixed(), opacity(p2 ? 1 : 0)]);
 
     // Wave indicator
     const waveLabel = hud.add([
@@ -2106,10 +2212,20 @@ scene("game", (p1Type, p2Type) => {
           p1Bar.width = (p1.hp / p1.maxHp) * 120;
         }
 
-        if (p2.dead) {
-          p2Bar.width = 0;
+        if (p2) {
+          p2Label.opacity = 1;
+          p2BarBg.opacity = 1;
+          p2Bar.opacity = 1;
+          p2Label.text = CHAR_NAMES[p2.type] || "P2";
+          if (p2.dead) {
+            p2Bar.width = 0;
+          } else {
+            p2Bar.width = (p2.hp / p2.maxHp) * 120;
+          }
         } else {
-          p2Bar.width = (p2.hp / p2.maxHp) * 120;
+          p2Label.opacity = 0;
+          p2BarBg.opacity = 0;
+          p2Bar.opacity = 0;
         }
 
         waveLabel.text = state.bossSpawned ? "BOSS FIGHT" : `WAVE ${state.wave}`;
