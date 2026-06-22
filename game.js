@@ -1356,7 +1356,6 @@ scene("select", (opts) => {
 // ============================================================
 
 scene("game", (p1Type, p2Type) => {
-  if (!p1Type) p1Type = "punkette";
   if (!p2Type) p2Type = null;
   events.clear();
 
@@ -1593,12 +1592,14 @@ scene("game", (p1Type, p2Type) => {
   }
 
   // Create players from selection
-  const p1 = createPlayer(p1Type, 150, H - 100, {
-    left: "a", right: "d", up: "w", down: "s",
-    punch: "j", jump: "k", dodge: "l",
-  }, "player");
-
-  p1.playerId = 1;
+  let p1 = null;
+  if (p1Type) {
+    p1 = createPlayer(p1Type, 150, H - 100, {
+      left: "a", right: "d", up: "w", down: "s",
+      punch: "j", jump: "k", dodge: "l",
+    }, "player");
+    p1.playerId = 1;
+  }
 
   let p2 = null;
   if (p2Type) {
@@ -1609,70 +1610,83 @@ scene("game", (p1Type, p2Type) => {
     p2.playerId = 2;
   }
 
-  // ---- MID-GAME P2 JOIN ----
-  if (!p2Type) {
-    const availChars = CHAR_OPTIONS.filter((c) => c !== p1Type);
+  // ---- MID-GAME JOIN (symmetrical for P1 and P2) ----
+  const joinSlots = [];
+  if (!p1Type) joinSlots.push({ key: "j", playerId: 1, label: "P1", spawnX: 150, controls: { left: "a", right: "d", up: "w", down: "s", punch: "j", jump: "k", dodge: "l" } });
+  if (!p2Type) joinSlots.push({ key: "1", playerId: 2, label: "P2", spawnX: 250, controls: { left: "left", right: "right", up: "up", down: "down", punch: "1", jump: "2", dodge: "3" } });
+
+  if (joinSlots.length > 0) {
     let joinChoice = 0;
+    let joinAvail = [];
     let joinOverlay = null;
+    let joinTarget = null;
+
+    function getTakenType() {
+      if (!joinTarget) return null;
+      return joinTarget.playerId === 1 ? (p2 ? p2.type : p2Type) : (p1 ? p1.type : p1Type);
+    }
+
     function destroyJoinOverlay() {
       if (joinOverlay) {
         for (const o of joinOverlay) { if (o.exists()) destroy(o); }
         joinOverlay = null;
       }
     }
+
     function showJoinOverlay() {
       destroyJoinOverlay();
       joinOverlay = [];
+      joinAvail = CHAR_OPTIONS.filter((c) => c !== getTakenType());
+      if (joinChoice >= joinAvail.length) joinChoice = 0;
       const baseY = 51;
-      // Dark bar across top
       const bar = add([rect(W, 24), color(INK), pos(0, baseY), fixed(), z(95), opacity(0.85)]);
       joinOverlay.push(bar);
-      // Label
       const label = add([
-        text("P2 JOIN  ", { size: 10, font: "sans-serif" }),
+        text(joinTarget.label + " JOIN  ", { size: 10, font: "sans-serif" }),
         pos(W / 2 - 80, baseY + 6), anchor("left"), color(WHITE), fixed(), z(96),
       ]);
       joinOverlay.push(label);
-      // Character options
-      const charNames = availChars.map((c) => CHAR_NAMES[c]);
-      let charsText = charNames.map((n, i) => i === joinChoice ? "[" + n + "]" : n).join("  ");
+      const charNames = joinAvail.map((c) => CHAR_NAMES[c]);
+      const charsText = charNames.map((n, i) => i === joinChoice ? "[" + n + "]" : n).join("  ");
       const chars = add([
         text(charsText, { size: 10, font: "sans-serif" }),
         pos(W / 2 - 40, baseY + 6), anchor("left"), color(WHITE), fixed(), z(96),
       ]);
       joinOverlay.push(chars);
-      // Hint
       const hint = add([
-        text("< > choose  1 - JOIN", { size: 8, font: "sans-serif" }),
+        text("< > choose  " + joinTarget.key.toUpperCase() + " - JOIN", { size: 8, font: "sans-serif" }),
         pos(W / 2 + 60, baseY + 7), anchor("left"), color(WHITE), fixed(), z(96),
       ]);
       joinOverlay.push(hint);
     }
-    // P2 navigate left/right, confirm with 1
+
     onKeyPress("left", () => {
-      if (joinOverlay) { joinChoice = (joinChoice - 1 + availChars.length) % availChars.length; showJoinOverlay(); }
+      if (joinOverlay && joinAvail.length > 0) { joinChoice = (joinChoice - 1 + joinAvail.length) % joinAvail.length; showJoinOverlay(); }
     });
     onKeyPress("right", () => {
-      if (joinOverlay) { joinChoice = (joinChoice + 1) % availChars.length; showJoinOverlay(); }
+      if (joinOverlay && joinAvail.length > 0) { joinChoice = (joinChoice + 1) % joinAvail.length; showJoinOverlay(); }
     });
-    onKeyPress("1", () => {
-      if (joinOverlay) {
-        const chosenType = availChars[joinChoice];
-        destroyJoinOverlay();
-        p2 = createPlayer(chosenType, 250, H - 100, {
-          left: "left", right: "right", up: "up", down: "down",
-          punch: "1", jump: "2", dodge: "3",
-        }, "player");
-        p2.playerId = 2;
-        p2Type = chosenType;
-      } else {
-        // Open join overlay if game is running and P2 not present
-        if (!p2 && !state.gameOver && !state.victory) {
-          joinChoice = 0;
-          showJoinOverlay();
+
+    for (const slot of joinSlots) {
+      onKeyPress(slot.key, () => {
+        if (joinOverlay && joinTarget === slot) {
+          const chosenType = joinAvail[joinChoice];
+          destroyJoinOverlay();
+          const player = createPlayer(chosenType, slot.spawnX, H - 100, slot.controls, "player");
+          player.playerId = slot.playerId;
+          if (slot.playerId === 1) { p1 = player; p1Type = chosenType; }
+          else { p2 = player; p2Type = chosenType; }
+          joinTarget = null;
+        } else if (!joinOverlay) {
+          const alreadyExists = slot.playerId === 1 ? p1 : p2;
+          if (!alreadyExists && !state.gameOver && !state.victory) {
+            joinTarget = slot;
+            joinChoice = 0;
+            showJoinOverlay();
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   // ---- ENEMY SYSTEM ----
@@ -2160,15 +2174,16 @@ scene("game", (p1Type, p2Type) => {
     hud.add([rect(W, 50), color(INK), pos(0, 0), opacity(0.85), fixed()]);
     hud.add([rect(W, 1), color(WHITE), pos(0, 50), fixed()]);
 
-    // Player 1 health
+    // Player 1 health (hidden until P1 joins)
     const p1Label = hud.add([
-      text(CHAR_NAMES[p1Type] || "P1", { size: 10, font: "sans-serif" }),
+      text("P1", { size: 10, font: "sans-serif" }),
       color(WHITE),
       pos(15, 6),
       fixed(),
+      opacity(p1 ? 1 : 0),
     ]);
-    const p1BarBg = hud.add([rect(120, 16), color(GRAY), pos(15, 20), fixed()]);
-    const p1Bar = hud.add([rect(120, 16), color(WHITE), pos(15, 20), fixed()]);
+    const p1BarBg = hud.add([rect(120, 16), color(GRAY), pos(15, 20), fixed(), opacity(p1 ? 1 : 0)]);
+    const p1Bar = hud.add([rect(120, 16), color(WHITE), pos(15, 20), fixed(), opacity(p1 ? 1 : 0)]);
 
     // Player 2 health (hidden until P2 joins)
     const p2Label = hud.add([
@@ -2213,10 +2228,21 @@ scene("game", (p1Type, p2Type) => {
     // Update loop
     return {
       update() {
-        if (p1.dead) {
-          p1Bar.width = 0;
+        if (p1) {
+          p1Label.opacity = 1;
+          p1BarBg.opacity = 1;
+          p1Bar.opacity = 1;
+          p1Label.text = CHAR_NAMES[p1.type] || "P1";
+          if (p1.dead) {
+            p1Bar.width = 0;
+          } else {
+            p1Bar.width = (p1.hp / p1.maxHp) * 120;
+          }
         } else {
-          p1Bar.width = (p1.hp / p1.maxHp) * 120;
+          p1Label.text = "P1: J TO JOIN";
+          p1Label.opacity = 0.5 + Math.sin(state.time * 4) * 0.3;
+          p1BarBg.opacity = 0;
+          p1Bar.opacity = 0;
         }
 
         if (p2) {
@@ -2230,7 +2256,8 @@ scene("game", (p1Type, p2Type) => {
             p2Bar.width = (p2.hp / p2.maxHp) * 120;
           }
         } else {
-          p2Label.opacity = 0;
+          p2Label.text = "P2: 1 TO JOIN";
+          p2Label.opacity = 0.5 + Math.sin(state.time * 4 + 2) * 0.3;
           p2BarBg.opacity = 0;
           p2Bar.opacity = 0;
         }
