@@ -1062,7 +1062,7 @@ scene("select", () => {
     previews.length = 0;
 
     const p1Label = add([
-      text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " [LOCKED]" : " [A/D]"), { size: 12, font: "sans-serif" }),
+      text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"), { size: 12, font: "sans-serif" }),
       pos(W / 2, 80), anchor("center"), color(INK), fixed(), z(10),
     ]);
     previews.push(p1Label);
@@ -1072,7 +1072,7 @@ scene("select", () => {
     previews.push(p1Char);
 
     const p2Label = add([
-      text("P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? " [LOCKED]" : " [< >]"), { size: 12, font: "sans-serif" }),
+      text("P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? " (LOCKED)" : " (< >)"), { size: 12, font: "sans-serif" }),
       pos(W / 2, 130), anchor("center"), color(INK), fixed(), z(10),
     ]);
     previews.push(p2Label);
@@ -1081,7 +1081,7 @@ scene("select", () => {
     p2Char.scale.x = -1;
     previews.push(p2Char);
 
-    let msg = "P1: J to lock   P2: 1 to lock   SPACE: start";
+    let msg = "P1: J to lock | P2: 1 to lock | SPACE: start";
     if (started) msg = "STARTING...";
     else if (p1Locked && p2Locked) msg = "STARTING...";
     else if (p1Locked) msg = "P2: 1 to lock or SPACE for 1P";
@@ -1151,7 +1151,9 @@ scene("game", (p1Type, p2Type) => {
   state.bgType = "street";
   const bgLayers = [];
   for (let i = 0; i < 3; i++) {
-    const layer = add([sprite(bgSprites[state.bgType][i]), z(i)]);
+    const name = bgSprites[state.bgType][i];
+    const layer = add([sprite(name), pos(0, 0), z(i)]);
+    if (!layer) console.warn("bg layer " + i + " failed to create");
     bgLayers.push(layer);
   }
   add([sprite("paperTex"), opacity(0.18), z(90), fixed()]);
@@ -1876,13 +1878,15 @@ scene("game", (p1Type, p2Type) => {
     hud.update();
 
     // Parallax scrolling
-    const alive = state.players.filter((p) => !p.dead);
-    if (alive.length > 0) {
-      const avgX = alive.reduce((s, p) => s + p.pos.x, 0) / alive.length;
-      const camX = (avgX / W - 0.5) * 2; // -1 to 1
-      for (let i = 0; i < 3; i++) {
-        const speed = [0.05, 0.12, 0.25][i];
-        bgLayers[i].pos.x = -camX * speed * (BG_W - W) / 2;
+    if (bgLayers.length >= 3 && bgLayers[0] && bgLayers[0].pos) {
+      const alive = state.players.filter((p) => !p.dead);
+      if (alive.length > 0) {
+        const avgX = alive.reduce((s, p) => s + p.pos.x, 0) / alive.length;
+        const camX = (avgX / W - 0.5) * 2; // -1 to 1
+        for (let i = 0; i < 3; i++) {
+          const speed = [0.05, 0.12, 0.25][i];
+          bgLayers[i].pos.x = -camX * speed * (BG_W - W) / 2;
+        }
       }
     }
   });
