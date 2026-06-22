@@ -1054,13 +1054,13 @@ scene("select", () => {
 
   let p1Choice = 0, p2Choice = 1;
   let p1Locked = false, p2Locked = false;
+  let started = false;
 
   const previews = [];
   function renderSelect() {
     for (const p of previews) destroy(p);
     previews.length = 0;
 
-    // P1 selection
     const p1Label = add([
       text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " [LOCKED]" : " [A/D]"), { size: 12, font: "sans-serif" }),
       pos(W / 2, 80), anchor("center"), color(INK), fixed(), z(10),
@@ -1071,7 +1071,6 @@ scene("select", () => {
     p1Char.scale.x = 1;
     previews.push(p1Char);
 
-    // P2 selection
     const p2Label = add([
       text("P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? " [LOCKED]" : " [< >]"), { size: 12, font: "sans-serif" }),
       pos(W / 2, 130), anchor("center"), color(INK), fixed(), z(10),
@@ -1082,28 +1081,41 @@ scene("select", () => {
     p2Char.scale.x = -1;
     previews.push(p2Char);
 
+    let msg = "P1: J to lock   P2: 1 to lock   SPACE: start";
+    if (started) msg = "STARTING...";
+    else if (p1Locked && p2Locked) msg = "STARTING...";
+    else if (p1Locked) msg = "P2: 1 to lock or SPACE for 1P";
     const instr = add([
-      text(p1Locked && p2Locked ? "FIGHT!" : "P1: J to lock   P2: 1 to lock", { size: 12, font: "sans-serif" }),
+      text(msg, { size: 12, font: "sans-serif" }),
       pos(W / 2, 380), anchor("center"), color(INK), fixed(), z(10),
     ]);
     previews.push(instr);
-
-    if (p1Locked && p2Locked) {
-      wait(0.5, () => go("game", CHAR_OPTIONS[p1Choice], CHAR_OPTIONS[p2Choice]));
-    }
   }
 
   renderSelect();
 
-  // P1 controls
-  onKeyPress("a", () => { if (!p1Locked) { p1Choice = (p1Choice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length; renderSelect(); } });
-  onKeyPress("d", () => { if (!p1Locked) { p1Choice = (p1Choice + 1) % CHAR_OPTIONS.length; renderSelect(); } });
-  onKeyPress("j", () => { if (!p1Locked) { p1Locked = true; renderSelect(); } });
+  // Navigation
+  onKeyPress("a", () => { if (!p1Locked && !started) { p1Choice = (p1Choice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length; renderSelect(); } });
+  onKeyPress("d", () => { if (!p1Locked && !started) { p1Choice = (p1Choice + 1) % CHAR_OPTIONS.length; renderSelect(); } });
+  onKeyPress("j", () => { if (!p1Locked && !started) { p1Locked = true; renderSelect(); } });
 
-  // P2 controls
-  onKeyPress("left", () => { if (!p2Locked) { p2Choice = (p2Choice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length; renderSelect(); } });
-  onKeyPress("right", () => { if (!p2Locked) { p2Choice = (p2Choice + 1) % CHAR_OPTIONS.length; renderSelect(); } });
-  onKeyPress("1", () => { if (!p2Locked) { p2Locked = true; renderSelect(); } });
+  onKeyPress("left", () => { if (!p2Locked && !started) { p2Choice = (p2Choice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length; renderSelect(); } });
+  onKeyPress("right", () => { if (!p2Locked && !started) { p2Choice = (p2Choice + 1) % CHAR_OPTIONS.length; renderSelect(); } });
+  onKeyPress("1", () => { if (!p2Locked && !started) { p2Locked = true; renderSelect(); } });
+
+  // Start game
+  function startGame() {
+    if (started) return;
+    started = true;
+    go("game", CHAR_OPTIONS[p1Choice], p2Locked ? CHAR_OPTIONS[p2Choice] : null);
+  }
+
+  onKeyPress("space", startGame);
+
+  // Auto-start when both locked
+  onUpdate(() => {
+    if (p1Locked && p2Locked && !started) startGame();
+  });
 });
 
 // ============================================================
