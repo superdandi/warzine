@@ -945,6 +945,51 @@ const events = (() => {
 
 let curState = null;
 
+// ---- ITEM DROP ----
+const ITEM_TYPES = ["health"];
+
+function spawnItemDrop(x, y) {
+  const type = "health";
+  const item = add([
+    rect(16, 16),
+    color(WHITE),
+    outline(3, INK),
+    pos(x, y),
+    area(),
+    anchor("center"),
+    z(25),
+    "item",
+    { itemType: type, bob: rand(0, Math.PI * 2) },
+  ]);
+  // Red cross for health
+  item.add([rect(10, 3), color(INK), pos(-5, -1.5), anchor("center")]);
+  item.add([rect(3, 10), color(INK), pos(-1.5, -5), anchor("center")]);
+  if (curState && curState.items) curState.items.push(item);
+}
+
+function checkItemPickups() {
+  if (!curState || !curState.items) return;
+  for (let i = curState.items.length - 1; i >= 0; i--) {
+    const item = curState.items[i];
+    if (!item.exists()) { curState.items.splice(i, 1); continue; }
+    // Bob
+    item.bob += dt() * 3;
+    item.pos.y += Math.sin(item.bob * 2) * 0.5;
+    for (const p of curState.players) {
+      if (p.dead) continue;
+      if (p.pos.dist(item.pos) < 30) {
+        p.hp = Math.min(p.maxHp, p.hp + 30);
+        destroy(item);
+        curState.items.splice(i, 1);
+        // Flash heal effect
+        const flash = add([rect(20, 30), color(WHITE), pos(p.pos.x, p.pos.y - 15), anchor("center"), z(50), opacity(0.6)]);
+        tween(0.6, 0, 0.3, (v) => flash.opacity = v, () => destroy(flash));
+        break;
+      }
+    }
+  }
+}
+
 // ============================================================
 // TITLE SCENE
 // ============================================================
@@ -1004,7 +1049,7 @@ scene("title", () => {
 
   // Controls
   const ctrlText = add([
-    text("P1: WASD + J/K     P2: ARROWS + 1/2", { size: 12, font: "sans-serif" }),
+    text("P1: WASD+J/K+L  P2: ARROWS+1/2+3", { size: 12, font: "sans-serif" }),
     pos(W / 2, H * 0.78),
     anchor("center"),
     color(INK),
@@ -1142,6 +1187,7 @@ scene("game", (p1Type, p2Type) => {
     paused: false,
     players: [],
     enemies: [],
+    items: [],
     boss: null,
     time: 0,
   };
@@ -1167,6 +1213,8 @@ scene("game", (p1Type, p2Type) => {
     char.attackCooldown = 0;
     char.walkTime = 0;
     char.isWalking = false;
+    char.dodgeTimer = 0;
+    char.dodgeCooldown = 0;
 
     // Keep within bounds
     char.onUpdate(() => {
@@ -1195,6 +1243,7 @@ scene("game", (p1Type, p2Type) => {
     // Movement (8-dir)
     const moveHandler = char.onUpdate(() => {
       if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
+      if (char.dodgeTimer > 0) return;
       const c = controls;
       let dx = 0,
         dy = 0;
@@ -1239,6 +1288,7 @@ scene("game", (p1Type, p2Type) => {
       if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.hitTimer > 0) return;
       if (char.attackCooldown > 0) return;
+      if (char.dodgeTimer > 0) return;
 
       // Super attack (A+B)
       if (isKeyDown(controls.jump) && char.superCooldown <= 0) {
@@ -1310,6 +1360,31 @@ scene("game", (p1Type, p2Type) => {
       char.jumpStartY = char.pos.y;
     });
 
+    // Dodge / roll
+    onKeyPress(controls.dodge, () => {
+      if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
+      if (char.hitTimer > 0) return;
+      if (char.isAirborne) return;
+      if (char.dodgeTimer > 0) return;
+      if (char.dodgeCooldown > 0) return;
+
+      char.dodgeTimer = 0.3;
+      char.dodgeCooldown = 1.0;
+      char.invincible = 0.35;
+      char.move(char.facing * 200, 0);
+      // Squish effect
+      char.scale.y = 0.6;
+      char.scale.x = char.facing * 1.3;
+      spawnWalkDust(char.pos.x, char.pos.y, char.facing);
+      tween(0.3, 0, 0.2, (v) => {
+        if (char.dead) return;
+        char.scale.y = 1 - v * 0.4;
+        char.scale.x = (char.facing > 0 ? 1 : -1) * (1 + v * 0.3);
+      }, () => {
+        if (!char.dead) { char.scale.y = 1; char.scale.x = char.facing > 0 ? 1 : -1; }
+      });
+    });
+
     // Combo timer
     char.comboTimer = 0;
 
@@ -1322,6 +1397,8 @@ scene("game", (p1Type, p2Type) => {
         }
       }
       if (char.attackCooldown > 0) char.attackCooldown -= dt();
+      if (char.dodgeTimer > 0) char.dodgeTimer -= dt();
+      if (char.dodgeCooldown > 0) char.dodgeCooldown -= dt();
     });
 
     return char;
@@ -1330,14 +1407,14 @@ scene("game", (p1Type, p2Type) => {
   // Create players from selection
   const p1 = createPlayer(p1Type || "punkette", 150, H - 100, {
     left: "a", right: "d", up: "w", down: "s",
-    punch: "j", jump: "k",
+    punch: "j", jump: "k", dodge: "l",
   }, "player");
 
   p1.playerId = 1;
 
   const p2 = createPlayer(p2Type || "antagonic", 250, H - 100, {
     left: "left", right: "right", up: "up", down: "down",
-    punch: "1", jump: "2",
+    punch: "1", jump: "2", dodge: "3",
   }, "player");
   p2.playerId = 2;
 
@@ -1550,6 +1627,49 @@ scene("game", (p1Type, p2Type) => {
     });
   }
 
+  // ---- ENDLESS MODE ----
+  function startEndlessWave() {
+    state.wave++;
+    state.waveActive = true;
+    state.enemiesKilled = 0;
+    state.enemiesThisWave = 0;
+
+    const endlessWave = state.wave - waveConfigs.length; // 1, 2, 3...
+    const count = 2 + endlessWave;
+    const types = ["grunt", "punk", "tough"];
+    const config = [];
+    for (let i = 0; i < count; i++) {
+      config.push({ type: types[Math.floor(Math.random() * types.length)], count: 1 });
+    }
+    state.enemiesInWave = count;
+
+    // Wave text
+    const flash = add([rect(W, H), color(INK), fixed(), opacity(0), z(45)]);
+    tween(0, 0.3, 0.1, (v) => (flash.opacity = v), () => {
+      tween(0.3, 0, 0.15, (v) => (flash.opacity = v), () => destroy(flash));
+    });
+    const waveText = add([
+      text("ENDLESS WAVE " + endlessWave, { size: 28, font: "sans-serif" }),
+      pos(W / 2, H / 2 - 30), anchor("center"), color(INK), z(50), fixed(),
+    ]);
+    wait(1.5, () => destroy(waveText));
+    tween(1, 0, 1.2, (v) => (waveText.opacity = v), undefined, easings.easeInQuad);
+
+    // Spawn enemies with delay
+    let spawned = 0;
+    const spawnInterval = setInterval(() => {
+      if (spawned >= count || state.gameOver) {
+        clearInterval(spawnInterval);
+        return;
+      }
+      const entry = config[spawned];
+      const side = spawned % 2 === 0 ? -1 : 1;
+      const ex = side < 0 ? 40 : W - 40;
+      spawnEnemy(entry.type, ex, H - 100 + rand(-30, 30));
+      spawned++;
+    }, 600);
+  }
+
   // ---- WAVE COMPLETION CHECK ----
   events.on("enemy-killed", (enemy) => {
     state.enemiesKilled++;
@@ -1557,10 +1677,19 @@ scene("game", (p1Type, p2Type) => {
     const idx = state.enemies.indexOf(enemy);
     if (idx >= 0) state.enemies.splice(idx, 1);
 
+    // Item drop chance
+    if (Math.random() < 0.3 && state.items) spawnItemDrop(enemy.pos.x, enemy.pos.y);
+
     if (state.enemiesKilled >= state.enemiesInWave && state.waveActive) {
       state.waveActive = false;
 
-      if (state.wave < waveConfigs.length) {
+      if (state.bossDefeated) {
+        // Endless mode
+        const w = state.wave;
+        wait(2.0, () => {
+          if (!state.gameOver) startEndlessWave();
+        });
+      } else if (state.wave < waveConfigs.length) {
         const w = state.wave;
         wait(2.0, () => {
           if (!state.bossSpawned) startWave(w);
@@ -1735,24 +1864,34 @@ scene("game", (p1Type, p2Type) => {
       state.boss = null;
       state.victory = true;
 
+      // High score
+      const prev = parseInt(localStorage.getItem("warzine_high") || "0");
+      const score = state.wave;
+      if (score > prev) localStorage.setItem("warzine_high", String(score));
+
       add([
         text("VICTORY!", { size: 48, font: "sans-serif" }),
-        pos(W / 2, H / 2 - 20),
+        pos(W / 2, H / 2 - 30),
         anchor("center"),
         color(INK),
         z(60),
         fixed(),
       ]);
       add([
-        text("THE STREETS ARE FREE... FOR NOW", { size: 14, font: "sans-serif" }),
-        pos(W / 2, H / 2 + 30),
+        text("BUT THE FIGHT CONTINUES...", { size: 14, font: "sans-serif" }),
+        pos(W / 2, H / 2 + 15),
         anchor("center"),
         color(INK),
         z(60),
         fixed(),
       ]);
 
-      wait(3, () => go("title"));
+      wait(2, () => {
+        state.waveActive = true;
+        state.wave++;
+        state.victory = false;
+        startEndlessWave();
+      });
     }
   });
 
@@ -1804,6 +1943,14 @@ scene("game", (p1Type, p2Type) => {
       fixed(),
       opacity(0),
     ]);
+    const bossPhaseLabel = hud.add([
+      text("", { size: 8, font: "sans-serif" }),
+      color(WHITE),
+      pos(W / 2, 80),
+      anchor("center"),
+      fixed(),
+      opacity(0),
+    ]);
 
     // Update loop
     return {
@@ -1827,11 +1974,14 @@ scene("game", (p1Type, p2Type) => {
           bossBarBg.opacity = 1;
           bossBar.opacity = 1;
           bossLabel.opacity = 1;
+          bossPhaseLabel.opacity = 1;
           bossBar.width = (state.boss.hp / state.boss.maxHp) * 300;
+          bossPhaseLabel.text = "PHASE " + (state.boss.phase || 1);
         } else {
           bossBarBg.opacity = 0;
           bossBar.opacity = 0;
           bossLabel.opacity = 0;
+          bossPhaseLabel.opacity = 0;
         }
       },
       destroy() {
@@ -1847,7 +1997,9 @@ scene("game", (p1Type, p2Type) => {
     const allDead = state.players.every((p) => p.dead);
     if (allDead && !state.gameOver) {
       state.gameOver = true;
-      wait(1, () => go("gameover"));
+      const prev = parseInt(localStorage.getItem("warzine_high") || "0");
+      if (state.wave > prev) localStorage.setItem("warzine_high", String(state.wave));
+      wait(1, () => go("gameover", state.wave));
     }
   }
 
@@ -1876,6 +2028,9 @@ scene("game", (p1Type, p2Type) => {
     if (state.hitPause > 0) state.hitPause -= dt();
     state.time += dt();
     hud.update();
+
+    // Items
+    checkItemPickups();
 
     // Parallax scrolling
     if (bgLayers.length >= 3 && bgLayers[0] && bgLayers[0].pos) {
@@ -1918,17 +2073,19 @@ scene("game", (p1Type, p2Type) => {
         const lines = [
           "--- CONTROLS ---",
           "",
-          "P1 (WASD + J/K):",
+          "P1 (WASD + J/K/L):",
           "  WASD    Move",
           "  K       Jump",
           "  J       Punch",
           "  J+K     Super Attack",
+          "  L       Dodge/Roll",
           "",
-          "P2 (ARROWS + 1/2):",
+          "P2 (ARROWS + 1/2/3):",
           "  Arrows  Move",
           "  2       Jump",
           "  1       Punch",
           "  1+2     Super Attack",
+          "  3       Dodge/Roll",
           "",
           "ESC      Pause",
           "C        Toggle Controls",
@@ -1961,36 +2118,40 @@ scene("game", (p1Type, p2Type) => {
 // GAME OVER SCENE
 // ============================================================
 
-scene("gameover", () => {
+scene("gameover", (wave) => {
+  wave = wave || 0;
+
+  // High score
+  const prev = parseInt(localStorage.getItem("warzine_high") || "0");
+  const score = wave;
+  if (score > prev) localStorage.setItem("warzine_high", String(score));
+  const high = Math.max(prev, score);
+
   add([sprite("paperTex"), opacity(0.15), z(100), fixed()]);
   add([rect(W, H), color(PAPER), fixed()]);
 
-  // X mark
   add([
     text("X", { size: 120, font: "sans-serif" }),
-    pos(W / 2, H / 3),
-    anchor("center"),
-    color(INK),
-    fixed(),
-    z(10),
+    pos(W / 2, H / 3 - 20),
+    anchor("center"), color(INK), fixed(), z(10),
   ]);
 
   add([
     text("GAME OVER", { size: 36, font: "sans-serif" }),
-    pos(W / 2, H / 2 + 20),
-    anchor("center"),
-    color(INK),
-    fixed(),
-    z(10),
+    pos(W / 2, H / 2 + 10),
+    anchor("center"), color(INK), fixed(), z(10),
   ]);
 
   add([
-    text("THE CITY HAS FALLEN", { size: 14, font: "sans-serif" }),
-    pos(W / 2, H * 0.6),
-    anchor("center"),
-    color(INK),
-    fixed(),
-    z(10),
+    text("WAVE " + wave, { size: 14, font: "sans-serif" }),
+    pos(W / 2, H * 0.58),
+    anchor("center"), color(INK), fixed(), z(10),
+  ]);
+
+  add([
+    text("BEST: WAVE " + high, { size: 12, font: "sans-serif" }),
+    pos(W / 2, H * 0.63),
+    anchor("center"), color(INK), fixed(), z(10), opacity(0.6),
   ]);
 
   let blink = 0;

@@ -21,7 +21,7 @@
 | 🌱 | Agarres / throws | ⬜ | Clásico del género |
 | 🌱 | Armas arrojadizas (botellas, bates) | ⬜ | Pickups en el escenario |
 | 🌱 | Movimientos especiales por personaje | ⬜ | Diferenciar Punkette de Antagonic |
-| 🌱 | Dodge / roll | ⬜ | Botón de esquivar con i-frames |
+| 🌱 | Dodge / roll | ✅ | L/3 key, 0.3s i-frames, squish anim, 1s cooldown |
 
 ---
 
@@ -36,7 +36,7 @@
 | 💧 | Indicador visual de wave + transición | ✅ | Flash de tinta + texto + fade |
 | 🌱 | Enemigo con escudo | ⬜ | Romper escudo con combo o super |
 | 🌱 | Enemigo que spawnea otros | ⬜ | "Líder" de wave |
-| 🌱 | Wave 4+ / Endless mode | ⬜ | Después del boss, modo sin fin |
+| 🌱 | Wave 4+ / Endless mode | ✅ | Después del boss, waves infinitas con dificultad creciente |
 
 ---
 
@@ -49,7 +49,7 @@
 | 💧 | Ataque de boss que el jugador tenga que saltar | ✅ | Ground pound (piso: hitbox a y+24, esquivable con salto) |
 | 💧 | Hitbox del boss ajustada al sprite grande | ✅ | Ataques con hitbox escaladas (28px punch, 40px slam) |
 | 🌱 | Múltiples bosses | ⬜ | 2 jefes a la vez |
-| 🌱 | Barra de fase (P1 / P2) en HUD | ⬜ | Indicador visual del enrage |
+| 🌱 | Barra de fase (P1 / P2) en HUD | ✅ | "PHASE 1 / 2" debajo de la health bar del boss |
 
 ---
 
@@ -93,7 +93,7 @@
 | ⚡ | Pausa (ESC / P) | ✅ | ESC toggle, overlay oscuro + PAUSED + continuar |
 | 💧 | Pantalla de controles | ✅ | Pausa + C toggle, lista completa de teclas |
 | 💧 | Character select (Punkette / Antagonic vs random) | ✅ | 3 personajes seleccionables, preview en vivo |
-| 🌱 | High score / records | ⬜ | localStorage |
+| 🌱 | High score / records | ✅ | localStorage, muestra BEST WAVE en game over y victory |
 | 🌱 | Pantalla de créditos | ⬜ | Con scrolling tipo cine |
 | 🌱 | Dificultad (Fácil / Normal / Duro) | ⬜ | HP, daño, velocidad enemiga |
 | 🌱 | Tutorial interactivo | ⬜ | Primera partida guiada |
@@ -130,7 +130,7 @@
 |------|------|--------|-------|
 | ⚡ | Segundo nivel (escenario diferente) | ⬜ | Azotea, club nocturno |
 | 💧 | Tercer nivel + boss final verdadero | ⬜ | Secuencia de jefes |
-| 🌱 | Power-ups (comida, 1UP) | ⬜ | Clásico beat 'em up |
+| 🌱 | Power-ups (comida, 1UP) | ✅ | Health drops 30% de enemigos, +30 HP |
 | 🌱 | Secretos / áreas ocultas | ⬜ | Puertas, callejones |
 
 ---
@@ -148,6 +148,11 @@
 - [x] Pantalla de pausa con controles
 - [x] Enemigos saltan
 - [x] Cambio de fondo: Street → Rooftop
+- [x] Dodge / roll con i-frames (L / 3)
+- [x] Power-ups de salud caen de enemigos
+- [x] Modo endless después del boss
+- [x] High score con localStorage
+- [x] Indicador de fase del boss en HUD
 - [x] 2 jugadores locales (mismo teclado)
 - [x] Sistema de combos (J-J-J)
 - [x] Personajes 2x más grandes (F=2, boss F=3)
