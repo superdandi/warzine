@@ -64,7 +64,7 @@ loadSprite("paperTex", generatePaperTexture());
 // PARALLAX BACKGROUND GENERATORS
 // ============================================================
 
-const BG_W = 1600; // wider than screen for parallax scroll
+const BG_W = 1600;
 
 function bgCanvas(w, h) {
   const c = document.createElement("canvas");
