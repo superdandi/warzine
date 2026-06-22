@@ -686,6 +686,7 @@ function spawnHitEffect(x, y) {
       color(INK),
       pos(x, y),
       move(vec2(Math.cos(angle), Math.sin(angle)).scale(speed)),
+      opacity(1),
       lifespan(rand(0.15, 0.3)),
       anchor("center"),
     ]);
@@ -1144,6 +1145,7 @@ scene("game", () => {
       color(INK),
       z(50),
       fixed(),
+      opacity(1),
       lifespan(2),
     ]);
     add([
@@ -1153,6 +1155,7 @@ scene("game", () => {
       color(INK),
       z(50),
       fixed(),
+      opacity(1),
       lifespan(2),
     ]);
 
