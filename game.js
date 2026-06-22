@@ -362,6 +362,8 @@ function createCharacter(x, y, type, tag) {
       comboCount: 0,
       lastComboMilestone: 0,
       kills: 0,
+      downed: false,
+      reviveTimer: 0,
       hitTimer: 0,
       dead: false,
       invincible: 0,
@@ -888,7 +890,7 @@ function spawnHitbox(owner, offsetX, offsetY, w, h, damage, knockback, duration)
     hb.onUpdate(() => {
       if (!curState) return;
       for (const player of curState.players) {
-        if (player.dead || player === owner || player.invincible > 0) continue;
+        if (player.dead || player.downed || player === owner || player.invincible > 0) continue;
         if (hb.isColliding(player)) {
           player.hp -= damage;
           player.invincible = 0.3;
@@ -1430,11 +1432,12 @@ scene("game", (p1Type, p2Type) => {
   add([sprite("paperTex"), opacity(0.18), z(90), fixed()]);
 
   // ---- PLAYER CREATION ----
-  function createPlayer(type, x, y, controls, tag) {
+  function createPlayer(type, x, y, controls, tag, reviveKey) {
     const char = createCharacter(x, y, type, tag);
     state.players.push(char);
 
     char.controls = controls;
+    char.reviveKey = reviveKey || controls.punch;
     char.attackCooldown = 0;
     char.walkTime = 0;
     char.isWalking = false;
@@ -1443,7 +1446,7 @@ scene("game", (p1Type, p2Type) => {
 
     // Keep within bounds
     char.onUpdate(() => {
-      if (char.dead || state.hitPause > 0) return;
+      if (char.dead || char.downed || state.hitPause > 0) return;
       char.pos.x = clamp(char.pos.x, 30, W - 30);
       if (!char.isAirborne) {
         char.pos.y = clamp(char.pos.y, H - 180, H - 60);
@@ -1452,7 +1455,7 @@ scene("game", (p1Type, p2Type) => {
 
     // Gravity
     const gravityHandler = char.onUpdate(() => {
-      if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
+      if (char.dead || char.downed || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.isAirborne) {
         char.jumpVy += GRAVITY * dt();
         char.pos.y += char.jumpVy * dt();
@@ -1467,7 +1470,7 @@ scene("game", (p1Type, p2Type) => {
 
     // Movement (8-dir)
     const moveHandler = char.onUpdate(() => {
-      if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
+      if (char.dead || char.downed || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.dodgeTimer > 0) return;
       const c = controls;
       let dx = 0,
@@ -1510,7 +1513,7 @@ scene("game", (p1Type, p2Type) => {
 
     // Punch / Super / Air attack
     onKeyPress(controls.punch, () => {
-      if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
+      if (char.dead || char.downed || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.hitTimer > 0) return;
       if (char.attackCooldown > 0) return;
       if (char.dodgeTimer > 0) return;
@@ -1587,7 +1590,7 @@ scene("game", (p1Type, p2Type) => {
 
     // Jump
     onKeyPress(controls.jump, () => {
-      if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
+      if (char.dead || char.downed || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.hitTimer > 0) return;
       if (char.isAirborne) return;
 
@@ -1598,7 +1601,7 @@ scene("game", (p1Type, p2Type) => {
 
     // Dodge / roll
     onKeyPress(controls.dodge, () => {
-      if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
+      if (char.dead || char.downed || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.hitTimer > 0) return;
       if (char.isAirborne) return;
       if (char.dodgeTimer > 0) return;
@@ -1659,16 +1662,57 @@ scene("game", (p1Type, p2Type) => {
       }
     });
 
-    // Death handler
+    // Downed / Death handler
     char.onUpdate(() => {
-      if (char.hp <= 0 && !char.dead) {
-        char.dead = true;
-        tween(0, 90, 0.3, (v) => {
-          char.angle = v;
-          char.pos.y += 1;
-        });
-        checkGameOver();
+      if (char.dead) return;
+      if (char.hp <= 0 && !char.downed) {
+        // Check if any teammate is alive and can fight
+        const teammateAlive = state.players.some((p) => p !== char && !p.dead && !p.downed);
+        if (teammateAlive) {
+          char.downed = true;
+          char.reviveTimer = 10;
+          char.invincible = 999;
+          tween(0, 90, 0.3, (v) => {
+            char.angle = v;
+            char.pos.y += 1;
+          });
+        } else {
+          char.dead = true;
+          tween(0, 90, 0.3, (v) => {
+            char.angle = v;
+            char.pos.y += 1;
+          });
+          checkGameOver();
+        }
       }
+      if (char.downed) {
+        char.reviveTimer -= dt();
+        if (char.reviveTimer <= 0) {
+          char.downed = false;
+          char.dead = true;
+          const idx = state.players.indexOf(char);
+          if (idx >= 0) state.players.splice(idx, 1);
+          if (char === p1) { p1 = null; p1Type = null; }
+          if (char === p2) { p2 = null; p2Type = null; }
+          destroy(char);
+          checkGameOver();
+        }
+      }
+    });
+
+    // Revive key
+    onKeyPress(char.reviveKey, () => {
+      if (!char.downed || char.dead || state.gameOver || state.victory) return;
+      char.downed = false;
+      char.hp = Math.floor(char.maxHp * 0.5);
+      char.invincible = 1.5;
+      char.reviveTimer = 0;
+      char.angle = 0;
+      // Reset position near center, slightly offset
+      char.pos.x = char.facing > 0 ? W / 2 - 40 : W / 2 + 40;
+      char.pos.y = H - 100;
+      // Brief get-up visual
+      screenShake(3, 0.15);
     });
 
     return char;
@@ -1680,7 +1724,7 @@ scene("game", (p1Type, p2Type) => {
     p1 = createPlayer(p1Type, 150, H - 100, {
       left: "a", right: "d", up: "w", down: "s",
       punch: "j", jump: "k", dodge: "l",
-    }, "player");
+    }, "player", "j");
     p1.playerId = 1;
   }
 
@@ -1689,14 +1733,14 @@ scene("game", (p1Type, p2Type) => {
     p2 = createPlayer(p2Type, 250, H - 100, {
       left: "left", right: "right", up: "up", down: "down",
       punch: "1", jump: "2", dodge: "3",
-    }, "player");
+    }, "player", "1");
     p2.playerId = 2;
   }
 
   // ---- MID-GAME JOIN (symmetrical for P1 and P2) ----
   const joinSlots = [];
-  if (!p1Type) joinSlots.push({ key: "j", playerId: 1, label: "P1", spawnX: 150, controls: { left: "a", right: "d", up: "w", down: "s", punch: "j", jump: "k", dodge: "l" } });
-  if (!p2Type) joinSlots.push({ key: "1", playerId: 2, label: "P2", spawnX: 250, controls: { left: "left", right: "right", up: "up", down: "down", punch: "1", jump: "2", dodge: "3" } });
+  joinSlots.push({ key: "j", playerId: 1, label: "P1", spawnX: 150, controls: { left: "a", right: "d", up: "w", down: "s", punch: "j", jump: "k", dodge: "l" } });
+  joinSlots.push({ key: "1", playerId: 2, label: "P2", spawnX: 250, controls: { left: "left", right: "right", up: "up", down: "down", punch: "1", jump: "2", dodge: "3" } });
 
   if (joinSlots.length > 0) {
     let joinChoice = 0;
@@ -1755,7 +1799,7 @@ scene("game", (p1Type, p2Type) => {
         if (joinOverlay && joinTarget === slot) {
           const chosenType = joinAvail[joinChoice];
           destroyJoinOverlay();
-          const player = createPlayer(chosenType, slot.spawnX, H - 100, slot.controls, "player");
+          const player = createPlayer(chosenType, slot.spawnX, H - 100, slot.controls, "player", slot.key);
           player.playerId = slot.playerId;
           if (slot.playerId === 1) { p1 = player; p1Type = chosenType; }
           else { p2 = player; p2Type = chosenType; }
@@ -1834,7 +1878,7 @@ scene("game", (p1Type, p2Type) => {
       let target = null;
       let minDist = Infinity;
       for (const p of state.players) {
-        if (p.dead) continue;
+        if (p.dead || p.downed) continue;
         const d = p.pos.dist(enemy.pos);
         if (d < minDist) {
           minDist = d;
@@ -2130,7 +2174,7 @@ scene("game", (p1Type, p2Type) => {
         let target = null;
         let minDist = Infinity;
         for (const p of state.players) {
-          if (p.dead) continue;
+          if (p.dead || p.downed) continue;
           const d = p.pos.dist(boss.pos);
           if (d < minDist) {
             minDist = d;
@@ -2330,11 +2374,15 @@ scene("game", (p1Type, p2Type) => {
           p1BarBg.opacity = 1;
           p1Bar.opacity = 1;
           p1Kills.opacity = 1;
-          p1Label.text = CHAR_NAMES[p1.type] || "P1";
-          if (p1.dead) {
+          if (p1.downed) {
+            p1Label.text = "PRESS " + p1.reviveKey.toUpperCase() + " - " + Math.ceil(p1.reviveTimer);
             p1Bar.width = 0;
+          } else if (p1.dead) {
+            p1Bar.width = 0;
+            p1Label.text = CHAR_NAMES[p1.type] || "P1";
           } else {
             p1Bar.width = (p1.hp / p1.maxHp) * 120;
+            p1Label.text = CHAR_NAMES[p1.type] || "P1";
           }
           p1Kills.text = "KILLS: " + p1.kills;
         } else {
@@ -2350,11 +2398,15 @@ scene("game", (p1Type, p2Type) => {
           p2BarBg.opacity = 1;
           p2Bar.opacity = 1;
           p2Kills.opacity = 1;
-          p2Label.text = CHAR_NAMES[p2.type] || "P2";
-          if (p2.dead) {
+          if (p2.downed) {
+            p2Label.text = "PRESS " + p2.reviveKey.toUpperCase() + " - " + Math.ceil(p2.reviveTimer);
             p2Bar.width = 0;
+          } else if (p2.dead) {
+            p2Bar.width = 0;
+            p2Label.text = CHAR_NAMES[p2.type] || "P2";
           } else {
             p2Bar.width = (p2.hp / p2.maxHp) * 120;
+            p2Label.text = CHAR_NAMES[p2.type] || "P2";
           }
           p2Kills.text = "KILLS: " + p2.kills;
         } else {
