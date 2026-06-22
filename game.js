@@ -361,6 +361,7 @@ function createCharacter(x, y, type, tag) {
       comboTimer: 0,
       comboCount: 0,
       lastComboMilestone: 0,
+      kills: 0,
       hitTimer: 0,
       dead: false,
       invincible: 0,
@@ -876,13 +877,13 @@ function spawnHitbox(owner, offsetX, offsetY, w, h, damage, knockback, duration)
 
   if (isPlayer) {
     hb.onCollide("enemy", (enemy) => {
-      if (enemy.invincible > 0 || enemy.dead) return;
-      hitEnemy(enemy, damage, knockback, dir);
-    });
-    hb.onCollide("boss", (boss) => {
-      if (boss.invincible > 0 || boss.dead) return;
-      hitEnemy(boss, damage, knockback, dir);
-    });
+        if (enemy.invincible > 0 || enemy.dead) return;
+        hitEnemy(enemy, damage, knockback, dir, owner);
+      });
+      hb.onCollide("boss", (boss) => {
+        if (boss.invincible > 0 || boss.dead) return;
+        hitEnemy(boss, damage, knockback, dir, owner);
+      });
   } else {
     hb.onCollide("player", (player) => {
       if (player === owner) return;
@@ -903,7 +904,7 @@ function spawnHitbox(owner, offsetX, offsetY, w, h, damage, knockback, duration)
   return hb;
 }
 
-function hitEnemy(enemy, damage, knockback, dir) {
+function hitEnemy(enemy, damage, knockback, dir, attacker) {
   enemy.hp -= damage;
   enemy.invincible = 0.3;
   enemy.hitTimer = 0.15;
@@ -941,6 +942,7 @@ function hitEnemy(enemy, damage, knockback, dir) {
 
   if (enemy.hp <= 0) {
     enemy.dead = true;
+    if (attacker && attacker.kills !== undefined) attacker.kills++;
     events.emit("enemy-killed", enemy);
     destroy(enemy);
   }
@@ -2248,6 +2250,13 @@ scene("game", (p1Type, p2Type) => {
     ]);
     const p1BarBg = hud.add([rect(120, 16), color(GRAY), pos(15, 20), fixed(), opacity(p1 ? 1 : 0)]);
     const p1Bar = hud.add([rect(120, 16), color(WHITE), pos(15, 20), fixed(), opacity(p1 ? 1 : 0)]);
+    const p1Kills = hud.add([
+      text("", { size: 9, font: "sans-serif" }),
+      color(WHITE),
+      pos(15, 40),
+      fixed(),
+      opacity(p1 ? 1 : 0),
+    ]);
 
     // Player 2 health (hidden until P2 joins)
     const p2Label = hud.add([
@@ -2259,6 +2268,13 @@ scene("game", (p1Type, p2Type) => {
     ]);
     const p2BarBg = hud.add([rect(120, 16), color(GRAY), pos(W - 135, 20), fixed(), opacity(p2 ? 1 : 0)]);
     const p2Bar = hud.add([rect(120, 16), color(WHITE), pos(W - 135, 20), fixed(), opacity(p2 ? 1 : 0)]);
+    const p2Kills = hud.add([
+      text("", { size: 9, font: "sans-serif" }),
+      color(WHITE),
+      pos(W - 135, 40),
+      fixed(),
+      opacity(p2 ? 1 : 0),
+    ]);
 
     // Wave indicator
     const waveLabel = hud.add([
@@ -2296,34 +2312,40 @@ scene("game", (p1Type, p2Type) => {
           p1Label.opacity = 1;
           p1BarBg.opacity = 1;
           p1Bar.opacity = 1;
+          p1Kills.opacity = 1;
           p1Label.text = CHAR_NAMES[p1.type] || "P1";
           if (p1.dead) {
             p1Bar.width = 0;
           } else {
             p1Bar.width = (p1.hp / p1.maxHp) * 120;
           }
+          p1Kills.text = "KILLS: " + p1.kills;
         } else {
           p1Label.text = "P1: J TO JOIN";
           p1Label.opacity = 0.5 + Math.sin(state.time * 4) * 0.3;
           p1BarBg.opacity = 0;
           p1Bar.opacity = 0;
+          p1Kills.opacity = 0;
         }
 
         if (p2) {
           p2Label.opacity = 1;
           p2BarBg.opacity = 1;
           p2Bar.opacity = 1;
+          p2Kills.opacity = 1;
           p2Label.text = CHAR_NAMES[p2.type] || "P2";
           if (p2.dead) {
             p2Bar.width = 0;
           } else {
             p2Bar.width = (p2.hp / p2.maxHp) * 120;
           }
+          p2Kills.text = "KILLS: " + p2.kills;
         } else {
           p2Label.text = "P2: 1 TO JOIN";
           p2Label.opacity = 0.5 + Math.sin(state.time * 4 + 2) * 0.3;
           p2BarBg.opacity = 0;
           p2Bar.opacity = 0;
+          p2Kills.opacity = 0;
         }
 
         waveLabel.text = state.bossSpawned ? "BOSS FIGHT" : `WAVE ${state.wave}`;
