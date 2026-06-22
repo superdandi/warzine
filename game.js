@@ -8,7 +8,7 @@ const H = 480;
 kaplay({
   width: W,
   height: H,
-  background: rgb(230, 222, 210),
+  background: [230, 222, 210],
   letterbox: true,
   stretch: true,
 });
