@@ -782,6 +782,7 @@ scene("title", () => {
   // Background
   add([rect(W, H), color(PAPER), fixed()]);
 
+  let titleTime = 0;
   // Animated decorative lines (scanlines style)
   for (let i = 0; i < 12; i++) {
     const y = 20 + i * 38;
@@ -792,10 +793,6 @@ scene("title", () => {
       opacity(rand(0.1, 0.3)),
       fixed(),
     ]);
-    // Slight drift
-    onUpdate(() => {
-      line.opacity = 0.15 + Math.sin(stateTime * 0.5 + i) * 0.1;
-    });
   }
 
   // Title with drift
@@ -807,10 +804,6 @@ scene("title", () => {
     fixed(),
     z(10),
   ]);
-  onUpdate(() => {
-    title.pos.x = W / 2 + Math.sin(stateTime * 0.5) * 3;
-    title.pos.y = H / 3 - 20 + Math.sin(stateTime * 0.7) * 2;
-  });
 
   // Subtitle
   add([
@@ -857,9 +850,12 @@ scene("title", () => {
   ]);
 
   onUpdate(() => {
+    titleTime += dt();
     blink += dt();
     pressText.opacity = blink % 1 < 0.6 ? 1 : 0.3;
     ctrlText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
+    title.pos.x = W / 2 + Math.sin(titleTime * 0.5) * 3;
+    title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
   });
 
   onKeyPress("space", () => {
