@@ -8,7 +8,7 @@ const H = 480;
 kaplay({
   width: W,
   height: H,
-  background: new Color(230, 222, 210),
+  background: rgb(230, 222, 210),
   letterbox: true,
   stretch: true,
 });
@@ -1084,7 +1084,7 @@ scene("game", () => {
       opacity(1),
     ]);
     wait(1.5, () => destroy(waveText));
-    tween(1, 0, 1.2, (v) => (waveText.opacity = v), {}, easings.easeInQuad);
+    tween(1, 0, 1.2, (v) => (waveText.opacity = v), undefined, easings.easeInQuad);
 
     const subText = add([
       text("GET READY", { size: 16, font: "sans-serif" }),
@@ -1095,7 +1095,7 @@ scene("game", () => {
       fixed(),
     ]);
     wait(1.5, () => destroy(subText));
-    tween(1, 0, 1.2, (v) => (subText.opacity = v), {}, easings.easeInQuad);
+    tween(1, 0, 1.2, (v) => (subText.opacity = v), undefined, easings.easeInQuad);
 
     const spawnList = [];
     for (const e of config.enemies) {
