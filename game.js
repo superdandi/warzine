@@ -33,20 +33,27 @@ function generatePaperTexture() {
   const ctx = c.getContext("2d");
   const imgData = ctx.createImageData(W, H);
   for (let i = 0; i < imgData.data.length; i += 4) {
-    const noise = Math.random() * 30;
+    const noise = Math.random() * 50;
     imgData.data[i] = noise;
     imgData.data[i + 1] = noise;
     imgData.data[i + 2] = noise;
-    imgData.data[i + 3] = Math.random() < 0.15 ? 8 : 0;
+    imgData.data[i + 3] = Math.random() < 0.25 ? 12 : 0;
   }
   ctx.putImageData(imgData, 0, 0);
-  for (let i = 0; i < 30; i++) {
-    ctx.strokeStyle = `rgba(0,0,0,${Math.random() * 0.04})`;
-    ctx.lineWidth = 1;
+  for (let i = 0; i < 60; i++) {
+    ctx.strokeStyle = `rgba(0,0,0,${Math.random() * 0.06})`;
+    ctx.lineWidth = Math.random() < 0.2 ? 2 : 1;
     ctx.beginPath();
     ctx.moveTo(Math.random() * W, Math.random() * H);
     ctx.lineTo(Math.random() * W, Math.random() * H);
     ctx.stroke();
+  }
+  // Add some toner specks
+  for (let i = 0; i < 20; i++) {
+    ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`;
+    ctx.beginPath();
+    ctx.arc(Math.random() * W, Math.random() * H, Math.random() * 3 + 1, 0, Math.PI * 2);
+    ctx.fill();
   }
   return c;
 }
@@ -634,8 +641,11 @@ function spawnHitbox(owner, offsetX, offsetY, w, h, damage, knockback, duration)
       player.invincible = 0.3;
       player.hitTimer = 0.15;
       setHitPose(player);
-      player.pos.x += -dir * knockback;
       screenShake(4, 0.12);
+      if (curState) curState.hitPause = 0.04;
+      wait(0.02, () => {
+        if (!player.dead) player.pos.x += -dir * knockback;
+      });
     });
   }
 
@@ -647,10 +657,17 @@ function hitEnemy(enemy, damage, knockback, dir) {
   enemy.invincible = 0.3;
   enemy.hitTimer = 0.15;
   setHitPose(enemy);
-  enemy.pos.x += -dir * knockback;
   screenShake(3, 0.1);
 
-  // Hit flash - blink the character white
+  // Hitpause
+  if (curState) curState.hitPause = 0.04;
+
+  // Knockback (delayed slightly for hitpause feel)
+  wait(0.02, () => {
+    if (!enemy.dead) enemy.pos.x += -dir * knockback;
+  });
+
+  // Hit flash
   let flash = 0;
   const flashInterval = enemy.onUpdate(() => {
     flash += dt();
@@ -668,6 +685,7 @@ function hitEnemy(enemy, damage, knockback, dir) {
 
   // Hit spark effect
   spawnHitEffect(enemy.pos.x, enemy.pos.y - 10);
+  spawnInkSplat(enemy.pos.x, enemy.pos.y - 10);
 
   if (enemy.hp <= 0) {
     enemy.dead = true;
@@ -707,6 +725,31 @@ function spawnAttackArc(x, y, dir) {
   }
 }
 
+function spawnInkSplat(x, y) {
+  for (let i = 0; i < 5; i++) {
+    add([
+      circle(rand(3, 8)),
+      color(INK),
+      pos(x + rand(-12, 12), y + rand(-12, 12)),
+      opacity(0.6),
+      lifespan(rand(0.3, 0.7)),
+      anchor("center"),
+    ]);
+  }
+}
+
+function spawnWalkDust(x, y, dir) {
+  add([
+    rect(rand(3, 6), rand(3, 6)),
+    color(INK),
+    pos(x + dir * rand(-4, 4), y + 20),
+    opacity(0.4),
+    move(vec2(-dir * rand(20, 50), 0)),
+    lifespan(rand(0.15, 0.3)),
+    anchor("center"),
+  ]);
+}
+
 // ============================================================
 // EVENTS BUS
 // ============================================================
@@ -727,6 +770,8 @@ const events = (() => {
   };
 })();
 
+let curState = null;
+
 // ============================================================
 // TITLE SCENE
 // ============================================================
@@ -737,19 +782,24 @@ scene("title", () => {
   // Background
   add([rect(W, H), color(PAPER), fixed()]);
 
-  // Decorative lines
-  for (let i = 0; i < 8; i++) {
-    add([
+  // Animated decorative lines (scanlines style)
+  for (let i = 0; i < 12; i++) {
+    const y = 20 + i * 38;
+    const line = add([
       rect(W - 40, 1),
       color(INK),
-      pos(20, 30 + i * 55),
-      opacity(0.2),
+      pos(20, y),
+      opacity(rand(0.1, 0.3)),
       fixed(),
     ]);
+    // Slight drift
+    onUpdate(() => {
+      line.opacity = 0.15 + Math.sin(stateTime * 0.5 + i) * 0.1;
+    });
   }
 
-  // Title
-  add([
+  // Title with drift
+  const title = add([
     text("WARZINE", { size: 80, font: "sans-serif" }),
     pos(W / 2, H / 3 - 20),
     anchor("center"),
@@ -757,6 +807,10 @@ scene("title", () => {
     fixed(),
     z(10),
   ]);
+  onUpdate(() => {
+    title.pos.x = W / 2 + Math.sin(stateTime * 0.5) * 3;
+    title.pos.y = H / 3 - 20 + Math.sin(stateTime * 0.7) * 2;
+  });
 
   // Subtitle
   add([
@@ -767,6 +821,9 @@ scene("title", () => {
     fixed(),
     z(10),
   ]);
+
+  // Decorative arrows
+  add([text("< >", { size: 24, font: "sans-serif" }), pos(W / 2, H / 3 + 65), anchor("center"), color(INK), fixed(), z(10)]);
 
   // Press SPACE
   let blink = 0;
@@ -780,7 +837,7 @@ scene("title", () => {
   ]);
 
   // Controls
-  add([
+  const ctrlText = add([
     text("P1: WASD + J/K     P2: ARROWS + 1/2", { size: 12, font: "sans-serif" }),
     pos(W / 2, H * 0.78),
     anchor("center"),
@@ -789,25 +846,20 @@ scene("title", () => {
     z(10),
   ]);
 
-  // "Fanzine" decorative elements
+  // Decorative lines
+  add([rect(180, 3), color(INK), pos(W / 2 - 90, H * 0.7), fixed(), z(10)]);
+  add([rect(140, 2), color(INK), pos(W / 2 - 70, H * 0.85), fixed(), z(10)]);
+
+  // Version
   add([
-    rect(160, 3),
-    color(INK),
-    pos(W / 2 - 80, H * 0.7),
-    fixed(),
-    z(10),
-  ]);
-  add([
-    rect(120, 2),
-    color(INK),
-    pos(W / 2 - 60, H * 0.85),
-    fixed(),
-    z(10),
+    text("v1.0", { size: 10, font: "sans-serif" }),
+    pos(W - 30, H - 15), anchor("center"), color(INK), fixed(), z(10),
   ]);
 
   onUpdate(() => {
     blink += dt();
     pressText.opacity = blink % 1 < 0.6 ? 1 : 0.3;
+    ctrlText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
   });
 
   onKeyPress("space", () => {
@@ -833,16 +885,18 @@ scene("game", () => {
     bossDefeated: false,
     gameOver: false,
     victory: false,
+    hitPause: 0,
     paused: false,
     players: [],
     enemies: [],
     boss: null,
     time: 0,
   };
+  curState = state;
 
   // ---- BACKGROUND ----
   add([sprite("streetBg"), z(0)]);
-  add([sprite("paperTex"), opacity(0.12), z(90), fixed()]);
+  add([sprite("paperTex"), opacity(0.18), z(90), fixed()]);
 
   // ---- PLAYER CREATION ----
   function createPlayer(type, x, y, controls, tag) {
@@ -856,7 +910,7 @@ scene("game", () => {
 
     // Keep within bounds
     char.onUpdate(() => {
-      if (char.dead) return;
+      if (char.dead || state.hitPause > 0) return;
       char.pos.x = clamp(char.pos.x, 30, W - 30);
       if (!char.isAirborne) {
         char.pos.y = clamp(char.pos.y, H - 180, H - 60);
@@ -865,7 +919,7 @@ scene("game", () => {
 
     // Gravity
     const gravityHandler = char.onUpdate(() => {
-      if (char.dead || state.gameOver || state.victory) return;
+      if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.isAirborne) {
         char.jumpVy += GRAVITY * dt();
         char.pos.y += char.jumpVy * dt();
@@ -880,7 +934,7 @@ scene("game", () => {
 
     // Movement (8-dir)
     const moveHandler = char.onUpdate(() => {
-      if (char.dead || state.gameOver || state.victory) return;
+      if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
       const c = controls;
       let dx = 0,
         dy = 0;
@@ -906,6 +960,9 @@ scene("game", () => {
         char.isWalking = true;
         char.walkTime += dt();
         setWalkPose(char, char.walkTime * 10);
+        if (!char.isAirborne && Math.random() < 0.08) {
+          spawnWalkDust(char.pos.x, char.pos.y, char.facing);
+        }
       } else {
         char.isWalking = false;
         setIdlePose(char, state.time);
@@ -919,7 +976,7 @@ scene("game", () => {
 
     // Punch / Super / Air attack
     onKeyPress(controls.punch, () => {
-      if (char.dead || state.gameOver || state.victory) return;
+      if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.hitTimer > 0) return;
       if (char.attackCooldown > 0) return;
 
@@ -927,18 +984,21 @@ scene("game", () => {
       if (isKeyDown(controls.jump) && char.superCooldown <= 0) {
         char.superCooldown = 2;
         char.attackCooldown = 0.5;
-        screenShake(8, 0.2);
-        spawnHitbox(char, 0, -10, 50, 40, 30, 250, 0.15);
-        spawnHitbox(char, -20, -5, 20, 30, 20, 150, 0.12);
-        spawnHitbox(char, 20, -5, 20, 30, 20, 150, 0.12);
-        setPunchPose(char);
-        tween(0, 1, 0.1, () => {}, () => {
+        screenShake(10, 0.25);
+        spawnHitbox(char, 0, -10, 60, 50, 35, 300, 0.2);
+        spawnHitbox(char, -25, -5, 25, 35, 20, 180, 0.15);
+        spawnHitbox(char, 25, -5, 25, 35, 20, 180, 0.15);
+        setKickPose(char);
+        tween(0, 1, 0.12, () => {}, () => {
           if (!char.dead) resetPose(char);
         });
         spawnHitEffect(char.pos.x, char.pos.y - 10);
-        spawnHitEffect(char.pos.x - 15, char.pos.y);
-        spawnHitEffect(char.pos.x + 15, char.pos.y);
-        spawnAttackArc(char.pos.x + 25 * char.facing, char.pos.y - 10, char.facing);
+        spawnHitEffect(char.pos.x - 20, char.pos.y - 5);
+        spawnHitEffect(char.pos.x + 20, char.pos.y - 5);
+        spawnHitEffect(char.pos.x, char.pos.y + 10);
+        spawnHitEffect(char.pos.x - 25, char.pos.y);
+        spawnHitEffect(char.pos.x + 25, char.pos.y);
+        spawnAttackArc(char.pos.x + 30 * char.facing, char.pos.y - 10, char.facing);
         return;
       }
 
@@ -946,8 +1006,8 @@ scene("game", () => {
       if (char.isAirborne) {
         char.attackCooldown = 0.3;
         setKickPose(char);
-        spawnHitbox(char, 10, 10, 16, 16, 15, 120, 0.08);
-        spawnAttackArc(char.pos.x + 15 * char.facing, char.pos.y + 5, char.facing);
+        spawnHitbox(char, 5, 20, 20, 18, 15, 120, 0.08);
+        spawnAttackArc(char.pos.x + 10 * char.facing, char.pos.y + 15, char.facing);
         tween(0, 1, 0.06, () => {}, () => {
           if (!char.dead) resetPose(char);
         });
@@ -957,23 +1017,23 @@ scene("game", () => {
       // Normal punch (ground combo)
       char.attackCooldown = 0.3;
       char.comboCount++;
-      char.comboTimer = 0.4;
+      char.comboTimer = 0.25;
 
-      const dmg = char.comboCount >= 3 ? 25 : 12;
+      const dmg = char.comboCount >= 3 ? 28 : 12;
       setPunchPose(char);
 
       spawnHitbox(
         char,
-        20,
+        24,
         -5,
+        22,
         18,
-        14,
         dmg,
-        char.comboCount >= 3 ? 200 : 100,
+        char.comboCount >= 3 ? 300 : 100,
         0.08,
       );
 
-      spawnAttackArc(char.pos.x + 22 * char.facing, char.pos.y - 5, char.facing);
+      spawnAttackArc(char.pos.x + 26 * char.facing, char.pos.y - 5, char.facing);
       tween(0, 1, 0.06, () => {}, () => {
         if (!char.dead) resetPose(char);
       });
@@ -981,7 +1041,7 @@ scene("game", () => {
 
     // Jump
     onKeyPress(controls.jump, () => {
-      if (char.dead || state.gameOver || state.victory) return;
+      if (char.dead || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.hitTimer > 0) return;
       if (char.isAirborne) return;
 
@@ -994,6 +1054,7 @@ scene("game", () => {
     char.comboTimer = 0;
 
     const comboHandler = char.onUpdate(() => {
+      if (state.hitPause > 0) return;
       if (char.comboTimer > 0) {
         char.comboTimer -= dt();
         if (char.comboTimer <= 0) {
@@ -1028,7 +1089,8 @@ scene("game", () => {
 
     enemy.attackCooldown = rand(0.5, 1.5);
     enemy.attackRange = type === "tough" ? 35 : 28;
-    enemy.damage = type === "tough" ? 15 : type === "punk" ? 10 : 8;
+    enemy.damage = type === "tough" ? 18 : type === "punk" ? 10 : 8;
+    enemy.speed = type === "tough" ? 130 : type === "punk" ? 170 : 150;
     enemy.aiState = "chase";
     enemy.aiTimer = 0;
     enemy.facing = -1;
@@ -1036,14 +1098,14 @@ scene("game", () => {
 
     // Clamp position
     enemy.onUpdate(() => {
-      if (enemy.dead) return;
+      if (enemy.dead || state.hitPause > 0) return;
       enemy.pos.x = clamp(enemy.pos.x, 30, W - 30);
       enemy.pos.y = clamp(enemy.pos.y, H - 180, H - 60);
     });
 
     // AI
     enemy.onUpdate(() => {
-      if (enemy.dead || state.gameOver || state.victory) return;
+      if (enemy.dead || state.gameOver || state.victory || state.hitPause > 0) return;
 
       if (enemy.hitTimer > 0) {
         enemy.hitTimer -= dt();
@@ -1067,8 +1129,19 @@ scene("game", () => {
       }
       if (!target) return;
 
-      const dx = target.pos.x - enemy.pos.x;
-      const dy = target.pos.y - enemy.pos.y;
+      // Push away from nearby enemies (anti-stack)
+      let repelX = 0, repelY = 0;
+      for (const other of state.enemies) {
+        if (other === enemy || other.dead) continue;
+        const d = enemy.pos.dist(other.pos);
+        if (d < 40) {
+          repelX += (enemy.pos.x - other.pos.x) / d;
+          repelY += (enemy.pos.y - other.pos.y) / d;
+        }
+      }
+
+      const dx = target.pos.x - enemy.pos.x + repelX * 20;
+      const dy = target.pos.y - enemy.pos.y + repelY * 20;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < enemy.attackRange && enemy.attackCooldown <= 0) {
@@ -1114,9 +1187,9 @@ scene("game", () => {
 
   // ---- WAVE MANAGER ----
   const waveConfigs = [
-    { enemies: [{ type: "grunt", count: 3 }], title: "WAVE 1" },
-    { enemies: [{ type: "grunt", count: 2 }, { type: "punk", count: 2 }], title: "WAVE 2" },
-    { enemies: [{ type: "grunt", count: 2 }, { type: "punk", count: 2 }, { type: "tough", count: 1 }], title: "WAVE 3" },
+    { enemies: [{ type: "grunt", count: 3 }, { type: "punk", count: 1 }], title: "WAVE 1" },
+    { enemies: [{ type: "grunt", count: 2 }, { type: "punk", count: 2 }, { type: "tough", count: 1 }], title: "WAVE 2" },
+    { enemies: [{ type: "grunt", count: 3 }, { type: "punk", count: 3 }, { type: "tough", count: 2 }], title: "WAVE 3" },
   ];
 
   function startWave(index) {
@@ -1131,6 +1204,12 @@ scene("game", () => {
     state.enemiesThisWave = 0;
     const config = waveConfigs[index];
     state.enemiesInWave = config.enemies.reduce((a, e) => a + e.count, 0);
+
+    // Wave transition flash
+    const flash = add([rect(W, H), color(INK), fixed(), opacity(0), z(45)]);
+    tween(0, 0.3, 0.1, (v) => (flash.opacity = v), () => {
+      tween(0.3, 0, 0.15, (v) => (flash.opacity = v), () => destroy(flash));
+    });
 
     const waveText = add([
       text(config.title, { size: 32, font: "sans-serif" }),
@@ -1238,7 +1317,7 @@ scene("game", () => {
 
       // Boss AI
       boss.onUpdate(() => {
-        if (boss.dead || state.gameOver || state.victory) return;
+        if (boss.dead || state.gameOver || state.victory || state.hitPause > 0) return;
 
         if (boss.hitTimer > 0) {
           boss.hitTimer -= dt();
@@ -1253,9 +1332,15 @@ scene("game", () => {
           boss.phase = 2;
           boss.speed *= 1.3;
           boss.attackCooldown = 0.5;
+          boss.invincible = 1.5;
           // Visual feedback - flash
-          screenShake(8, 0.3);
+          screenShake(10, 0.5);
           spawnHitEffect(boss.pos.x, boss.pos.y - 20);
+          spawnInkSplat(boss.pos.x, boss.pos.y);
+          spawnHitEffect(boss.pos.x - 30, boss.pos.y);
+          spawnHitEffect(boss.pos.x + 30, boss.pos.y);
+          // Brief charge-up animation
+          boss.attackCooldown = 1.5;
         }
 
         // Find nearest player
@@ -1279,8 +1364,9 @@ scene("game", () => {
         boss.scale.x = boss.facing;
 
         if (dist < boss.attackRange && boss.attackCooldown <= 0) {
+          const maxPattern = boss.phase === 2 ? 4 : 2;
           boss.attackCooldown = boss.phase === 2 ? rand(0.6, 1.2) : rand(1.2, 2.0);
-          boss.attackPattern = (boss.attackPattern + 1) % 3;
+          boss.attackPattern = (boss.attackPattern + 1) % (maxPattern + 1);
 
           if (boss.attackPattern === 0) {
             // Heavy punch
@@ -1297,13 +1383,30 @@ scene("game", () => {
             spawnHitEffect(boss.pos.x, boss.pos.y + 10);
             spawnHitEffect(boss.pos.x - 15, boss.pos.y + 5);
             spawnHitEffect(boss.pos.x + 15, boss.pos.y + 5);
-          } else {
+          } else if (boss.attackPattern === 2) {
             // Charge attack
             const chargeDir = boss.facing;
             boss.move(chargeDir * 150, 0);
             spawnHitbox(boss, 10, -2, 30, 20, boss.damage, 180, 0.2);
             screenShake(3, 0.08);
             spawnAttackArc(boss.pos.x + 20 * boss.facing, boss.pos.y - 5, boss.facing);
+          } else if (boss.attackPattern === 3 && boss.phase === 2) {
+            // Ground pound (requires jump to dodge)
+            screenShake(8, 0.2);
+            spawnHitbox(boss, -30, 24, 60, 30, boss.damage * 0.7, 80, 0.2);
+            spawnHitEffect(boss.pos.x - 20, boss.pos.y + 15);
+            spawnHitEffect(boss.pos.x, boss.pos.y + 20);
+            spawnHitEffect(boss.pos.x + 20, boss.pos.y + 15);
+          } else if (boss.attackPattern === 4 && boss.phase === 2) {
+            // Double swipe (two quick hitboxes)
+            setPunchPose(boss);
+            spawnHitbox(boss, 24, -4, 20, 16, boss.damage * 0.6, 120, 0.06);
+            wait(0.12, () => {
+              if (!boss.dead) {
+                setPunchPose(boss);
+                spawnHitbox(boss, 24, -4, 20, 16, boss.damage * 0.6, 120, 0.06);
+              }
+            });
           }
 
           tween(0, 1, 0.08, () => {}, () => {
@@ -1462,10 +1565,38 @@ scene("game", () => {
     });
   }
 
+  // ---- PAUSE ----
+  onKeyPress("escape", () => {
+    state.paused = !state.paused;
+  });
+
   // ---- MAIN UPDATE ----
   onUpdate(() => {
+    if (state.paused) return;
+    if (state.hitPause > 0) state.hitPause -= dt();
     state.time += dt();
     hud.update();
+  });
+
+  // Pause overlay
+  onUpdate(() => {
+    if (state.paused) {
+      if (!state.pauseUI) {
+        state.pauseUI = add([fixed(), z(100)]);
+        state.pauseUI.add([rect(W, H), color(INK), opacity(0.5)]);
+        state.pauseUI.add([
+          text("PAUSED", { size: 48, font: "sans-serif" }),
+          pos(W / 2, H / 2 - 20), anchor("center"), color(WHITE), fixed(), z(101),
+        ]);
+        state.pauseUI.add([
+          text("PRESS ESC TO CONTINUE", { size: 14, font: "sans-serif" }),
+          pos(W / 2, H / 2 + 30), anchor("center"), color(WHITE), fixed(), z(101),
+        ]);
+      }
+    } else if (state.pauseUI) {
+      destroy(state.pauseUI);
+      state.pauseUI = null;
+    }
   });
 
   // ---- START FIRST WAVE ----

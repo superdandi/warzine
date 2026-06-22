@@ -9,15 +9,15 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| 🔥 | Hitpause (frames de pausa al conectar golpe) | ⬜ | Congelar todo ~3-4 frames por impacto |
-| 🔥 | Tiempo de ataque enemigo menos aleatorio | ⬜ | Que el timing sea justo, no spam |
-| ⚡ | Knockback más dramático en combos | ⬜ | Que el 3er golpe mande volando |
-| ⚡ | Velocidad de caída del salto (tuning) | ⬜ | GRAVITY=800, probar 600-1000 |
-| ⚡ | Hitbox de ataques más generosa | ⬜ | Que cubra mejor el rango visual del brazo |
-| ⚡ | Combo: ventana de 0.4s → 0.25s | ⬜ | Más tight, más skill |
-| 💧 | Super attack: animación especial | ⬜ | Que no sea solo el mismo punch pose |
-| 💧 | Invulnerabilidad después de hit (tuning) | ⬜ | 0.3s, probar 0.15-0.4 |
-| 💧 | Ataque en aire: que golpee hacia abajo | ⬜ | Hitbox más abajo del personaje |
+| 🔥 | Hitpause (frames de pausa al conectar golpe) | ✅ | 0.04s (2-3 frames), knockback delayed |
+| 🔥 | Tiempo de ataque enemigo menos aleatorio | ✅ | Cooldowns acotados, grupos más agresivos |
+| ⚡ | Knockback más dramático en combos | ✅ | 3er golpe: 300 knockback, super: 300 |
+| ⚡ | Velocidad de caída del salto (tuning) | ✅ | GRAVITY=800, probado funcional |
+| ⚡ | Hitbox de ataques más generosa | ✅ | Punches: 22x18, super: 60x50, air: 20x18 |
+| ⚡ | Combo: ventana de 0.4s → 0.25s | ✅ | Más tight, más skill requerida |
+| 💧 | Super attack: animación especial | ✅ | Kick pose + 6 hit effects + arc, daño 35, cooldown 2s |
+| 💧 | Invulnerabilidad después de hit (tuning) | ✅ | 0.3s player, 0.3s enemy, boss 1.5s en transición de fase |
+| 💧 | Ataque en aire: que golpee hacia abajo | ✅ | Hitbox a y+20 (antes y+10) |
 | 🌱 | Agarres / throws | ⬜ | Clásico del género |
 | 🌱 | Armas arrojadizas (botellas, bates) | ⬜ | Pickups en el escenario |
 | 🌱 | Movimientos especiales por personaje | ⬜ | Diferenciar Punkette de Antagonic |
@@ -29,11 +29,11 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| ⚡ | Más variedad de enemigos por wave | ⬜ | Combinaciones más interesantes |
-| ⚡ | Enemigos que atacan en grupo | ⬜ | No esperar turno, coordinación básica |
-| ⚡ | Tough: que sea realmente amenazante | ⬜ | Daño alto pero predecible |
+| ⚡ | Más variedad de enemigos por wave | ✅ | Wave 1: grunts+punk, W2: +tough, W3: 3grunt+3punk+2tough |
+| ⚡ | Enemigos que atacan en grupo | ✅ | Anti-stacking AI, cooldowns reducidos, chase cooperativo |
+| ⚡ | Tough: que sea realmente amenazante | ✅ | Daño 18 (antes 15), speed 130, range 35 |
 | 💧 | Que los enemigos puedan saltar | ⬜ | AI con salto básico |
-| 💧 | Indicador visual de wave (número grande) | ⬜ | Más dramático que el texto actual |
+| 💧 | Indicador visual de wave + transición | ✅ | Flash de tinta + texto + fade |
 | 🌱 | Enemigo con escudo | ⬜ | Romper escudo con combo o super |
 | 🌱 | Enemigo que spawnea otros | ⬜ | "Líder" de wave |
 | 🌱 | Wave 4+ / Endless mode | ⬜ | Después del boss, modo sin fin |
@@ -44,10 +44,10 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| ⚡ | Más ataques en fase 2 | ⬜ | Agregar 1-2 patrones nuevos al enojarse |
-| ⚡ | Boss invulnerable brevemente entre fases | ⬜ | Transición visible con flash |
-| 💧 | Ataque de boss que el jugador tenga que saltar | ⬜ | Ground pound, onda expansiva |
-| 💧 | Hitbox del boss ajustada al sprite grande | ⬜ | Que no sea injusto |
+| ⚡ | Más ataques en fase 2 | ✅ | Ground pound (esquivable saltando) + double swipe |
+| ⚡ | Boss invulnerable brevemente entre fases | ✅ | 1.5s de invulnerabilidad + flash + screen shake |
+| 💧 | Ataque de boss que el jugador tenga que saltar | ✅ | Ground pound (piso: hitbox a y+24, esquivable con salto) |
+| 💧 | Hitbox del boss ajustada al sprite grande | ✅ | Ataques con hitbox escaladas (28px punch, 40px slam) |
 | 🌱 | Múltiples bosses | ⬜ | 2 jefes a la vez |
 | 🌱 | Barra de fase (P1 / P2) en HUD | ⬜ | Indicador visual del enrage |
 
@@ -60,9 +60,9 @@
 | 🔥 | Sprite sheets para personajes (futuro) | ⬜ | Reemplazar rect() por bitmaps dibujados |
 | ⚡ | Background con parallax | ⬜ | 2-3 capas a distinta velocidad |
 | ⚡ | Más variedad de fondos | ⬜ | Callejón, azotea, club, etc. |
-| 💧 | Efecto de sangre / tinta al golpear | ⬜ | Mancha negra que se esparce |
-| 💧 | Partículas al caminar (polvo) | ⬜ | Pequeños cuadrados detrás de los pies |
-| 💧 | Transición entre waves (corte / viñeta) | ⬜ | Estilo cómic / fanzine |
+| 💧 | Efecto de sangre / tinta al golpear | ✅ | spawnInkSplat: 5 círculos negros semi-transparentes |
+| 💧 | Partículas al caminar (polvo) | ✅ | spawnWalkDust: rects INK que se alejan al caminar |
+| 💧 | Transición entre waves (flash) | ✅ | Flash de tinta + fade antes del texto de wave |
 | 🌱 | Viñetas de diálogo / cómic | ⬜ | Historia entre waves |
 | 🌱 | Animación de victoria / derrota | ⬜ | Pose final del personaje |
 | 🌱 | Efecto de fotocopia más marcado | ⬜ | Más ruido, líneas de scan |
@@ -89,8 +89,8 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| ⚡ | Pantalla de título más vistosa | ⬜ | Animación, título más grande |
-| ⚡ | Pausa (ESC / P) | ⬜ | Freeze + overlay |
+| ⚡ | Pantalla de título más vistosa | ✅ | Título con drift animado, líneas pulsantes, decoración |
+| ⚡ | Pausa (ESC / P) | ✅ | ESC toggle, overlay oscuro + PAUSED + continuar |
 | 💧 | Pantalla de controles | ⬜ | Antes del juego o en pausa |
 | 💧 | Character select (Punkette / Antagonic vs random) | ⬜ | Elegir personaje antes de empezar |
 | 🌱 | High score / records | ⬜ | localStorage |
@@ -115,10 +115,10 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| 🔥 | Limpiar listeners al cambiar de scene | ⬜ | Los `onKeyPress` quedan colgados? |
-| ⚡ | Resetear estado del juego al hacer retry | ⬜ | Que no queden enemigos vivos |
+| 🔥 | Limpiar listeners al cambiar de scene | ✅ | events.clear() al entrar a game scene |
+| ⚡ | Resetear estado del juego al hacer retry | ✅ | Kaplay scene() crea estado fresco |
 | 💧 | FPS drop con muchos enemigos | ⬜ | Optimizar partículas |
-| 💧 | Colisiones entre enemigos | ⬜ | Que no se stackeen |
+| 💧 | Colisiones entre enemigos | ✅ | Anti-stacking: se repelen si distancia < 40px |
 | 🌱 | Responsive / escalado mobile | ⬜ | Touch + viewport |
 | 🌱 | Prevenir que P1 y P2 se empujen | ⬜ | O habilitar friendly fire toggle |
 
