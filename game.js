@@ -161,7 +161,7 @@ function createCharacter(x, y, type, tag) {
 
   const char = add([
     pos(x, y),
-    area({ shape: new Rect(vec2(-14 * F, -24 * F), 28 * F, 48 * F) }),
+    area({ width: 28 * F, height: 48 * F }),
     anchor("center"),
     "char",
     tag,
