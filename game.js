@@ -164,6 +164,7 @@ function createCharacter(x, y, type, tag) {
     rect(28 * F, 48 * F),
     area(),
     anchor("center"),
+    scale(1),
     "char",
     tag,
     {
@@ -876,11 +877,6 @@ scene("game", () => {
         setIdlePose(char, state.time);
       }
 
-      // Flip body parts based on facing
-      for (const p of char.parts) {
-        p.obj.pos.x = Math.abs(p.x0 - 0) * char.facing + (p.x0 < 0 ? -1 : 1 > 0 ? 1 : 1) * 0;
-        // Actually simpler: just mirror the whole thing visually
-      }
       char.scale.x = char.facing > 0 ? 1 : -1;
     });
 
