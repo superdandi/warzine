@@ -1647,7 +1647,7 @@ scene("game", (p1Type, p2Type) => {
       ]);
       joinOverlay.push(label);
       const charNames = joinAvail.map((c) => CHAR_NAMES[c]);
-      const charsText = charNames.map((n, i) => i === joinChoice ? "[" + n + "]" : n).join("  ");
+      const charsText = charNames.map((n, i) => i === joinChoice ? ">" + n : " " + n).join("  ");
       const chars = add([
         text(charsText, { size: 10, font: "sans-serif" }),
         pos(W / 2 - 40, baseY + 6), anchor("left"), color(WHITE), fixed(), z(96),
