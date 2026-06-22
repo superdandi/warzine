@@ -360,6 +360,7 @@ function createCharacter(x, y, type, tag) {
       attackTimer: 0,
       comboTimer: 0,
       comboCount: 0,
+      lastComboMilestone: 0,
       hitTimer: 0,
       dead: false,
       invincible: 0,
@@ -892,6 +893,7 @@ function spawnHitbox(owner, offsetX, offsetY, w, h, damage, knockback, duration)
       setHitPose(player);
       screenShake(4, 0.12);
       if (curState) curState.hitPause = 0.04;
+      spawnDamagePopup(player.pos.x, player.pos.y - 15, damage, dir);
       wait(0.02, () => {
         if (!player.dead) player.pos.x += -dir * knockback;
       });
@@ -935,6 +937,7 @@ function hitEnemy(enemy, damage, knockback, dir) {
   // Hit spark effect
   spawnHitEffect(enemy.pos.x, enemy.pos.y - 10);
   spawnInkSplat(enemy.pos.x, enemy.pos.y - 10);
+  spawnDamagePopup(enemy.pos.x, enemy.pos.y - 15, damage, dir);
 
   if (enemy.hp <= 0) {
     enemy.dead = true;
@@ -1001,6 +1004,34 @@ function spawnWalkDust(x, y, dir) {
     anchor("center"),
     z(15),
   ]);
+}
+
+function spawnDamagePopup(x, y, damage, dir) {
+  const pop = add([
+    text(damage.toString(), { size: 14, font: "sans-serif" }),
+    pos(x + rand(-8, 8), y - 10),
+    anchor("center"),
+    color(INK),
+    z(20),
+    opacity(1),
+    move(vec2(dir * rand(30, 60), -rand(60, 100))),
+    lifespan(0.6),
+  ]);
+  tween(1, 0, 0.5, (v) => pop.opacity = v);
+}
+
+function spawnBurstText(text) {
+  const b = add([
+    text(text, { size: 28, font: "sans-serif" }),
+    pos(W / 2, H / 2 - 40),
+    anchor("center"),
+    color(INK),
+    z(30),
+    opacity(1),
+    scale(0.5),
+  ]);
+  tween(0.5, 1.3, 0.5, (v) => b.scale = vec2(v, v), _ => destroy(b));
+  tween(1, 0, 0.6, (v) => b.opacity = v);
 }
 
 // ============================================================
@@ -1516,6 +1547,17 @@ scene("game", (p1Type, p2Type) => {
       char.comboCount++;
       char.comboTimer = 0.25;
 
+      // Milestone burst
+      const milestones = [3, 5, 8, 10, 15, 20, 30, 50];
+      const lastM = char.lastComboMilestone || 0;
+      for (const m of milestones) {
+        if (char.comboCount >= m && lastM < m) {
+          char.lastComboMilestone = m;
+          spawnBurstText(m + " HITS!");
+          break;
+        }
+      }
+
       const dmg = char.comboCount >= 3 ? 28 : 12;
       setPunchPose(char);
 
@@ -1581,11 +1623,33 @@ scene("game", (p1Type, p2Type) => {
         char.comboTimer -= dt();
         if (char.comboTimer <= 0) {
           char.comboCount = 0;
+          char.lastComboMilestone = 0;
         }
       }
       if (char.attackCooldown > 0) char.attackCooldown -= dt();
       if (char.dodgeTimer > 0) char.dodgeTimer -= dt();
       if (char.dodgeCooldown > 0) char.dodgeCooldown -= dt();
+    });
+
+    // Combo counter text
+    const comboText = add([
+      text("", { size: 16, font: "sans-serif" }),
+      pos(0, 0),
+      anchor("center"),
+      color(INK),
+      z(20),
+      opacity(0),
+    ]);
+    char.onUpdate(() => {
+      if (!char.dead && char.comboCount > 1 && char.comboTimer > 0) {
+        comboText.pos = vec2(char.pos.x, char.pos.y - 65);
+        comboText.text = char.comboCount + " HITS";
+        comboText.opacity = Math.min(1, char.comboTimer * 5);
+        const s = 1 + Math.min(char.comboCount - 1, 5) * 0.04;
+        comboText.scale = vec2(s, s);
+      } else {
+        comboText.opacity = 0;
+      }
     });
 
     return char;
