@@ -887,7 +887,7 @@ scene("game", () => {
     char.attackCooldown = 0;
 
     // Punch
-    onKeyPress(c.punch, () => {
+    onKeyPress(controls.punch, () => {
       if (char.dead || state.gameOver || state.victory) return;
       if (char.hitTimer > 0) return;
       if (char.attackCooldown > 0) return;
@@ -916,7 +916,7 @@ scene("game", () => {
     });
 
     // Kick
-    onKeyPress(c.kick, () => {
+    onKeyPress(controls.kick, () => {
       if (char.dead || state.gameOver || state.victory) return;
       if (char.hitTimer > 0) return;
       if (char.attackCooldown > 0) return;
