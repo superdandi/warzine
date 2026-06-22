@@ -1659,6 +1659,18 @@ scene("game", (p1Type, p2Type) => {
       }
     });
 
+    // Death handler
+    char.onUpdate(() => {
+      if (char.hp <= 0 && !char.dead) {
+        char.dead = true;
+        tween(0, 90, 0.3, (v) => {
+          char.angle = v;
+          char.pos.y += 1;
+        });
+        checkGameOver();
+      }
+    });
+
     return char;
   }
 
@@ -2387,20 +2399,6 @@ scene("game", (p1Type, p2Type) => {
       if (state.wave > prev) localStorage.setItem("warzine_high", String(state.wave));
       wait(1, () => go("gameover", state.wave));
     }
-  }
-
-  // Player death handling
-  for (const p of state.players) {
-    p.onUpdate(() => {
-      if (p.hp <= 0 && !p.dead) {
-        p.dead = true;
-        tween(0, 90, 0.3, (v) => {
-          p.angle = v;
-          p.pos.y += 1;
-        });
-        checkGameOver();
-      }
-    });
   }
 
   // ---- PAUSE ----
