@@ -8,13 +8,16 @@ Beat 'em up 2D con estética de tinta negra / fotocopia / fanzine punk. Construi
 
 ## Controles
 
-| Acción      | Player 1  | Player 2  |
-|-------------|-----------|-----------|
-| Movimiento  | WASD      | Flechas   |
-| Golpe       | J         | 1         |
-| Patada      | K         | 2         |
+| Acción       | Player 1  | Player 2  |
+|--------------|-----------|-----------|
+| Movimiento   | WASD      | Flechas   |
+| Golpe (A)    | J         | 1         |
+| Salto (B)    | K         | 2         |
+| Super (A+B)  | J+K       | 1+2       |
 
-**Combo:** J → J → K (3er golpe potenciado, escala el daño por combo).
+**Combo:** J × 3 (3 golpes consecutivos → daño potenciado).
+**Golpe en aire:** J mientras saltás (ataque aéreo).
+**Super:** J+K simultáneo (ataque de área, 2s de reutilización).
 
 ---
 

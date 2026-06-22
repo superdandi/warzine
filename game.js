@@ -19,6 +19,9 @@ const WHITE = rgb(255, 255, 255);
 const RED = rgb(180, 30, 30);
 const GRAY = rgb(160, 150, 140);
 
+const GRAVITY = 800;
+const JUMP_FORCE = -300;
+
 // ============================================================
 // PAPER TEXTURE OVERLAY (efecto fotocopia)
 // ============================================================
@@ -178,6 +181,10 @@ function createCharacter(x, y, type, tag) {
       hitTimer: 0,
       dead: false,
       invincible: 0,
+      isAirborne: false,
+      jumpVy: 0,
+      jumpStartY: y,
+      superCooldown: 0,
       type,
       parts: [],
       bodyW: cfg.bodyW * F,
@@ -844,10 +851,27 @@ scene("game", () => {
     char.onUpdate(() => {
       if (char.dead) return;
       char.pos.x = clamp(char.pos.x, 30, W - 30);
-      char.pos.y = clamp(char.pos.y, H - 180, H - 60);
+      if (!char.isAirborne) {
+        char.pos.y = clamp(char.pos.y, H - 180, H - 60);
+      }
     });
 
-    // Movement
+    // Gravity
+    const gravityHandler = char.onUpdate(() => {
+      if (char.dead || state.gameOver || state.victory) return;
+      if (char.isAirborne) {
+        char.jumpVy += GRAVITY * dt();
+        char.pos.y += char.jumpVy * dt();
+        if (char.pos.y >= char.jumpStartY) {
+          char.pos.y = char.jumpStartY;
+          char.jumpVy = 0;
+          char.isAirborne = false;
+        }
+      }
+      if (char.superCooldown > 0) char.superCooldown -= dt();
+    });
+
+    // Movement (8-dir)
     const moveHandler = char.onUpdate(() => {
       if (char.dead || state.gameOver || state.victory) return;
       const c = controls;
@@ -855,8 +879,10 @@ scene("game", () => {
         dy = 0;
       if (isKeyDown(c.left)) dx -= 1;
       if (isKeyDown(c.right)) dx += 1;
-      if (isKeyDown(c.up)) dy -= 1;
-      if (isKeyDown(c.down)) dy += 1;
+      if (!char.isAirborne) {
+        if (isKeyDown(c.up)) dy -= 1;
+        if (isKeyDown(c.down)) dy += 1;
+      }
 
       if (char.hitTimer > 0) {
         char.hitTimer -= dt();
@@ -884,12 +910,42 @@ scene("game", () => {
     // Attack cooldown
     char.attackCooldown = 0;
 
-    // Punch
+    // Punch / Super / Air attack
     onKeyPress(controls.punch, () => {
       if (char.dead || state.gameOver || state.victory) return;
       if (char.hitTimer > 0) return;
       if (char.attackCooldown > 0) return;
 
+      // Super attack (A+B)
+      if (isKeyDown(controls.jump) && char.superCooldown <= 0) {
+        char.superCooldown = 2;
+        char.attackCooldown = 0.5;
+        screenShake(8, 0.2);
+        spawnHitbox(char, 0, -10, 50, 40, 30, 250, 0.15);
+        spawnHitbox(char, -20, -5, 20, 30, 20, 150, 0.12);
+        spawnHitbox(char, 20, -5, 20, 30, 20, 150, 0.12);
+        setPunchPose(char);
+        tween(0, 1, 0.1, () => {}, () => {
+          if (!char.dead) resetPose(char);
+        });
+        spawnHitEffect(char.pos.x, char.pos.y - 10);
+        spawnHitEffect(char.pos.x - 15, char.pos.y);
+        spawnHitEffect(char.pos.x + 15, char.pos.y);
+        return;
+      }
+
+      // Air attack
+      if (char.isAirborne) {
+        char.attackCooldown = 0.3;
+        setKickPose(char);
+        spawnHitbox(char, 10, 10, 16, 16, 15, 120, 0.08);
+        tween(0, 1, 0.06, () => {}, () => {
+          if (!char.dead) resetPose(char);
+        });
+        return;
+      }
+
+      // Normal punch (ground combo)
       char.attackCooldown = 0.3;
       char.comboCount++;
       char.comboTimer = 0.4;
@@ -913,22 +969,15 @@ scene("game", () => {
       });
     });
 
-    // Kick
-    onKeyPress(controls.kick, () => {
+    // Jump
+    onKeyPress(controls.jump, () => {
       if (char.dead || state.gameOver || state.victory) return;
       if (char.hitTimer > 0) return;
-      if (char.attackCooldown > 0) return;
+      if (char.isAirborne) return;
 
-      char.attackCooldown = 0.4;
-      char.comboCount = 0;
-      setKickPose(char);
-
-      const dmg = 18;
-      spawnHitbox(char, 10, 10, 14, 20, dmg, 150, 0.1);
-
-      tween(0, 1, 0.08, () => {}, () => {
-        if (!char.dead) resetPose(char);
-      });
+      char.isAirborne = true;
+      char.jumpVy = JUMP_FORCE;
+      char.jumpStartY = char.pos.y;
     });
 
     // Combo timer
@@ -950,14 +999,14 @@ scene("game", () => {
   // Create players
   const p1 = createPlayer("punkette", 150, H - 100, {
     left: "a", right: "d", up: "w", down: "s",
-    punch: "j", kick: "k",
+    punch: "j", jump: "k",
   }, "player");
 
   p1.playerId = 1;
 
   const p2 = createPlayer("antagonic", 250, H - 100, {
     left: "left", right: "right", up: "up", down: "down",
-    punch: "1", kick: "2",
+    punch: "1", jump: "2",
   }, "player");
   p2.playerId = 2;
 
