@@ -161,7 +161,8 @@ function createCharacter(x, y, type, tag) {
 
   const char = add([
     pos(x, y),
-    area({ width: 28 * F, height: 48 * F }),
+    rect(28 * F, 48 * F),
+    area(),
     anchor("center"),
     "char",
     tag,
@@ -850,10 +851,10 @@ scene("game", () => {
       const c = controls;
       let dx = 0,
         dy = 0;
-      if (keyIsDown(c.left)) dx -= 1;
-      if (keyIsDown(c.right)) dx += 1;
-      if (keyIsDown(c.up)) dy -= 1;
-      if (keyIsDown(c.down)) dy += 1;
+      if (isKeyDown(c.left)) dx -= 1;
+      if (isKeyDown(c.right)) dx += 1;
+      if (isKeyDown(c.up)) dy -= 1;
+      if (isKeyDown(c.down)) dy += 1;
 
       if (char.hitTimer > 0) {
         char.hitTimer -= dt();
