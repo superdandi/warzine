@@ -885,19 +885,24 @@ function spawnHitbox(owner, offsetX, offsetY, w, h, damage, knockback, duration)
         hitEnemy(boss, damage, knockback, dir, owner);
       });
   } else {
-    hb.onCollide("player", (player) => {
-      if (player === owner) return;
-      if (player.invincible > 0 || player.dead) return;
-      player.hp -= damage;
-      player.invincible = 0.3;
-      player.hitTimer = 0.15;
-      setHitPose(player);
-      screenShake(4, 0.12);
-      if (curState) curState.hitPause = 0.04;
-      spawnDamagePopup(player.pos.x, player.pos.y - 15, damage, dir);
-      wait(0.02, () => {
-        if (!player.dead) player.pos.x += -dir * knockback;
-      });
+    hb.onUpdate(() => {
+      if (!curState) return;
+      for (const player of curState.players) {
+        if (player.dead || player === owner || player.invincible > 0) continue;
+        if (hb.isColliding(player)) {
+          player.hp -= damage;
+          player.invincible = 0.3;
+          player.hitTimer = 0.15;
+          setHitPose(player);
+          screenShake(4, 0.12);
+          curState.hitPause = 0.04;
+          spawnDamagePopup(player.pos.x, player.pos.y - 15, damage, dir);
+          wait(0.02, () => {
+            if (!player.dead) player.pos.x += -dir * knockback;
+          });
+          break;
+        }
+      }
     });
   }
 
