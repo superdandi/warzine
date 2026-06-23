@@ -2235,7 +2235,9 @@ scene("game", (p1Type, p2Type) => {
       char.jumpVy = JUMP_FORCE;
       char.jumpStartY = char.pos.y;
       sfxJump();
-    });
+    };
+    onKeyPress(controls.jump, jumpFn);
+    touchPressCallbacks[controls.jump] = jumpFn;
 
     // Dodge / roll
     onKeyPress(controls.dodge, () => {
