@@ -1220,7 +1220,7 @@ const CHAR_NAMES = { punkette: "PUNKETTE", antagonic: "ANTAGONIC", xero: "X-ERO"
 
 scene("select", (opts) => {
   if (!opts) opts = {};
-  const p1Active = opts.p1 !== false;
+  let p1Active = opts.p1 !== false;
   let p2Active = opts.p2 === true;
 
   add([sprite("paperTex"), opacity(0.15), z(100), fixed()]);
