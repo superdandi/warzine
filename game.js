@@ -675,6 +675,37 @@ function createCharacter(x, y, type, tag) {
 
   const cfg = CHAR_CONFIG[type];
 
+  // Sprite characters — no white rect, collision via explicit area
+  const spriteCfg = CHAR_SPRITES[type];
+  if (spriteCfg) {
+    const scaleFactor = (48 * F) / spriteCfg.h * 1.5;
+    const char = add([
+      pos(x, y),
+      area({ shape: new Rect(vec2(-14 * F, -24 * F), 28 * F, 48 * F) }),
+      anchor("center"),
+      scale(1),
+      z(10),
+      "char",
+      tag,
+      {
+        hp: cfg.hp, maxHp: cfg.hp, speed: cfg.speed,
+        facing: 1, attackTimer: 0, comboTimer: 0,
+        comboCount: 0, lastComboMilestone: 0, kills: 0,
+        downed: false, reviveTimer: 0, hitTimer: 0,
+        dead: false, invincible: 0, isAirborne: false,
+        jumpVy: 0, jumpStartY: y, superCooldown: 0,
+        type, parts: [],
+        bodyW: cfg.bodyW * F, bodyH: cfg.bodyH * F,
+        headW: cfg.headW * F, headH: cfg.headH * F,
+        armW: cfg.armW * F, armH: cfg.armH * F,
+        legW: cfg.legW * F, legH: cfg.legH * F,
+        useSprite: true,
+      },
+    ]);
+    char.add([sprite(spriteCfg.name), pos(0, 0), anchor("center"), scale(scaleFactor)]);
+    return char;
+  }
+
   const char = add([
     pos(x, y),
     rect(28 * F, 48 * F),
@@ -715,15 +746,6 @@ function createCharacter(x, y, type, tag) {
       legH: cfg.legH * F,
     },
   ]);
-
-  // Sprite characters (player selectable types) skip procedural drawing
-  const spriteCfg = CHAR_SPRITES[type];
-  if (spriteCfg) {
-    const scaleFactor = (48 * F) / spriteCfg.h;
-    char.add([sprite(spriteCfg.name), pos(0, 0), anchor("center"), scale(scaleFactor)]);
-    char.useSprite = true;
-    return char;
-  }
 
   const bw = char.bodyW, bh = char.bodyH;
   const hw = char.headW, hh = char.headH;
