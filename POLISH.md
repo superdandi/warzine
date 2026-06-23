@@ -78,14 +78,16 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| 🔥 | SFX de golpe (punch/kick) | ⬜ | Sample corto, crunch fanzine |
-| 🔥 | SFX de recibir golpe | ⬜ | "Oof" o impacto |
-| 🔥 | SFX de salto | ⬜ | "Whoosh" corto |
-| ⚡ | SFX de super attack | ⬜ | Más potente, con eco |
-| ⚡ | Música de fondo (loop) | ⬜ | Punk instrumental, 8-bit o grabado |
-| 💧 | SFX de "WAVE N" | ⬜ | Anuncio con reverb |
-| 💧 | SFX de boss | ⬜ | Risas, rugido |
-| 💧 | SFX de game over | ⬜ | Derrota, estática |
+| 🔥 | Sistema de sonido procedural (Web Audio API) | ✅ | 15 efectos con osciladores + ruido, música drum & bass loop |
+| 🔥 | SFX de golpe (punch/kick) | ✅ | Noise burst + square wave, corto y seco |
+| 🔥 | SFX de recibir golpe | ✅ | Sawtooth + noise, tono más grave |
+| 🔥 | SFX de salto | ✅ | Ascenso rápido de tono (square wave) |
+| ⚡ | SFX de super attack | ✅ | Bandpass noise + sawtooth sweep, más potente |
+| ⚡ | Música de fondo (loop) | ✅ | Drum & bass: kick, snare, hi-hat, bass 120 BPM |
+| 💧 | SFX de "WAVE N" | ✅ | Beep doble al iniciar wave |
+| 💧 | SFX de boss | ✅ | Rumble grave + noise al aparecer; fanfare al morir |
+| 💧 | SFX de game over | ✅ | Descenso cromático sawtooth |
+| 💧 | SFX de victoria | ✅ | Arpegio ascendente 4 notas (cuadrado) |
 | 🌱 | Banda sonora por nivel | ⬜ | Track diferente por escenario |
 
 ---
@@ -113,7 +115,8 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| ⚡ | Gamepad (mando USB) | ⬜ | API Gamepad de HTML5 |
+| ⚡ | Mute toggle (tecla M) | ✅ | Activa/desactiva todos los sonidos + detiene música |
+| 💧 | SFX menú / navegación | ✅ | Clic cuadrado en título, select y game over |
 | 💧 | Rebind de teclas | ⬜ | Menú de configuración |
 | 🌱 | Controles táctiles (mobile) | ⬜ | Botones virtuales |
 | 🌱 | 3-4 jugadores | ⬜ | Más teclas o más mandos |
@@ -232,3 +235,15 @@
 - [x] Fix: double deploy (Pages API build_type)
 - [x] Fix: textos transición persistentes
 - [x] Fix: jugador horizontal tras revive
+
+---
+
+## ✅ HECHO (v1.5)
+
+- [x] **Sistema de sonido procedural** con Web Audio API (sin archivos externos)
+- [x] 15 efectos: hit, hitPlayer, jump, super, dodge, kill, playerDeath, revive, wave, bossWarning, bossDeath, victory, gameOver, itemPickup, combo, menuSelect
+- [x] **Música de fondo** loop drum & bass (kick, snare, hi-hat, bass) a 120 BPM
+- [x] **Mute toggle** con tecla M, overlay visual "SOUND: ON/OFF"
+- [x] Música se detiene automáticamente en game over, victoria y título
+- [x] SFX en menú: navegación (A/D/←/→), lock (J/1), start (SPACE), volver (ENTER)
+- [x] SFX de combo al hacer milestone (burst text)
