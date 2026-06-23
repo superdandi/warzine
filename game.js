@@ -1535,7 +1535,7 @@ scene("title", () => {
 
   // Version
   add([
-    text("v1.0", { size: 10, font: "sans-serif" }),
+    text("v1.5", { size: 10, font: "sans-serif" }),
     pos(W - 30, H - 15), anchor("center"), color(INK), fixed(), z(10),
   ]);
 

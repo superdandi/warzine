@@ -1,6 +1,6 @@
 # WARZINE
 
-**v1.1** — Beat 'em up 2D con estética de tinta negra / fotocopia / fanzine punk. Construido con [Kaplay 3001](https://kaplayjs.com/).
+**v1.5** — Beat 'em up 2D con estética de tinta negra / fotocopia / fanzine punk. Construido con [Kaplay 3001](https://kaplayjs.com/).
 
 [![Jugar ahora](https://img.shields.io/badge/Jugar-GitHub%20Pages-black?style=for-the-badge)](https://superdandi.github.io/warzine/)
 [![Licencia](https://img.shields.io/badge/Licencia-MIT-white?style=flat)](LICENSE)
@@ -17,6 +17,8 @@
 | Super ataque (A+B)   |     J+K       |     1+2       |
 | Dodge / Roll         |      L        |      3        |
 | Start / Revivir      |      J        |      1        |
+| Mute música/SFX     |      M        |      M        |
+| Dificultad (menú)   |      A/D      |  Flechas izq/der |
 | Pausa                |     ESC       |     ESC       |
 | Controles (en pausa) |      C        |      C        |
 
@@ -37,6 +39,7 @@
 ### Partida
 
 - **1 o 2 jugadores:** P1 presiona J / P2 presiona 1 en la pantalla de título. Cada uno selecciona su personaje independientemente.
+- **Dificultad:** En la pantalla de título, usa A/D (P1) o flechas (P2) para cambiar entre Easy / Normal / Hard. Afecta HP enemigo, daño recibido y cantidad de oleadas.
 - **Mid-game join:** Si un jugador no empezó la partida, puede unirse durante el juego presionando su tecla Start (J para P1, 1 para P2) y eligiendo personaje.
 - **Pausa:** ESC para pausar, C para ver controles.
 
@@ -49,27 +52,29 @@ Cuando un jugador cae a **0 HP** y hay un compañero vivo:
 3. **Vuelve a la acción:** El jugador revivido se reincorpora cerca del centro del escenario.
 4. **Timer expira:** Si nadie revive a tiempo, el jugador muere permanentemente. Puede **reingresar** seleccionando un nuevo personaje a través del sistema de join.
 
-> Si solo hay un jugador, no hay oportunidad de revive — cae directamente con muerte permanente y game over.
+> Incluso con un solo jugador hay oportunidad de revive — caes al suelo con 10s para revivir presionando tu tecla Start. Si el timer expira, el jugador muere permanentemente y puede reingresar.
 
-### Oleadas y enemigos
+### Niveles y oleadas
 
-| Oleada | Enemigos |
-|--------|----------|
-| **WAVE 1** | 3 Grunts + 1 Punk |
-| **WAVE 2** | 2 Grunts + 2 Punks + 1 Tough |
-| **WAVE 3** | 3 Grunts + 3 Punks + 2 Toughs |
-| **Boss**   | Jefe de 250 HP, 2 fases |
+Cada nivel sigue la estructura: **W1 → W2 → Miniboss → W3 → Boss**
 
-**Modo endless:** Después del boss, las oleadas continúan infinitamente con dificultad creciente.
+| Nivel | Escenario | W1 | W2 | Miniboss | W3 | Boss |
+|-------|-----------|:--:|:--:|:--------:|:--:|:----:|
+| **1 — Street** | Ciudad | 2 Grunts | 3 Grunts + 1 Punk | EL BRUTO (250 HP) | 3 Grunts + 2 Punks + 1 Tough | Jefe (250 HP, 2 fases) |
+| **2 — Rooftop** | Azotea | 3 Grunts + 1 Punk | 3 Grunts + 2 Punks | EL BRUTO (300 HP) | 4 Grunts + 3 Punks + 1 Tough | Jefe (300 HP, 2 fases) |
+| **3 — Factory** | Fábrica | 4 Grunts + 1 Tough | 4 Grunts + 2 Punks + 1 Tough | EL BRUTO (350 HP) | 5 Grunts + 3 Punks + 2 Toughs | Jefe (400 HP, 2 fases) |
+
+3 niveles con dificultad creciente. Al derrotar al jefe del nivel 3, **victoria** — pantalla final estilo terminal cyberpunk.
 
 #### Tipos de enemigos
 
-| Tipo   | HP  | Velocidad | Daño | Notas |
-|--------|:---:|:---------:|:----:|-------|
-| Grunt  | 30  | 150       | 8    | Básico, rápido |
-| Punk   | 55  | 170       | 10   | Mohawk, agresivo |
-| Tough  | 90  | 130       | 18   | Alto HP, lento, pegada fuerte |
-| Boss   | 250 | 100       | 12-18| 2 fases, 3 patrones de ataque |
+| Tipo     | HP  | Velocidad | Daño | Notas |
+|----------|:---:|:---------:|:----:|-------|
+| Grunt    | 30  | 150       | 8    | Básico, rápido |
+| Punk     | 55  | 170       | 10   | Mohawk, agresivo |
+| Tough    | 90  | 130       | 18   | Alto HP, lento, pegada fuerte |
+| EL BRUTO | 250 | 120       | 15   | Miniboss: 2 patrones, enrage a 30% HP |
+| Boss     | 250 | 100       | 12-18| 2 fases, 4 patrones de ataque |
 
 ### Personajes
 
@@ -86,7 +91,8 @@ Cuando un jugador cae a **0 HP** y hay un compañero vivo:
 | Barra de vida P1 | Izquierda superior | HP del jugador 1 + nombre |
 | Barra de vida P2 | Derecha superior | HP del jugador 2 + nombre |
 | Contador KILLS  | Bajo cada barra | Enemigos eliminados por ese jugador |
-| Wave / Boss     | Centro superior | "WAVE 1" o "BOSS FIGHT" |
+| Dificultad      | Bajo contador KILLS | "EASY" / "NORMAL" / "HARD" |
+| Wave / Boss     | Centro superior | "WAVE N", "MINIBOSS" o "BOSS FIGHT" |
 | Barra de boss   | Centro (bajo HUD) | HP del boss + indicador de fase |
 | Revive prompt   | En la barra de vida | "PRESS J - 8" con cuenta regresiva |
 | Join prompt     | En la barra de vida | "P1: J TO JOIN" (parpadeante) |
@@ -111,20 +117,22 @@ Cuando un jugador cae a **0 HP** y hay un compañero vivo:
 | Componente | Detalle |
 |------------|---------|
 | Motor de juego | [Kaplay](https://kaplayjs.com/) 3001.0.19 (CDN) |
-| Lenguaje | JavaScript (1 archivo, ~2600 líneas) |
+| Lenguaje | JavaScript (1 archivo, ~3400 líneas) |
 | Sprites | Generados proceduralmente con `rect()` + `outline()` |
-| Fondos | Canvas API, parallax de 3 capas (calle / azotea) |
+| Fondos | Canvas API, parallax de 3 capas (calle / azotea / fábrica) |
+| Audio | Web Audio API (15 SFX procedurales + música drum & bass) |
 | Texturas | Ruido procedural + papel fotocopia |
 | Despliegue | GitHub Pages (auto-deploy con workflow custom) |
 | Dependencias | 0 externas |
 
 ### Controles técnicos
 
-- **Scenas:** title → select → game → gameover
+- **Scenas:** title → select → game → gameover / victory
 - **Tags Kaplay:** `char`, `player`, `enemy`, `boss`, `playerHitbox`, `enemyHitbox`
 - **Colisiones:** `area()` + chequeo manual en hitboxes enemigas (evita bugs con mid-game join)
 - **High score:** `localStorage` ("warzine_high"), mejor wave alcanzada
 - **Event bus:** Sistema de eventos interno para comunicación entre subsistemas
+- **Dificultad:** Global `gameDifficulty` (0-2), multiplicadores de HP/daño/cantidad de enemigos
 
 ### Desarrollo local
 
@@ -139,6 +147,18 @@ python3 -m http.server 8080
 ---
 
 ## Changelog
+
+### v1.5 — Sonido, dificultad, viñetas, 3 niveles con victoria
+
+- **Sound system:** 15 SFX procedurales vía Web Audio API (hit, jump, super, dodge, kill, etc.) + música drum & bass loop (120 BPM) + mute con tecla M
+- **Dificultad selector:** Easy / Normal / Hard en pantalla de título (A/D o flechas), multiplicadores de HP, daño y oleadas
+- **Story vignettes:** Paneles estilo cómic entre niveles con texto animado línea por línea, fondo de papel, splatters de tinta
+- **3 niveles con victoria:** Street → Rooftop → Factory, cada nivel con W1→W2→Miniboss→W3→Boss. Al derrotar el jefe final, pantalla de victoria cyberpunk
+- **Miniboss "EL BRUTO":** Aparece después de W2 en cada nivel, 2 patrones de ataque, enrage a 30% HP
+- **Factory background:** Fondo industrial con siluetas de chimeneas, cintas transportadoras, barrotes, franjas de advertencia
+- **Revive universal:** Ahora también funciona en partidas de 1 jugador (timer de 10s, revive con 50% HP)
+- **Pantalla de victoria:** Estilo terminal, "SYSTEM.PURGE: COMPLETE", mensaje final, [SPACE] rejugar / [ENTER] título
+- **Múltiples bugs fix:** transiciones persistentes, fondo traspasando entre niveles, rotación post-revive, game over falso durante viñetas
 
 ### v1.1 — Revive + continuación + kill counter
 
