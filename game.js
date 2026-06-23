@@ -2142,7 +2142,7 @@ scene("game", (p1Type, p2Type) => {
     ]);
 
     wait(1.5, () => {
-      const mb = createCharacter(W / 2, H - 100, "tough", "miniboss");
+      const mb = createCharacter(W / 2, H - 100, "tough", "enemy");
       state.miniBoss = mb;
       state.enemies.push(mb);
 
