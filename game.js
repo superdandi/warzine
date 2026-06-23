@@ -1666,24 +1666,14 @@ scene("game", (p1Type, p2Type) => {
     char.onUpdate(() => {
       if (char.dead) return;
       if (char.hp <= 0 && !char.downed) {
-        // Check if any teammate is alive and can fight
-        const teammateAlive = state.players.some((p) => p !== char && !p.dead && !p.downed);
-        if (teammateAlive) {
-          char.downed = true;
-          char.reviveTimer = 10;
-          char.invincible = 999;
-          tween(0, 90, 0.3, (v) => {
-            char.angle = v;
-            char.pos.y += 1;
-          });
-        } else {
-          char.dead = true;
-          tween(0, 90, 0.3, (v) => {
-            char.angle = v;
-            char.pos.y += 1;
-          });
-          checkGameOver();
-        }
+        char.downed = true;
+        char.reviveTimer = 10;
+        char.invincible = 999;
+        tween(0, 90, 0.3, (v) => {
+          char.angle = v;
+          char.pos.y += 1;
+        });
+        spawnInkSplat(char.pos.x, char.pos.y - 10);
       }
       if (char.downed) {
         char.reviveTimer -= dt();
@@ -1707,12 +1697,30 @@ scene("game", (p1Type, p2Type) => {
       char.hp = Math.floor(char.maxHp * 0.5);
       char.invincible = 1.5;
       char.reviveTimer = 0;
-      char.angle = 0;
-      // Reset position near center, slightly offset
       char.pos.x = char.facing > 0 ? W / 2 - 40 : W / 2 + 40;
       char.pos.y = H - 100;
-      // Brief get-up visual
-      screenShake(3, 0.15);
+      screenShake(5, 0.25);
+      // Get-up animation: rotate back upright
+      tween(90, 0, 0.25, (v) => {
+        if (char.dead) return;
+        char.angle = v;
+        char.pos.y -= 1;
+      });
+      // Ink burst on revive
+      for (let i = 0; i < 8; i++) {
+        const a = rand(0, Math.PI * 2);
+        const sp = rand(80, 160);
+        add([
+          circle(rand(2, 5)),
+          color(INK),
+          pos(char.pos.x, char.pos.y),
+          opacity(0.7),
+          move(vec2(Math.cos(a), Math.sin(a)).scale(sp)),
+          lifespan(rand(0.3, 0.6)),
+          anchor("center"),
+          z(20),
+        ]);
+      }
     });
 
     return char;
