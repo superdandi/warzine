@@ -1237,6 +1237,10 @@ function spawnHitbox(owner, offsetX, offsetY, w, h, damage, knockback, duration)
 }
 
 function hitEnemy(enemy, damage, knockback, dir, attacker) {
+  // Player damage multiplier
+  if (attacker && attacker.kills !== undefined && curState && curState.diffMul) {
+    damage = Math.round(damage * curState.diffMul.playerDmg);
+  }
   enemy.hp -= damage;
   enemy.invincible = 0.3;
   enemy.hitTimer = 0.15;
@@ -1515,6 +1519,16 @@ scene("title", () => {
     z(10),
   ]);
 
+  // Difficulty selector
+  const diffText = add([
+    text("< DIFFICULTY: NORMAL >", { size: 14, font: "sans-serif" }),
+    pos(W / 2, H * 0.84),
+    anchor("center"),
+    color(INK),
+    fixed(),
+    z(10),
+  ]);
+
   // Decorative lines
   add([rect(180, 3), color(INK), pos(W / 2 - 90, H * 0.73), fixed(), z(10)]);
   add([rect(140, 2), color(INK), pos(W / 2 - 70, H * 0.85), fixed(), z(10)]);
@@ -1535,7 +1549,13 @@ scene("title", () => {
     ctrlText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
     title.pos.x = W / 2 + Math.sin(titleTime * 0.5) * 3;
     title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
+    diffText.text = "< DIFFICULTY: " + DIFFICULTIES[gameDifficulty] + " >";
+    diffText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
   });
+
+  // Difficulty change
+  onKeyPress("a", () => { gameDifficulty = (gameDifficulty - 1 + 3) % 3; sfxMenuSelect(); });
+  onKeyPress("d", () => { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); });
 
   onKeyPress("j", () => { sfxMenuSelect(); if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: p2Ready }); } });
   onKeyPress("1", () => { sfxMenuSelect(); if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
@@ -1547,6 +1567,35 @@ scene("title", () => {
 
 const CHAR_OPTIONS = ["punkette", "antagonic", "xero"];
 const CHAR_NAMES = { punkette: "PUNKETTE", antagonic: "ANTAGONIC", xero: "X-ERO" };
+
+const DIFFICULTIES = ["EASY", "NORMAL", "HARD"];
+let gameDifficulty = 1; // 0=easy, 1=normal, 2=hard
+
+const VIGNETTES = [
+  [
+    "THE CITY IS A CANCER.",
+    "THE STREETS BELONG TO NO ONE.",
+    "BUT TONIGHT, TWO FIGHTERS",
+    "WILL WRITE THEIR OWN LAW.",
+    "",
+    "NO MERCY. NO SURRENDER.",
+    "JUST BLOOD AND INK.",
+  ],
+  [
+    "THE GROUND IS NOT ENOUGH.",
+    "THE ROOFTOPS CALL.",
+    "UP THERE, THE RULES CHANGE.",
+    "GRAVITY IS THE ONLY JUDGE.",
+  ],
+  [
+    "THE FACTORY BREATHES FIRE.",
+    "SMOKE AND STEEL.",
+    "IN THE BELLY OF THE BEAST,",
+    "THE FINAL BATTLE AWAITS.",
+    "",
+    "NO TURNING BACK NOW.",
+  ],
+];
 
 scene("select", (opts) => {
   if (!opts) opts = {};
@@ -1760,6 +1809,92 @@ scene("game", (p1Type, p2Type) => {
     time: 0,
   };
   curState = state;
+
+  // ---- DIFFICULTY MULTIPLIERS ----
+  state.diffMul = (() => {
+    if (gameDifficulty === 0) return { enemyHp: 0.7, enemyDmg: 0.7, playerDmg: 1.3, waveCount: 0.75, label: "EASY" };
+    if (gameDifficulty === 2) return { enemyHp: 1.5, enemyDmg: 1.5, playerDmg: 0.8, waveCount: 1.25, label: "HARD" };
+    return { enemyHp: 1, enemyDmg: 1, playerDmg: 1, waveCount: 1, label: "NORMAL" };
+  })();
+  const diffMul = state.diffMul;
+
+  // ---- VIGNETTE SYSTEM ----
+  let vignetteActive = false;
+  let vignetteCallback = null;
+
+  function showVignette(lines, onComplete) {
+    vignetteActive = true;
+    vignetteCallback = onComplete;
+    const overlay = add([fixed(), z(200)]);
+    overlay.add([rect(W, H), color(PAPER), opacity(1)]);
+    // Comic border
+    overlay.add([rect(W - 20, H - 20), outline(4, INK), pos(10, 10), color(PAPER)]);
+    // Inner border
+    overlay.add([rect(W - 34, H - 34), outline(2, INK), pos(17, 17), color(PAPER)]);
+    // Decorative corners
+    for (const [cx, cy] of [[17, 17], [W - 17, 17], [17, H - 17], [W - 17, H - 17]]) {
+      overlay.add([rect(10, 10), color(INK), pos(cx - 5, cy - 5)]);
+    }
+
+    // Ink splatters
+    for (let i = 0; i < 3; i++) {
+      const sx = rand(40, W - 40);
+      const sy = rand(40, H - 40);
+      for (let j = 0; j < 4; j++) {
+        overlay.add([circle(rand(2, 6)), color(INK), pos(sx + rand(-15, 15), sy + rand(-15, 15)), opacity(rand(0.1, 0.3))]);
+      }
+    }
+
+    // Story title
+    overlay.add([
+      text("WARZINE", { size: 14, font: "sans-serif" }),
+      pos(W / 2, 50), anchor("center"), color(INK), opacity(0.4), z(201),
+    ]);
+
+    // Horizontal dividers
+    overlay.add([rect(W - 80, 1), color(INK), pos(40, 68), opacity(0.5)]);
+    overlay.add([rect(W - 80, 1), color(INK), pos(40, H - 90), opacity(0.5)]);
+
+    // Text lines
+    const startY = H / 2 - (lines.length * 14) / 2;
+    const textObjs = [];
+    lines.forEach((line, i) => {
+      const t = overlay.add([
+        text(line, { size: line === "" ? 8 : 14, font: "sans-serif" }),
+        pos(W / 2, startY + i * 18),
+        anchor("center"), color(INK), z(201), opacity(0),
+      ]);
+      textObjs.push(t);
+    });
+
+    // Animate text appearing
+    textObjs.forEach((t, i) => {
+      wait(0.15 + i * 0.12, () => { if (t.exists()) t.opacity = 1; });
+    });
+
+    // Continue prompt
+    const prompt = overlay.add([
+      text("[ SPACE / ENTER ]", { size: 12, font: "sans-serif" }),
+      pos(W / 2, H - 55),
+      anchor("center"), color(INK), z(201), opacity(0),
+    ]);
+    let promptBlink = 0;
+
+    const updateFn = onUpdate(() => {
+      promptBlink += dt();
+      prompt.opacity = promptBlink % 1 < 0.6 ? 0.7 : 0.2;
+    });
+
+    const onDone = () => {
+      updateFn.cancel();
+      destroy(overlay);
+      vignetteActive = false;
+      if (vignetteCallback) vignetteCallback();
+    };
+
+    onKeyPress("space", () => { if (vignetteActive) { sfxMenuSelect(); onDone(); } });
+    onKeyPress("enter", () => { if (vignetteActive) { sfxMenuSelect(); onDone(); } });
+  }
 
   // ---- BACKGROUND (parallax layers) ----
   state.bgType = "street";
@@ -2178,12 +2313,14 @@ scene("game", (p1Type, p2Type) => {
   // ---- ENEMY SYSTEM ----
   function spawnEnemy(type, x, y) {
     const enemy = createCharacter(x, y, type, "enemy");
+    enemy.hp = Math.round(enemy.hp * diffMul.enemyHp);
+    enemy.maxHp = enemy.hp;
     state.enemies.push(enemy);
     state.enemiesThisWave++;
 
     enemy.attackCooldown = rand(0.5, 1.5);
     enemy.attackRange = type === "tough" ? 35 : 28;
-    enemy.damage = type === "tough" ? 18 : type === "punk" ? 10 : 8;
+    enemy.damage = Math.round((type === "tough" ? 18 : type === "punk" ? 10 : 8) * diffMul.enemyDmg);
     enemy.speed = type === "tough" ? 130 : type === "punk" ? 170 : 150;
     enemy.aiState = "chase";
     enemy.aiTimer = 0;
@@ -2317,7 +2454,6 @@ scene("game", (p1Type, p2Type) => {
     state.waveActive = true;
     state.enemiesKilled = 0;
     state.enemiesThisWave = 0;
-    state.enemiesInWave = config.enemies.reduce((a, e) => a + e.count, 0);
     sfxWave();
 
     // Wave transition flash
@@ -2351,10 +2487,12 @@ scene("game", (p1Type, p2Type) => {
 
     const spawnList = [];
     for (const e of config.enemies) {
-      for (let i = 0; i < e.count; i++) {
+      const scaled = Math.max(1, Math.round(e.count * diffMul.waveCount));
+      for (let i = 0; i < scaled; i++) {
         spawnList.push(e.type);
       }
     }
+    state.enemiesInWave = spawnList.length;
 
     spawnList.forEach((type, i) => {
       wait(0.3 + i * 0.9, () => {
@@ -2379,30 +2517,19 @@ scene("game", (p1Type, p2Type) => {
   // Advance to next level (bg swap, text, then start first wave)
   function startNextLevel() {
     state.currentLevel++;
+    const lvl = state.currentLevel;
     state.miniBossSpawned = false;
     state.miniBossDefeated = false;
     state.bossSpawned = false;
     state.bossDefeated = false;
     state.boss = null;
-    const level = LEVELS[state.currentLevel];
-    state.waveConfigIdx = level.preMidStart;
 
-    switchBg(level.bgType);
-
-    const l1 = add([
-      text("NIVEL " + (state.currentLevel + 1), { size: 32, font: "sans-serif" }),
-      pos(W / 2, H / 2 - 30),
-      anchor("center"), color(INK), z(60), fixed(),
-    ]);
-    const l2 = add([
-      text(level.bgLabel, { size: 14, font: "sans-serif" }),
-      pos(W / 2, H / 2 + 15),
-      anchor("center"), color(INK), z(60), fixed(),
-    ]);
-    wait(3.0, () => {
-      destroy(l1);
-      destroy(l2);
+    const vignetteIdx = lvl; // VIGNETTES[1] for level 1→2, VIGNETTES[2] for level 2→3
+    showVignette(VIGNETTES[vignetteIdx], () => {
       if (state.gameOver) return;
+      const level = LEVELS[lvl];
+      state.waveConfigIdx = level.preMidStart;
+      switchBg(level.bgType);
       startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
     });
   }
@@ -2466,12 +2593,12 @@ scene("game", (p1Type, p2Type) => {
       state.miniBoss = mb;
       state.enemies.push(mb);
 
-      mb.hp = 250;
-      mb.maxHp = 250;
+      mb.hp = Math.round(250 * diffMul.enemyHp);
+      mb.maxHp = mb.hp;
       mb.speed = 140;
       mb.attackCooldown = rand(1.5, 2.5);
       mb.attackRange = 45;
-      mb.damage = 15;
+      mb.damage = Math.round(15 * diffMul.enemyDmg);
       mb.aiState = "chase";
       mb.scale = vec2(1.25, 1.25);
       mb.facing = -1;
@@ -2631,7 +2758,7 @@ scene("game", (p1Type, p2Type) => {
 
       boss.attackCooldown = rand(1.0, 2.0);
       boss.attackRange = 50;
-      boss.damage = 20;
+      boss.damage = Math.round(20 * diffMul.enemyDmg);
       boss.aiState = "chase";
       boss.facing = -1;
       boss.scale.x = -1;
@@ -2859,6 +2986,16 @@ scene("game", (p1Type, p2Type) => {
       pos(W / 2, 8),
       anchor("center"),
       fixed(),
+    ]);
+
+    // Difficulty indicator
+    const diffLabel = hud.add([
+      text(diffMul.label, { size: 9, font: "sans-serif" }),
+      color(WHITE),
+      pos(W / 2, 22),
+      anchor("center"),
+      fixed(),
+      opacity(0.5),
     ]);
 
     // Boss health bar (hidden until boss spawns)
@@ -3101,8 +3238,10 @@ scene("game", (p1Type, p2Type) => {
   state.currentLevel = 0;
   const firstLevel = LEVELS[0];
   state.waveConfigIdx = firstLevel.preMidStart;
-  startMusic();
-  startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
+  showVignette(VIGNETTES[0], () => {
+    startMusic();
+    startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
+  });
 });
 
 // ============================================================

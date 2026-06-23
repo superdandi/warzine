@@ -105,6 +105,8 @@
 | 💧 | Revive prompt centro pantalla | ✅ | Texto grande centrado cuando queda 1 jugador en pie |
 | 💧 | High score / records | ✅ | localStorage, muestra BEST WAVE en game over y victory |
 | 💧 | Pantalla de victoria | ✅ | Terminal cyberpunk, scanlines, quote, [SPACE] retry / [ENTER] título |
+| 💧 | Viñetas de historia entre niveles | ✅ | Paneles comic con texto narrativo, fondo papel, splatters |
+| 💧 | Selector de dificultad en título | ✅ | A/D para cambiar, Easy/Normal/Hard, multiplicadores en HP/daño/cantidad |
 | 🌱 | Pantalla de créditos | ⬜ | Con scrolling tipo cine |
 | 🌱 | Dificultad (Fácil / Normal / Duro) | ⬜ | HP, daño, velocidad enemiga |
 | 🌱 | Tutorial interactivo | ⬜ | Primera partida guiada |
@@ -247,3 +249,18 @@
 - [x] Música se detiene automáticamente en game over, victoria y título
 - [x] SFX en menú: navegación (A/D/←/→), lock (J/1), start (SPACE), volver (ENTER)
 - [x] SFX de combo al hacer milestone (burst text)
+
+---
+
+## ✅ HECHO (v1.6)
+
+- [x] **Selector de dificultad** en título (A/D: Easy / Normal / Hard)
+- [x] Easy: enemigos 70% HP/daño, jugador 130% daño, 75% enemigos por wave
+- [x] Hard: enemigos 150% HP/daño, jugador 80% daño, 125% enemigos por wave
+- [x] Indicador de dificultad en HUD
+- [x] **Viñetas de historia** estilo comic entre niveles
+- [x] Viñeta inicial: "THE CITY IS A CANCER..." antes de nivel 1
+- [x] Viñeta nivel 1→2: "THE GROUND IS NOT ENOUGH..."
+- [x] Viñeta nivel 2→3: "THE FACTORY BREATHES FIRE..."
+- [x] Estética: fondo papel, bordes dobles, esquinas, splatters de tinta
+- [x] Texto animado línea por línea + prompt [SPACE/ENTER] para continuar
