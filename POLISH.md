@@ -18,6 +18,9 @@
 | 💧 | Super attack: animación especial | ✅ | Kick pose + 6 hit effects + arc, daño 35, cooldown 2s |
 | 💧 | Invulnerabilidad después de hit (tuning) | ✅ | 0.3s player, 0.3s enemy, boss 1.5s en transición de fase |
 | 💧 | Ataque en aire: que golpee hacia abajo | ✅ | Hitbox a y+20 (antes y+10) |
+| 💧 | Floating damage popups | ✅ | Daño numérico flotante con dirección y fade |
+| 💧 | Combo counter sobre jugador | ✅ | "N HITS" + escala pulsante mientras combo activo |
+| 💧 | Milestone burst texto | ✅ | "3 HITS!", "5 HITS!", etc. en centro de pantalla |
 | 🌱 | Agarres / throws | ⬜ | Clásico del género |
 | 🌱 | Armas arrojadizas (botellas, bates) | ⬜ | Pickups en el escenario |
 | 🌱 | Movimientos especiales por personaje | ⬜ | Diferenciar Punkette de Antagonic |
@@ -57,12 +60,13 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| 🔥 | Sprite sheets para personajes (futuro) | ⬜ | Reemplazar rect() por bitmaps dibujados |
+| 🔥 | Sprite sheets para personajes (futuro) | ⬜ | Concept art listo en repo, falta integrar |
 | ⚡ | Background con parallax | ✅ | 3 capas (far/mid/fore) a velocidad 0.05/0.12/0.25 |
 | ⚡ | Más variedad de fondos | ✅ | Street (W1-2) → Rooftop (W3+) con parallax |
 | 💧 | Efecto de sangre / tinta al golpear | ✅ | spawnInkSplat: 5 círculos negros semi-transparentes |
 | 💧 | Partículas al caminar (polvo) | ✅ | spawnWalkDust: rects INK que se alejan al caminar |
 | 💧 | Transición entre waves (flash) | ✅ | Flash de tinta + fade antes del texto de wave |
+| 💧 | Animación de revive (get-up) | ✅ | Tween de rotación 90→0 + ink burst al revivir |
 | 🌱 | Viñetas de diálogo / cómic | ⬜ | Historia entre waves |
 | 🌱 | Animación de victoria / derrota | ⬜ | Pose final del personaje |
 | 🌱 | Efecto de fotocopia más marcado | ⬜ | Más ruido, líneas de scan |
@@ -93,7 +97,10 @@
 | ⚡ | Pausa (ESC / P) | ✅ | ESC toggle, overlay oscuro + PAUSED + continuar |
 | 💧 | Pantalla de controles | ✅ | Pausa + C toggle, lista completa de teclas |
 | 💧 | Character select (Punkette / Antagonic vs random) | ✅ | 3 personajes seleccionables, preview en vivo |
-| 🌱 | High score / records | ✅ | localStorage, muestra BEST WAVE en game over y victory |
+| 💧 | Contador de kills por jugador en HUD | ✅ | "KILLS: N" bajo cada barra de vida |
+| 💧 | Revive prompt en HUD | ✅ | "PRESS J - 8" con cuenta regresiva en barra superior |
+| 💧 | Revive prompt centro pantalla | ✅ | Texto grande centrado cuando queda 1 jugador en pie |
+| 💧 | High score / records | ✅ | localStorage, muestra BEST WAVE en game over y victory |
 | 🌱 | Pantalla de créditos | ⬜ | Con scrolling tipo cine |
 | 🌱 | Dificultad (Fácil / Normal / Duro) | ⬜ | HP, daño, velocidad enemiga |
 | 🌱 | Tutorial interactivo | ⬜ | Primera partida guiada |
@@ -117,6 +124,9 @@
 |------|------|--------|-------|
 | 🔥 | Limpiar listeners al cambiar de scene | ✅ | events.clear() al entrar a game scene |
 | ⚡ | Resetear estado del juego al hacer retry | ✅ | Kaplay scene() crea estado fresco |
+| ⚡ | Colisión enemigos con mid-game join | ✅ | Reemplazado onCollide por onUpdate + isColliding |
+| ⚡ | Death handler para mid-game join | ✅ | Movido de bucle estático a createPlayer |
+| ⚡ | Timer de revive congelado en pausa | ✅ | if (state.paused) return en downed handler |
 | 💧 | FPS drop con muchos enemigos | ✅ | Partículas usan lifespan, auto-destrucción rápida |
 | 💧 | Colisiones entre enemigos | ✅ | Anti-stacking: se repelen si distancia < 40px |
 | 🌱 | Responsive / escalado mobile | ⬜ | Touch + viewport |
@@ -163,3 +173,23 @@
 - [x] Fondos procedurales (calle + edificios)
 - [x] Modelado de personajes: ojos, botas, detalles
 - [x] Escalado de detalles por tamaño (DS = F)
+
+---
+
+## ✅ HECHO (v1.2)
+
+- [x] Floating damage popups numéricos al golpear
+- [x] Combo counter "N HITS" sobre el jugador con escala
+- [x] Milestone burst "3 HITS!", "5 HITS!" en centro
+- [x] Contador de kills por jugador en HUD
+- [x] **Sistema de revive** (downed 10s + revivir con 50% HP)
+- [x] Revive funciona en single player y multi-player
+- [x] Get-up animation (tween 90°→0°)
+- [x] Ink burst visual al revivir
+- [x] Centro pantalla revive prompt (último jugador en pie)
+- [x] Timer de revive congelado durante pausa
+- [x] Mid-game join: P2 recibe daño correctamente
+- [x] Mid-game join: P2 puede morir (death handler en createPlayer)
+- [x] Workflow custom GitHub Pages con nombre descriptivo
+- [x] Concept art integrado al repo (punkette, x-ero, warzine, menu)
+- [x] README actualizado con docs completos v1.1 + v1.2
