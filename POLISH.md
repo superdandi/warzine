@@ -138,7 +138,7 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| ⚡ | Segundo nivel (escenario diferente) | ⬜ | Azotea, club nocturno |
+| ⚡ | Segundo nivel (escenario diferente) | ✅ | Calle → Miniboss → Azotea → Boss |
 | 💧 | Tercer nivel + boss final verdadero | ⬜ | Secuencia de jefes |
 | 🌱 | Power-ups (comida, 1UP) | ✅ | Health drops 30% de enemigos, +30 HP |
 | 🌱 | Secretos / áreas ocultas | ⬜ | Puertas, callejones |
@@ -193,3 +193,17 @@
 - [x] Workflow custom GitHub Pages con nombre descriptivo
 - [x] Concept art integrado al repo (punkette, x-ero, warzine, menu)
 - [x] README actualizado con docs completos v1.1 + v1.2
+
+---
+
+## ✅ HECHO (v1.3)
+
+- [x] **Miniboss "EL BRUTO"** después de WAVE 2
+- [x] 250 HP, 2 ataques: heavy punch + charge
+- [x] Enrage visual al 30% HP (más rápido + screen shake)
+- [x] Drop de salud garantizado al morir
+- [x] **Nivel 1 (Calle)**: W1 → W2 → Miniboss
+- [x] **Nivel 2 (Azotea)**: W3 → Boss → Endless
+- [x] Texto transición "LEVEL 1 CLEAR" + "ASCENDING TO THE ROOFTOP..."
+- [x] Cambio de fondo Calle → Azotea post-miniboss
+- [x] POLISH.md actualizado con v1.3

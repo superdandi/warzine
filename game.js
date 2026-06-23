@@ -1406,6 +1406,9 @@ scene("game", (p1Type, p2Type) => {
     enemiesThisWave: 0,
     enemiesKilled: 0,
     enemiesInWave: 0,
+    miniBossSpawned: false,
+    miniBoss: null,
+    miniBossDefeated: false,
     bossSpawned: false,
     bossDefeated: false,
     gameOver: false,
@@ -2096,6 +2099,10 @@ scene("game", (p1Type, p2Type) => {
         wait(2.0, () => {
           if (!state.gameOver) startEndlessWave();
         });
+      } else if (state.wave === 2 && !state.miniBossSpawned) {
+        wait(2.0, () => {
+          if (!state.miniBossSpawned) spawnMiniBoss();
+        });
       } else if (state.wave < waveConfigs.length) {
         const w = state.wave;
         wait(2.0, () => {
@@ -2104,6 +2111,166 @@ scene("game", (p1Type, p2Type) => {
       } else {
         spawnBoss();
       }
+    }
+  });
+
+  // ---- MINI-BOSS SYSTEM ----
+  function spawnMiniBoss() {
+    if (state.miniBossSpawned) return;
+    state.miniBossSpawned = true;
+
+    // Warning text
+    add([
+      text("WARNING!", { size: 36, font: "sans-serif" }),
+      pos(W / 2, H / 2 - 40),
+      anchor("center"),
+      color(INK),
+      z(50),
+      fixed(),
+      opacity(1),
+      lifespan(2),
+    ]);
+    add([
+      text("EL BRUTO APPROACHING", { size: 18, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 10),
+      anchor("center"),
+      color(INK),
+      z(50),
+      fixed(),
+      opacity(1),
+      lifespan(2),
+    ]);
+
+    wait(1.5, () => {
+      const mb = createCharacter(W / 2, H - 100, "tough", "miniboss");
+      state.miniBoss = mb;
+      state.enemies.push(mb);
+
+      mb.hp = 250;
+      mb.maxHp = 250;
+      mb.speed = 140;
+      mb.attackCooldown = rand(1.5, 2.5);
+      mb.attackRange = 45;
+      mb.damage = 15;
+      mb.aiState = "chase";
+      mb.scale = vec2(1.25, 1.25);
+      mb.facing = -1;
+      mb.scale.x = -1.25;
+      mb.walkTime = rand(0, 100);
+
+      mb.onUpdate(() => {
+        if (mb.dead || state.gameOver || state.victory || state.hitPause > 0) return;
+
+        if (mb.hitTimer > 0) {
+          mb.hitTimer -= dt();
+          mb.invincible -= dt();
+          return;
+        }
+        mb.invincible = Math.max(0, mb.invincible - dt());
+        mb.attackCooldown -= dt();
+
+        // Enrage at 30% HP
+        if (mb.hp < mb.maxHp * 0.3 && mb.speed === 140) {
+          mb.speed = 180;
+          mb.attackCooldown = 0.5;
+          screenShake(6, 0.3);
+          spawnHitEffect(mb.pos.x, mb.pos.y - 20);
+          spawnInkSplat(mb.pos.x, mb.pos.y);
+        }
+
+        // Find nearest player
+        let target = null;
+        let minDist = Infinity;
+        for (const p of state.players) {
+          if (p.dead || p.downed) continue;
+          const d = p.pos.dist(mb.pos);
+          if (d < minDist) {
+            minDist = d;
+            target = p;
+          }
+        }
+        if (!target) return;
+
+        const dx = target.pos.x - mb.pos.x;
+        const dy = target.pos.y - mb.pos.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        mb.facing = dx > 0 ? 1 : -1;
+        mb.scale.x = mb.facing;
+
+        if (dist < mb.attackRange && mb.attackCooldown <= 0) {
+          mb.attackCooldown = rand(1.0, 1.8);
+          const pattern = Math.floor(rand(0, 2));
+
+          if (pattern === 0) {
+            // Heavy punch
+            setPunchPose(mb);
+            screenShake(3, 0.08);
+            spawnHitbox(mb, 26, -6, 22, 18, mb.damage * 1.3, 180, 0.12);
+            spawnAttackArc(mb.pos.x + 30 * mb.facing, mb.pos.y - 5, mb.facing);
+          } else {
+            // Charge attack
+            setKickPose(mb);
+            const chargeDir = mb.facing;
+            mb.move(chargeDir * 120, 0);
+            spawnHitbox(mb, 10, -2, 28, 20, mb.damage, 160, 0.18);
+            screenShake(4, 0.1);
+            spawnAttackArc(mb.pos.x + 20 * mb.facing, mb.pos.y - 5, mb.facing);
+          }
+
+          tween(0, 1, 0.08, () => {}, () => {
+            if (!mb.dead) resetPose(mb);
+          });
+        } else if (dist > mb.attackRange * 0.5) {
+          // Chase
+          mb.aiState = "chase";
+          const len = Math.sqrt(dx * dx + dy * dy);
+          if (len > 0) {
+            mb.move((dx / len) * mb.speed, (dy / len) * mb.speed * 0.5);
+            mb.walkTime += dt();
+            setWalkPose(mb, mb.walkTime * 10);
+          }
+        }
+      });
+    });
+  }
+
+  // Check mini-boss killed
+  events.on("enemy-killed", (enemy) => {
+    if (enemy === state.miniBoss) {
+      state.miniBossDefeated = true;
+      state.miniBoss = null;
+
+      // Item drop
+      spawnItemDrop(enemy.pos.x, enemy.pos.y);
+      spawnItemDrop(enemy.pos.x - 20, enemy.pos.y);
+
+      add([
+        text("LEVEL 1 CLEAR", { size: 36, font: "sans-serif" }),
+        pos(W / 2, H / 2 - 30),
+        anchor("center"),
+        color(INK),
+        z(60),
+        fixed(),
+      ]);
+      add([
+        text("ASCENDING TO THE ROOFTOP...", { size: 14, font: "sans-serif" }),
+        pos(W / 2, H / 2 + 15),
+        anchor("center"),
+        color(INK),
+        z(60),
+        fixed(),
+      ]);
+
+      wait(3.0, () => {
+        if (state.gameOver) return;
+        // Change background to rooftop
+        state.bgType = "rooftop";
+        for (let i = 0; i < 3; i++) {
+          bgLayers[i].use(sprite(bgSprites.rooftop[i]));
+        }
+        startWave(2);
+      });
     }
   });
 
