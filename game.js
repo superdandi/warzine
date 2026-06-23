@@ -13,6 +13,8 @@ kaplay({
   stretch: true,
 });
 
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
 const PAPER = rgb(230, 222, 210);
 const INK = rgb(0, 0, 0);
 const WHITE = rgb(255, 255, 255);
@@ -1448,7 +1450,6 @@ function checkItemPickups() {
 // ============================================================
 
 (function() {
-  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   if (!isTouchDevice) return;
 
   const container = document.getElementById('touch-controls');
@@ -1599,19 +1600,23 @@ scene("title", () => {
     fixed(),
     z(10),
   ]);
-  const p2Start = add([
-    text("2 - PUSH START", { size: 18, font: "sans-serif" }),
-    pos(W / 2, H * 0.66),
-    anchor("center"),
-    color(INK),
-    fixed(),
-    z(10),
-  ]);
+  let p2Start = null;
+  if (!isTouchDevice) {
+    p2Start = add([
+      text("2 - PUSH START", { size: 18, font: "sans-serif" }),
+      pos(W / 2, H * 0.66),
+      anchor("center"),
+      color(INK),
+      fixed(),
+      z(10),
+    ]);
+  }
 
   // Controls
+  const ctrlY = isTouchDevice ? 0.72 : 0.78;
   const ctrlText = add([
-    text("P1: WASD+J/K+L  P2: ARROWS+1/2+3", { size: 12, font: "sans-serif" }),
-    pos(W / 2, H * 0.78),
+    text(isTouchDevice ? "P1: TOUCH BUTTONS" : "P1: WASD+J/K/L  P2: ARROWS+1/2+3", { size: 12, font: "sans-serif" }),
+    pos(W / 2, H * ctrlY),
     anchor("center"),
     color(INK),
     fixed(),
@@ -1619,9 +1624,10 @@ scene("title", () => {
   ]);
 
   // Difficulty selector
+  const diffY = isTouchDevice ? 0.78 : 0.84;
   const diffText = add([
     text("< DIFFICULTY: NORMAL >", { size: 14, font: "sans-serif" }),
-    pos(W / 2, H * 0.84),
+    pos(W / 2, H * diffY),
     anchor("center"),
     color(INK),
     fixed(),
@@ -1629,8 +1635,10 @@ scene("title", () => {
   ]);
 
   // Decorative lines
-  add([rect(180, 3), color(INK), pos(W / 2 - 90, H * 0.73), fixed(), z(10)]);
-  add([rect(140, 2), color(INK), pos(W / 2 - 70, H * 0.85), fixed(), z(10)]);
+  const line1Y = isTouchDevice ? 0.68 : 0.73;
+  const line2Y = isTouchDevice ? 0.80 : 0.85;
+  add([rect(180, 3), color(INK), pos(W / 2 - 90, H * line1Y), fixed(), z(10)]);
+  add([rect(140, 2), color(INK), pos(W / 2 - 70, H * line2Y), fixed(), z(10)]);
 
   // Version
   add([
@@ -1644,7 +1652,7 @@ scene("title", () => {
     titleTime += dt();
     blink += dt();
     p1Start.opacity = blink % 1 < 0.6 ? 1 : 0.3;
-    p2Start.opacity = p2Ready ? 0.15 : (blink % 1 < 0.6 ? 1 : 0.3);
+    if (p2Start) p2Start.opacity = p2Ready ? 0.15 : (blink % 1 < 0.6 ? 1 : 0.3);
     ctrlText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
     title.pos.x = W / 2 + Math.sin(titleTime * 0.5) * 3;
     title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
@@ -1658,8 +1666,10 @@ scene("title", () => {
   onKeyPress("left", () => { gameDifficulty = (gameDifficulty - 1 + 3) % 3; sfxMenuSelect(); });
   onKeyPress("right", () => { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); });
 
-  onKeyPress("j", () => { sfxMenuSelect(); if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: p2Ready }); } });
-  onKeyPress("1", () => { sfxMenuSelect(); if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
+  onKeyPress("j", () => { sfxMenuSelect(); if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: isTouchDevice ? false : p2Ready }); } });
+  if (!isTouchDevice) {
+    onKeyPress("1", () => { sfxMenuSelect(); if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
+  }
 });
 
 // ============================================================
@@ -1702,6 +1712,7 @@ scene("select", (opts) => {
   if (!opts) opts = {};
   let p1Active = opts.p1 !== false;
   let p2Active = opts.p2 === true;
+  if (isTouchDevice) p2Active = false;
 
   add([sprite("paperTex"), opacity(0.15), z(100), fixed()]);
   add([rect(W, H), color(PAPER), fixed()]);
@@ -1833,6 +1844,7 @@ scene("select", (opts) => {
   });
 
   // P2 Navigation & lock (always register, guard at runtime)
+  if (!isTouchDevice) {
   onKeyPress("left", () => {
     if (!p2Active || p2Locked || started) return;
     const taken = (p1Active && p1Locked) ? CHAR_OPTIONS[p1Choice] : null;
@@ -1858,6 +1870,7 @@ scene("select", (opts) => {
     sfxMenuSelect();
     renderSelect();
   });
+  } // !isTouchDevice
 
   // Start game
   function startGame() {
@@ -2338,7 +2351,7 @@ scene("game", (p1Type, p2Type) => {
   // ---- MID-GAME JOIN (symmetrical for P1 and P2) ----
   const joinSlots = [];
   joinSlots.push({ key: "j", playerId: 1, label: "P1", spawnX: 150, controls: { left: "a", right: "d", up: "w", down: "s", punch: "j", jump: "k", dodge: "l" } });
-  joinSlots.push({ key: "1", playerId: 2, label: "P2", spawnX: 250, controls: { left: "left", right: "right", up: "up", down: "down", punch: "1", jump: "2", dodge: "3" } });
+  if (!isTouchDevice) joinSlots.push({ key: "1", playerId: 2, label: "P2", spawnX: 250, controls: { left: "left", right: "right", up: "up", down: "down", punch: "1", jump: "2", dodge: "3" } });
 
   if (joinSlots.length > 0) {
     let joinChoice = 0;
