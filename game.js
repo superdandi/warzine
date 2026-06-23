@@ -1676,6 +1676,7 @@ scene("game", (p1Type, p2Type) => {
         spawnInkSplat(char.pos.x, char.pos.y - 10);
       }
       if (char.downed) {
+        if (state.paused) return;
         char.reviveTimer -= dt();
         if (char.reviveTimer <= 0) {
           char.downed = false;
@@ -2452,14 +2453,29 @@ scene("game", (p1Type, p2Type) => {
 
   // ---- CENTER REVIVE PROMPT (solo / last player) ----
   const revivePrompt = add([
-    text("", { size: 32, font: "sans-serif" }),
-    pos(W / 2, H / 2 - 40),
+    text(" ", { size: 36, font: "sans-serif" }),
+    pos(W / 2, H / 2 - 30),
     anchor("center"),
     color(INK),
     z(95),
     opacity(0),
     fixed(),
   ]);
+  onUpdate(() => {
+    let p = null;
+    for (const pl of state.players) {
+      if (pl.downed) {
+        const otherAlive = state.players.some((o) => o !== pl && !o.dead && !o.downed);
+        if (!otherAlive) { p = pl; break; }
+      }
+    }
+    if (p) {
+      revivePrompt.text = "PRESS " + p.reviveKey.toUpperCase() + " - " + Math.ceil(p.reviveTimer);
+      revivePrompt.opacity = 0.5 + Math.sin(state.time * 4) * 0.5;
+    } else {
+      revivePrompt.opacity = 0;
+    }
+  });
 
   // ---- GAME OVER CHECK ----
   function checkGameOver() {
@@ -2483,21 +2499,6 @@ scene("game", (p1Type, p2Type) => {
     if (state.hitPause > 0) state.hitPause -= dt();
     state.time += dt();
     hud.update();
-
-    // Center revive prompt (solo / last player standing)
-    let promptPlayer = null;
-    for (const p of state.players) {
-      if (p.downed) {
-        const otherAlive = state.players.some((o) => o !== p && !o.dead && !o.downed);
-        if (!otherAlive) { promptPlayer = p; break; }
-      }
-    }
-    if (promptPlayer) {
-      revivePrompt.text = "PRESS " + promptPlayer.reviveKey.toUpperCase() + " TO CONTINUE\n" + Math.ceil(promptPlayer.reviveTimer);
-      revivePrompt.opacity = 0.5 + Math.sin(state.time * 4) * 0.5;
-    } else {
-      revivePrompt.opacity = 0;
-    }
 
     // Items
     checkItemPickups();
