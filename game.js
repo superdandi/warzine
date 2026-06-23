@@ -1651,7 +1651,7 @@ scene("select", (opts) => {
         : "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? " (LOCKED)" : " (< >)");
       const p2Label = add([
         text(p2LabelTxt, { size: 12, font: "sans-serif" }),
-        pos(3 * W / 4, 130), anchor("center"), color(INK), fixed(), z(10),
+        pos(3 * W / 4, 80), anchor("center"), color(INK), fixed(), z(10),
       ]);
       previews.push(p2Label);
 
@@ -1667,7 +1667,7 @@ scene("select", (opts) => {
     for (let i = 0; i < CHAR_OPTIONS.length; i++) {
       const taken = (p1Active && p1Locked && CHAR_OPTIONS[i] === CHAR_OPTIONS[p1Choice]) ||
                     (p2Active && p2Locked && CHAR_OPTIONS[i] === CHAR_OPTIONS[p2Choice]);
-      const bx = W / 2 - 130 + i * 90;
+      const bx = W / 2 - (CHAR_OPTIONS.length - 1) * 45 + i * 90;
       const bg = add([rect(70, 20), outline(2), color(taken ? GRAY : WHITE), pos(bx, barY), anchor("center"), fixed(), z(10)]);
       previews.push(bg);
       const tx = add([
