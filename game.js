@@ -1556,6 +1556,8 @@ scene("title", () => {
   // Difficulty change
   onKeyPress("a", () => { gameDifficulty = (gameDifficulty - 1 + 3) % 3; sfxMenuSelect(); });
   onKeyPress("d", () => { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); });
+  onKeyPress("left", () => { gameDifficulty = (gameDifficulty - 1 + 3) % 3; sfxMenuSelect(); });
+  onKeyPress("right", () => { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); });
 
   onKeyPress("j", () => { sfxMenuSelect(); if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: p2Ready }); } });
   onKeyPress("1", () => { sfxMenuSelect(); if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
