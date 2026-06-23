@@ -1636,11 +1636,11 @@ scene("select", (opts) => {
     if (p1Active) {
       const p1Label = add([
         text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"), { size: 12, font: "sans-serif" }),
-        pos(W / 2, 80), anchor("center"), color(INK), fixed(), z(10),
+        pos(W / 4, 80), anchor("center"), color(INK), fixed(), z(10),
       ]);
       previews.push(p1Label);
 
-      const p1Char = createCharacter(200, 250, CHAR_OPTIONS[p1Choice], "preview");
+      const p1Char = createCharacter(W / 4, 250, CHAR_OPTIONS[p1Choice], "preview");
       p1Char.scale.x = 1;
       previews.push(p1Char);
     }
@@ -1651,11 +1651,11 @@ scene("select", (opts) => {
         : "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? " (LOCKED)" : " (< >)");
       const p2Label = add([
         text(p2LabelTxt, { size: 12, font: "sans-serif" }),
-        pos(W / 2, 130), anchor("center"), color(INK), fixed(), z(10),
+        pos(3 * W / 4, 130), anchor("center"), color(INK), fixed(), z(10),
       ]);
       previews.push(p2Label);
 
-      const p2Char = createCharacter(600, 250, CHAR_OPTIONS[p2Choice], "preview");
+      const p2Char = createCharacter(3 * W / 4, 250, CHAR_OPTIONS[p2Choice], "preview");
       p2Char.scale.x = -1;
       if (p2Locked && p2Taken === CHAR_OPTIONS[p1Choice]) p2Char.opacity = 0.3;
       previews.push(p2Char);
