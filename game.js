@@ -2471,10 +2471,7 @@ scene("game", (p1Type, p2Type) => {
       wait(2, () => {
         destroy(vic1);
         destroy(vic2);
-        state.waveActive = true;
-        state.wave++;
-        state.victory = false;
-        startEndlessWave();
+        go("victory", state.wave);
       });
     }
   });
@@ -2818,6 +2815,93 @@ scene("gameover", (wave) => {
   });
 
   onKeyPress("space", () => go("select"));
+});
+
+// ============================================================
+// VICTORY SCENE
+// ============================================================
+
+scene("victory", (wave) => {
+  wave = wave || 3;
+
+  // High score
+  const prev = parseInt(localStorage.getItem("warzine_high") || "0");
+  const score = wave;
+  if (score > prev) localStorage.setItem("warzine_high", String(score));
+  const high = Math.max(prev, score);
+
+  add([sprite("paperTex"), opacity(0.2), fixed()]);
+  add([rect(W, H), color(PAPER), fixed()]);
+
+  // Scanline overlay
+  const scanCanvas = document.createElement("canvas");
+  scanCanvas.width = W; scanCanvas.height = H;
+  const sctx = scanCanvas.getContext("2d");
+  sctx.fillStyle = "rgba(0,0,0,0.06)";
+  for (let y = 0; y < H; y += 3) sctx.fillRect(0, y, W, 1);
+  loadSprite("scanlines", scanCanvas);
+  add([sprite("scanlines"), opacity(0.3), fixed(), z(5)]);
+
+  // Top border line
+  add([rect(W - 80, 2), color(INK), pos(40, 60), fixed(), z(10)]);
+  add([rect(W - 80, 2), color(INK), pos(40, H - 60), fixed(), z(10)]);
+
+  // Main header
+  add([
+    text("> //////////////////////////////", { size: 10, font: "sans-serif" }),
+    pos(60, 90), color(INK), fixed(), z(10),
+  ]);
+  add([
+    text("> //  SYSTEM.PURGE: COMPLETE  //", { size: 16, font: "sans-serif" }),
+    pos(60, 108), color(INK), fixed(), z(10),
+  ]);
+  add([
+    text("> //////////////////////////////", { size: 10, font: "sans-serif" }),
+    pos(60, 130), color(INK), fixed(), z(10),
+  ]);
+
+  // Status lines
+  const lines = [
+    "> THREAT.LEVEL:  NEUTRALIZED",
+    "> CITY.STATUS:  SECURE",
+    "> WAVES.CLEARED:  " + wave,
+    "> HIGH.SCORE:  WAVE " + high,
+  ];
+  lines.forEach((line, i) => {
+    add([
+      text(line, { size: 12, font: "sans-serif" }),
+      pos(60, 170 + i * 22), color(INK), fixed(), z(10),
+    ]);
+  });
+
+  // Quote
+  add([
+    text('"the streets may run black,', { size: 14, font: "sans-serif" }),
+    pos(W / 2, H * 0.62), anchor("center"), color(INK), fixed(), z(10),
+  ]);
+  add([
+    text(' but tonight they run clean."', { size: 14, font: "sans-serif" }),
+    pos(W / 2, H * 0.62 + 20), anchor("center"), color(INK), fixed(), z(10),
+  ]);
+
+  // Bottom divider
+  add([rect(W - 80, 1), color(INK), pos(40, H * 0.73), fixed(), z(10)]);
+
+  // Pulsing retry
+  let blink = 0;
+  const retry = add([
+    text("[ SPACE ]  RETRY        [ ENTER ]  TITLE", { size: 13, font: "sans-serif" }),
+    pos(W / 2, H * 0.80),
+    anchor("center"), color(INK), fixed(), z(10),
+  ]);
+
+  onUpdate(() => {
+    blink += dt();
+    retry.opacity = blink % 1 < 0.6 ? 1 : 0.3;
+  });
+
+  onKeyPress("space", () => go("select"));
+  onKeyPress("enter", () => go("title"));
 });
 
 // ============================================================
