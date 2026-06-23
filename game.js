@@ -1673,6 +1673,7 @@ scene("game", (p1Type, p2Type) => {
         char.reviveTimer = 10;
         char.invincible = 999;
         tween(0, 90, 0.3, (v) => {
+          if (!char.downed) return;
           char.angle = v;
           char.pos.y += 1;
         });
@@ -1704,11 +1705,14 @@ scene("game", (p1Type, p2Type) => {
       char.pos.x = char.facing > 0 ? W / 2 - 40 : W / 2 + 40;
       char.pos.y = H - 100;
       screenShake(5, 0.25);
-      // Get-up animation: rotate back upright
-      tween(90, 0, 0.25, (v) => {
+      // Get-up animation: rotate back upright from current angle
+      const startAngle = char.angle;
+      tween(startAngle, 0, 0.25, (v) => {
         if (char.dead) return;
         char.angle = v;
         char.pos.y -= 1;
+      }, () => {
+        if (!char.dead) char.angle = 0;
       });
       // Ink burst on revive
       for (let i = 0; i < 8; i++) {
