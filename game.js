@@ -2156,7 +2156,7 @@ scene("game", (p1Type, p2Type) => {
         spawnInkSplat(char.pos.x, char.pos.y - 10);
       }
       if (char.downed) {
-        if (state.paused) return;
+        if (state.paused || state.victory || vignetteActive) return;
         char.reviveTimer -= dt();
         if (char.reviveTimer <= 0) {
           char.downed = false;
@@ -2523,6 +2523,17 @@ scene("game", (p1Type, p2Type) => {
     state.bossSpawned = false;
     state.bossDefeated = false;
     state.boss = null;
+
+    // Revive all downed players so they don't die during the vignette
+    for (const p of state.players) {
+      if (p.downed) {
+        p.downed = false;
+        p.angle = 0;
+        p.hp = Math.floor(p.maxHp * 0.3);
+        p.invincible = 2;
+        p.reviveTimer = 0;
+      }
+    }
 
     const vignetteIdx = lvl; // VIGNETTES[1] for level 1→2, VIGNETTES[2] for level 2→3
     showVignette(VIGNETTES[vignetteIdx], () => {
@@ -3122,6 +3133,7 @@ scene("game", (p1Type, p2Type) => {
 
   // ---- GAME OVER CHECK ----
   function checkGameOver() {
+    if (state.victory || state.gameOver || vignetteActive) return;
     const allDead = state.players.every((p) => p.dead);
     if (allDead && !state.gameOver) {
       state.gameOver = true;
