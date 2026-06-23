@@ -32,14 +32,14 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| ⚡ | Más variedad de enemigos por wave | ✅ | Wave 1: grunts+punk, W2: +tough, W3: 3grunt+3punk+2tough |
+| ⚡ | Más variedad de enemigos por wave | ✅ | 13 waves configuradas en 3 niveles |
 | ⚡ | Enemigos que atacan en grupo | ✅ | Anti-stacking AI, cooldowns reducidos, chase cooperativo |
 | ⚡ | Tough: que sea realmente amenazante | ✅ | Daño 18 (antes 15), speed 130, range 35 |
 | 💧 | Que los enemigos puedan saltar | ✅ | AI salta si distancia > 80px, con cooldown 2-4s |
 | 💧 | Indicador visual de wave + transición | ✅ | Flash de tinta + texto + fade |
 | 🌱 | Enemigo con escudo | ⬜ | Romper escudo con combo o super |
 | 🌱 | Enemigo que spawnea otros | ⬜ | "Líder" de wave |
-| 🌱 | Wave 4+ / Endless mode | ✅ | Después del boss, waves infinitas con dificultad creciente |
+| 🌱 | Sistema de waves por niveles | ✅ | LEVELS data + WAVE_CONFIGS planos con boundaries computados |
 
 ---
 
@@ -62,7 +62,8 @@
 |------|------|--------|-------|
 | 🔥 | Sprite sheets para personajes (futuro) | ⬜ | Concept art listo en repo, falta integrar |
 | ⚡ | Background con parallax | ✅ | 3 capas (far/mid/fore) a velocidad 0.05/0.12/0.25 |
-| ⚡ | Más variedad de fondos | ✅ | Street (W1-2) → Rooftop (W3+) con parallax |
+| ⚡ | Más variedad de fondos | ✅ | Street → Rooftop → Factory (3 niveles, switchBg destroy+recreate) |
+| 💧 | Fondo de fábrica (nivel 3) | ✅ | Chimeneas, tuberías, cintas transportadoras, rejillas, franjas advertencia |
 | 💧 | Efecto de sangre / tinta al golpear | ✅ | spawnInkSplat: 5 círculos negros semi-transparentes |
 | 💧 | Partículas al caminar (polvo) | ✅ | spawnWalkDust: rects INK que se alejan al caminar |
 | 💧 | Transición entre waves (flash) | ✅ | Flash de tinta + fade antes del texto de wave |
@@ -101,6 +102,7 @@
 | 💧 | Revive prompt en HUD | ✅ | "PRESS J - 8" con cuenta regresiva en barra superior |
 | 💧 | Revive prompt centro pantalla | ✅ | Texto grande centrado cuando queda 1 jugador en pie |
 | 💧 | High score / records | ✅ | localStorage, muestra BEST WAVE en game over y victory |
+| 💧 | Pantalla de victoria | ✅ | Terminal cyberpunk, scanlines, quote, [SPACE] retry / [ENTER] título |
 | 🌱 | Pantalla de créditos | ⬜ | Con scrolling tipo cine |
 | 🌱 | Dificultad (Fácil / Normal / Duro) | ⬜ | HP, daño, velocidad enemiga |
 | 🌱 | Tutorial interactivo | ⬜ | Primera partida guiada |
@@ -129,6 +131,11 @@
 | ⚡ | Timer de revive congelado en pausa | ✅ | if (state.paused) return en downed handler |
 | 💧 | FPS drop con muchos enemigos | ✅ | Partículas usan lifespan, auto-destrucción rápida |
 | 💧 | Colisiones entre enemigos | ✅ | Anti-stacking: se repelen si distancia < 40px |
+| 💧 | Fix: miniboss no moría (tag 'miniBoss' → isMiniBoss) | ✅ | Tag reservado, cambiado a propiedad |
+| 💧 | Fix: double deploy (Pages API build_type) | ✅ | Cambiado de legacy a workflow |
+| 💧 | Fix: textos transición persistentes | ✅ | destroy() en timeout del wait() |
+| 💧 | Fix: fondo mostrándose tras transición | ✅ | destroy+recreate bgLayers en switchBg() |
+| 💧 | Fix: jugador horizontal tras revive | ✅ | Conflicto de tweens downed/get-up resuelto |
 | 🌱 | Responsive / escalado mobile | ⬜ | Touch + viewport |
 | 🌱 | Prevenir que P1 y P2 se empujen | ⬜ | O habilitar friendly fire toggle |
 
@@ -138,8 +145,9 @@
 
 | Prio | Item | Estado | Notas |
 |------|------|--------|-------|
-| ⚡ | Segundo nivel (escenario diferente) | ✅ | Calle → Miniboss → Azotea → Boss |
-| 💧 | Tercer nivel + boss final verdadero | ⬜ | Secuencia de jefes |
+| ⚡ | Tres niveles completos | ✅ | Calle → Azotea → Fábrica, cada uno con pre-mid waves → Miniboss → post-mid waves → Boss |
+| 💧 | Progresión por niveles | ✅ | Boss de nivel N → transición → nivel N+1; victoria tras nivel 3 |
+| 🌱 | Pantalla de victoria (final real) | ✅ | Reemplaza endless mode, terminal cyberpunk con quote |
 | 🌱 | Power-ups (comida, 1UP) | ✅ | Health drops 30% de enemigos, +30 HP |
 | 🌱 | Secretos / áreas ocultas | ⬜ | Puertas, callejones |
 
@@ -207,3 +215,20 @@
 - [x] Texto transición "LEVEL 1 CLEAR" + "ASCENDING TO THE ROOFTOP..."
 - [x] Cambio de fondo Calle → Azotea post-miniboss
 - [x] POLISH.md actualizado con v1.3
+
+---
+
+## ✅ HECHO (v1.4)
+
+- [x] **Estructura de 3 niveles** con sistema de waves por niveles (LEVELS data + WAVE_CONFIGS)
+- [x] **Nivel 1 (Calle)**: pre-mid: W1-W2 → Miniboss → post-mid: W3 → Boss → transición
+- [x] **Nivel 2 (Azotea)**: pre-mid: W4-W5 → Miniboss → post-mid: W6-W7 → Boss → transición
+- [x] **Nivel 3 (Fábrica)**: pre-mid: W8-W10 → Miniboss → post-mid: W11-W13 → Boss → Victoria
+- [x] **Fondo de fábrica**: chimeneas, tuberías, cintas transportadoras, rejillas, franjas advertencia
+- [x] **Pantalla de victoria** (terminal cyberpunk, scanlines, quote, retry/title)
+- [x] **switchBg()**: destroy+recreate layers (fix fondo mostrándose)
+- [x] **startNextLevel()**: avanza nivel, cambia bg, inicia primera wave
+- [x] Fix: miniboss no moría (tag → propiedad)
+- [x] Fix: double deploy (Pages API build_type)
+- [x] Fix: textos transición persistentes
+- [x] Fix: jugador horizontal tras revive

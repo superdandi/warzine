@@ -292,6 +292,125 @@ function generateBgLayer(type, layer) {
       ctx.fillRect(0, H - 65, BG_W, 65);
       ctx.strokeRect(0, H - 65, BG_W, 65);
     }
+  } else if (type === "factory") {
+    if (layer === 0) {
+      ctx.fillStyle = "#c0baaa";
+      ctx.fillRect(0, 0, BG_W, H);
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+      ctx.fillStyle = "#d5d0c0";
+      const chimneys = [
+        [40, 40, 60, 170], [140, 70, 50, 140], [230, 30, 80, 180],
+        [360, 55, 60, 155], [470, 45, 70, 165], [580, 35, 90, 175],
+        [720, 60, 50, 150], [820, 40, 80, 170], [950, 50, 60, 160],
+        [1060, 30, 90, 180], [1200, 55, 60, 155], [1320, 40, 80, 170],
+        [1450, 50, 70, 160],
+      ];
+      for (const [cx, cy, cw, ch] of chimneys) {
+        ctx.fillRect(cx, cy, cw, ch);
+        ctx.strokeRect(cx, cy, cw, ch);
+        ctx.strokeRect(cx - 5, cy - 10, cw + 10, 10);
+        ctx.lineWidth = 1;
+        for (let s = 0; s < 3; s++) {
+          const sx = cx + cw / 2 + rand(-15, 15);
+          const sy = cy - 15 - s * 10;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 8 + s * 5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.lineWidth = 2;
+      }
+    } else if (layer === 1) {
+      ctx.fillStyle = "#e8e3d3";
+      ctx.fillRect(0, H - 200, BG_W, 200);
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, H - 200);
+      ctx.lineTo(BG_W, H - 200);
+      ctx.stroke();
+      const buildings = [
+        [30, H - 230, 100, 30], [170, H - 245, 70, 45], [280, H - 225, 120, 25],
+        [440, H - 240, 80, 40], [560, H - 230, 90, 30], [690, H - 250, 70, 50],
+        [800, H - 225, 110, 25], [950, H - 240, 80, 40], [1070, H - 230, 90, 30],
+        [1200, H - 245, 70, 45], [1320, H - 225, 100, 25], [1460, H - 235, 80, 35],
+      ];
+      for (const [bx, by, bw, bh] of buildings) {
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeRect(bx, by, bw, bh);
+      }
+      ctx.lineWidth = 4;
+      for (let i = 0; i < 6; i++) {
+        const px = 40 + i * 260;
+        ctx.beginPath();
+        ctx.moveTo(px, H - 200);
+        ctx.lineTo(px + 30, H - 230 - (i % 3) * 15);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(px + 30, H - 230 - (i % 3) * 15, 6, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.lineWidth = 3;
+      for (let i = 0; i < 5; i++) {
+        const cvx = 20 + i * 320;
+        ctx.strokeRect(cvx, H - 160, 120, 10);
+        ctx.lineWidth = 1;
+        for (let r = 0; r < 10; r++) {
+          ctx.beginPath();
+          ctx.moveTo(cvx + 5 + r * 12, H - 160);
+          ctx.lineTo(cvx + 5 + r * 12, H - 150);
+          ctx.stroke();
+        }
+        ctx.lineWidth = 3;
+      }
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 4; i++) {
+        const svx = 100 + i * 380;
+        ctx.strokeRect(svx, H - 190, 20, 10);
+        ctx.beginPath();
+        ctx.moveTo(svx + 4, H - 190);
+        ctx.lineTo(svx + 4, H - 210);
+        ctx.moveTo(svx + 10, H - 190);
+        ctx.lineTo(svx + 10, H - 215);
+        ctx.moveTo(svx + 16, H - 190);
+        ctx.lineTo(svx + 16, H - 208);
+        ctx.stroke();
+      }
+      ctx.lineWidth = 3;
+    } else if (layer === 2) {
+      ctx.fillStyle = "#d4cfc0";
+      ctx.fillRect(0, 0, BG_W, H);
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 1;
+      for (let row = 0; row < 10; row++) {
+        for (let col = 0; col < 16; col++) {
+          const gx = col * 100 + (row % 2) * 50;
+          const gy = row * 48 + H - 480;
+          ctx.strokeRect(gx, gy, 100, 48);
+        }
+      }
+      ctx.lineWidth = 3;
+      for (let i = 0; i < 6; i++) {
+        const dgx = 60 + i * 280;
+        ctx.strokeRect(dgx, H - 50, 40, 20);
+        ctx.lineWidth = 1;
+        for (let s = 0; s < 3; s++) {
+          ctx.beginPath();
+          ctx.moveTo(dgx + 6 + s * 14, H - 50);
+          ctx.lineTo(dgx + 6 + s * 14, H - 30);
+          ctx.stroke();
+        }
+        ctx.lineWidth = 3;
+      }
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 20; i++) {
+        const wx = i * 32;
+        ctx.fillStyle = i % 2 === 0 ? "#000" : "#d4cfc0";
+        ctx.fillRect(wx, H - 8, 32, 8);
+      }
+      ctx.strokeRect(0, H - 8, BG_W, 8);
+      ctx.lineWidth = 3;
+    }
   }
 
   return c;
@@ -308,6 +427,39 @@ function loadBgType(type) {
 }
 loadBgType("street");
 loadBgType("rooftop");
+loadBgType("factory");
+
+const LEVELS = [
+  { name: "NIVEL 1", bgType: "street", bgLabel: "THE STREETS", preMidCount: 2, postMidCount: 1 },
+  { name: "NIVEL 2", bgType: "rooftop", bgLabel: "THE ROOFTOP", preMidCount: 2, postMidCount: 2 },
+  { name: "NIVEL 3", bgType: "factory", bgLabel: "THE FACTORY", preMidCount: 3, postMidCount: 3 },
+];
+const WAVE_CONFIGS = [
+  { enemies: [{ type: "grunt", count: 3 }, { type: "punk", count: 1 }], title: "WAVE 1" },
+  { enemies: [{ type: "grunt", count: 2 }, { type: "punk", count: 2 }, { type: "tough", count: 1 }], title: "WAVE 2" },
+  { enemies: [{ type: "grunt", count: 3 }, { type: "punk", count: 3 }, { type: "tough", count: 2 }], title: "WAVE 3" },
+  { enemies: [{ type: "grunt", count: 4 }, { type: "punk", count: 2 }], title: "WAVE 4" },
+  { enemies: [{ type: "punk", count: 3 }, { type: "tough", count: 2 }], title: "WAVE 5" },
+  { enemies: [{ type: "grunt", count: 2 }, { type: "punk", count: 3 }, { type: "tough", count: 2 }], title: "WAVE 6" },
+  { enemies: [{ type: "punk", count: 4 }, { type: "tough", count: 3 }], title: "WAVE 7" },
+  { enemies: [{ type: "punk", count: 3 }, { type: "tough", count: 2 }], title: "WAVE 8" },
+  { enemies: [{ type: "grunt", count: 3 }, { type: "punk", count: 3 }, { type: "tough", count: 3 }], title: "WAVE 9" },
+  { enemies: [{ type: "tough", count: 4 }, { type: "punk", count: 2 }], title: "WAVE 10" },
+  { enemies: [{ type: "grunt", count: 4 }, { type: "punk", count: 4 }, { type: "tough", count: 2 }], title: "WAVE 11" },
+  { enemies: [{ type: "punk", count: 3 }, { type: "tough", count: 4 }], title: "WAVE 12" },
+  { enemies: [{ type: "tough", count: 5 }, { type: "punk", count: 3 }], title: "WAVE 13" },
+];
+(function computeBoundaries() {
+  let idx = 0;
+  for (const l of LEVELS) {
+    l.preMidStart = idx;
+    l.preMidEnd = idx + l.preMidCount - 1;
+    idx += l.preMidCount;
+    l.postMidStart = idx;
+    l.postMidEnd = idx + l.postMidCount - 1;
+    idx += l.postMidCount;
+  }
+})();
 
 // ============================================================
 // HELPERS
@@ -1401,11 +1553,13 @@ scene("game", (p1Type, p2Type) => {
 
   // ---- STATE ----
   const state = {
-    wave: 0,
+    wave: 1,
     waveActive: false,
     enemiesThisWave: 0,
     enemiesKilled: 0,
     enemiesInWave: 0,
+    currentLevel: 0,
+    waveConfigIdx: 0,
     miniBossSpawned: false,
     miniBoss: null,
     miniBossDefeated: false,
@@ -1969,35 +2123,12 @@ scene("game", (p1Type, p2Type) => {
   }
 
   // ---- WAVE MANAGER ----
-  const waveConfigs = [
-    { enemies: [{ type: "grunt", count: 3 }, { type: "punk", count: 1 }], title: "WAVE 1" },
-    { enemies: [{ type: "grunt", count: 2 }, { type: "punk", count: 2 }, { type: "tough", count: 1 }], title: "WAVE 2" },
-    { enemies: [{ type: "grunt", count: 3 }, { type: "punk", count: 3 }, { type: "tough", count: 2 }], title: "WAVE 3" },
-  ];
-
-  function startWave(index) {
-    if (index >= waveConfigs.length) {
-      spawnBoss();
-      return;
-    }
-
-    state.wave = index + 1;
+  function startWave(config, title) {
+    state.wave = title ? parseInt(title.replace("WAVE ", "")) : 0;
     state.waveActive = true;
     state.enemiesKilled = 0;
     state.enemiesThisWave = 0;
-    const config = waveConfigs[index];
     state.enemiesInWave = config.enemies.reduce((a, e) => a + e.count, 0);
-
-    // Switch background for later waves
-    if (index >= 2 && state.bgType !== "rooftop") {
-      state.bgType = "rooftop";
-      for (const l of bgLayers) destroy(l);
-      bgLayers.length = 0;
-      for (let i = 0; i < 3; i++) {
-        const layer = add([sprite(bgSprites.rooftop[i]), pos(0, 0), z(i)]);
-        bgLayers.push(layer);
-      }
-    }
 
     // Wave transition flash
     const flash = add([rect(W, H), color(INK), fixed(), opacity(0), z(45)]);
@@ -2006,7 +2137,7 @@ scene("game", (p1Type, p2Type) => {
     });
 
     const waveText = add([
-      text(config.title, { size: 32, font: "sans-serif" }),
+      text(title, { size: 32, font: "sans-serif" }),
       pos(W / 2, H / 2 - 30),
       anchor("center"),
       color(INK),
@@ -2044,47 +2175,46 @@ scene("game", (p1Type, p2Type) => {
     });
   }
 
-  // ---- ENDLESS MODE ----
-  function startEndlessWave() {
-    state.wave++;
-    state.waveActive = true;
-    state.enemiesKilled = 0;
-    state.enemiesThisWave = 0;
-
-    const endlessWave = state.wave - waveConfigs.length; // 1, 2, 3...
-    const count = 2 + endlessWave;
-    const types = ["grunt", "punk", "tough"];
-    const config = [];
-    for (let i = 0; i < count; i++) {
-      config.push({ type: types[Math.floor(Math.random() * types.length)], count: 1 });
+  // Switch background to a new type (destroy old, create new)
+  function switchBg(type) {
+    state.bgType = type;
+    for (const l of bgLayers) destroy(l);
+    bgLayers.length = 0;
+    for (let i = 0; i < 3; i++) {
+      const layer = add([sprite(bgSprites[type][i]), pos(0, 0), z(i)]);
+      bgLayers.push(layer);
     }
-    state.enemiesInWave = count;
+  }
 
-    // Wave text
-    const flash = add([rect(W, H), color(INK), fixed(), opacity(0), z(45)]);
-    tween(0, 0.3, 0.1, (v) => (flash.opacity = v), () => {
-      tween(0.3, 0, 0.15, (v) => (flash.opacity = v), () => destroy(flash));
-    });
-    const waveText = add([
-      text("ENDLESS WAVE " + endlessWave, { size: 28, font: "sans-serif" }),
-      pos(W / 2, H / 2 - 30), anchor("center"), color(INK), z(50), fixed(),
+  // Advance to next level (bg swap, text, then start first wave)
+  function startNextLevel() {
+    state.currentLevel++;
+    state.miniBossSpawned = false;
+    state.miniBossDefeated = false;
+    state.bossSpawned = false;
+    state.bossDefeated = false;
+    state.boss = null;
+    const level = LEVELS[state.currentLevel];
+    state.waveConfigIdx = level.preMidStart;
+
+    switchBg(level.bgType);
+
+    const l1 = add([
+      text("NIVEL " + (state.currentLevel + 1), { size: 32, font: "sans-serif" }),
+      pos(W / 2, H / 2 - 30),
+      anchor("center"), color(INK), z(60), fixed(),
     ]);
-    wait(1.5, () => destroy(waveText));
-    tween(1, 0, 1.2, (v) => (waveText.opacity = v), undefined, easings.easeInQuad);
-
-    // Spawn enemies with delay
-    let spawned = 0;
-    const spawnInterval = setInterval(() => {
-      if (spawned >= count || state.gameOver) {
-        clearInterval(spawnInterval);
-        return;
-      }
-      const entry = config[spawned];
-      const side = spawned % 2 === 0 ? -1 : 1;
-      const ex = side < 0 ? 40 : W - 40;
-      spawnEnemy(entry.type, ex, H - 100 + rand(-30, 30));
-      spawned++;
-    }, 600);
+    const l2 = add([
+      text(level.bgLabel, { size: 14, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 15),
+      anchor("center"), color(INK), z(60), fixed(),
+    ]);
+    wait(3.0, () => {
+      destroy(l1);
+      destroy(l2);
+      if (state.gameOver) return;
+      startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
+    });
   }
 
   // ---- WAVE COMPLETION CHECK ----
@@ -2099,24 +2229,16 @@ scene("game", (p1Type, p2Type) => {
 
     if (state.enemiesKilled >= state.enemiesInWave && state.waveActive) {
       state.waveActive = false;
+      const level = LEVELS[state.currentLevel];
 
-      if (state.bossDefeated) {
-        // Endless mode
-        const w = state.wave;
-        wait(2.0, () => {
-          if (!state.gameOver) startEndlessWave();
-        });
-      } else if (state.wave === 2 && !state.miniBossSpawned) {
-        wait(2.0, () => {
-          if (!state.miniBossSpawned) spawnMiniBoss();
-        });
-      } else if (state.wave < waveConfigs.length) {
-        const w = state.wave;
-        wait(2.0, () => {
-          if (!state.bossSpawned) startWave(w);
-        });
-      } else {
+      if (state.waveConfigIdx >= level.preMidEnd && !state.miniBossSpawned) {
+        wait(2.0, () => spawnMiniBoss());
+      } else if (state.waveConfigIdx >= level.postMidEnd && state.miniBossDefeated && !state.bossSpawned) {
         spawnBoss();
+      } else {
+        state.waveConfigIdx++;
+        const next = WAVE_CONFIGS[state.waveConfigIdx];
+        wait(2.0, () => { if (!state.gameOver) startWave(next, next.title); });
       }
     }
   });
@@ -2248,12 +2370,16 @@ scene("game", (p1Type, p2Type) => {
       state.miniBossDefeated = true;
       state.miniBoss = null;
 
-      // Item drop
+      // Guaranteed health drops
       spawnItemDrop(enemy.pos.x, enemy.pos.y);
       spawnItemDrop(enemy.pos.x - 20, enemy.pos.y);
 
+      // Advance to post-mid waves
+      const level = LEVELS[state.currentLevel];
+      state.waveConfigIdx = level.postMidStart;
+
       const l1 = add([
-        text("LEVEL 1 CLEAR", { size: 36, font: "sans-serif" }),
+        text("MINIBOSS DEFEATED", { size: 24, font: "sans-serif" }),
         pos(W / 2, H / 2 - 30),
         anchor("center"),
         color(INK),
@@ -2261,7 +2387,7 @@ scene("game", (p1Type, p2Type) => {
         fixed(),
       ]);
       const l2 = add([
-        text("ASCENDING TO THE ROOFTOP...", { size: 14, font: "sans-serif" }),
+        text("WAVES REMAINING: " + level.postMidCount, { size: 14, font: "sans-serif" }),
         pos(W / 2, H / 2 + 15),
         anchor("center"),
         color(INK),
@@ -2273,15 +2399,8 @@ scene("game", (p1Type, p2Type) => {
         destroy(l1);
         destroy(l2);
         if (state.gameOver) return;
-        // Change background to rooftop
-        state.bgType = "rooftop";
-        for (const l of bgLayers) destroy(l);
-        bgLayers.length = 0;
-        for (let i = 0; i < 3; i++) {
-          const layer = add([sprite(bgSprites.rooftop[i]), pos(0, 0), z(i)]);
-          bgLayers.push(layer);
-        }
-        startWave(2);
+        const next = WAVE_CONFIGS[state.waveConfigIdx];
+        startWave(next, next.title);
       });
     }
   });
@@ -2455,28 +2574,44 @@ scene("game", (p1Type, p2Type) => {
       const score = state.wave;
       if (score > prev) localStorage.setItem("warzine_high", String(score));
 
-      const vic1 = add([
-        text("VICTORY!", { size: 48, font: "sans-serif" }),
-        pos(W / 2, H / 2 - 30),
-        anchor("center"),
-        color(INK),
-        z(60),
-        fixed(),
-      ]);
-      const vic2 = add([
-        text("BUT THE FIGHT CONTINUES...", { size: 14, font: "sans-serif" }),
-        pos(W / 2, H / 2 + 15),
-        anchor("center"),
-        color(INK),
-        z(60),
-        fixed(),
-      ]);
-
-      wait(2, () => {
-        destroy(vic1);
-        destroy(vic2);
-        go("victory", state.wave);
-      });
+      if (state.currentLevel < LEVELS.length - 1) {
+        // Not the last level — transition to next
+        const nextLevel = LEVELS[state.currentLevel + 1];
+        const vic1 = add([
+          text("NIVEL " + (state.currentLevel + 1) + " COMPLETE", { size: 28, font: "sans-serif" }),
+          pos(W / 2, H / 2 - 30),
+          anchor("center"), color(INK), z(60), fixed(),
+        ]);
+        const vic2 = add([
+          text("PROCEEDING TO " + nextLevel.bgLabel + "...", { size: 14, font: "sans-serif" }),
+          pos(W / 2, H / 2 + 15),
+          anchor("center"), color(INK), z(60), fixed(),
+        ]);
+        wait(3.0, () => {
+          destroy(vic1);
+          destroy(vic2);
+          if (state.gameOver) return;
+          state.victory = false;
+          startNextLevel();
+        });
+      } else {
+        // Last level — victory!
+        const vic1 = add([
+          text("VICTORY!", { size: 48, font: "sans-serif" }),
+          pos(W / 2, H / 2 - 30),
+          anchor("center"), color(INK), z(60), fixed(),
+        ]);
+        const vic2 = add([
+          text("ALL LEVELS CLEARED", { size: 14, font: "sans-serif" }),
+          pos(W / 2, H / 2 + 15),
+          anchor("center"), color(INK), z(60), fixed(),
+        ]);
+        wait(3.0, () => {
+          destroy(vic1);
+          destroy(vic2);
+          go("victory", state.wave);
+        });
+      }
     }
   });
 
@@ -2759,8 +2894,11 @@ scene("game", (p1Type, p2Type) => {
     }
   });
 
-  // ---- START FIRST WAVE ----
-  startWave(0);
+  // ---- START FIRST LEVEL ----
+  state.currentLevel = 0;
+  const firstLevel = LEVELS[0];
+  state.waveConfigIdx = firstLevel.preMidStart;
+  startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
 });
 
 // ============================================================
