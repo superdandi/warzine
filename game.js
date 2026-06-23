@@ -1987,8 +1987,11 @@ scene("game", (p1Type, p2Type) => {
     // Switch background for later waves
     if (index >= 2 && state.bgType !== "rooftop") {
       state.bgType = "rooftop";
+      for (const l of bgLayers) destroy(l);
+      bgLayers.length = 0;
       for (let i = 0; i < 3; i++) {
-        bgLayers[i].use(sprite(bgSprites.rooftop[i]));
+        const layer = add([sprite(bgSprites.rooftop[i]), pos(0, 0), z(i)]);
+        bgLayers.push(layer);
       }
     }
 
