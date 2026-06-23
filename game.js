@@ -2450,6 +2450,17 @@ scene("game", (p1Type, p2Type) => {
 
   const hud = createHUD();
 
+  // ---- CENTER REVIVE PROMPT (solo / last player) ----
+  const revivePrompt = add([
+    text("", { size: 32, font: "sans-serif" }),
+    pos(W / 2, H / 2 - 40),
+    anchor("center"),
+    color(INK),
+    z(95),
+    opacity(0),
+    fixed(),
+  ]);
+
   // ---- GAME OVER CHECK ----
   function checkGameOver() {
     const allDead = state.players.every((p) => p.dead);
@@ -2472,6 +2483,21 @@ scene("game", (p1Type, p2Type) => {
     if (state.hitPause > 0) state.hitPause -= dt();
     state.time += dt();
     hud.update();
+
+    // Center revive prompt (solo / last player standing)
+    let promptPlayer = null;
+    for (const p of state.players) {
+      if (p.downed) {
+        const otherAlive = state.players.some((o) => o !== p && !o.dead && !o.downed);
+        if (!otherAlive) { promptPlayer = p; break; }
+      }
+    }
+    if (promptPlayer) {
+      revivePrompt.text = "PRESS " + promptPlayer.reviveKey.toUpperCase() + " TO CONTINUE\n" + Math.ceil(promptPlayer.reviveTimer);
+      revivePrompt.opacity = 0.5 + Math.sin(state.time * 4) * 0.5;
+    } else {
+      revivePrompt.opacity = 0;
+    }
 
     // Items
     checkItemPickups();
