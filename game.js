@@ -1456,8 +1456,8 @@ function checkItemPickups() {
   if (!container) return;
   container.style.display = 'block';
 
-  const activeTouches = {};
   const keyState = {};
+  const activeTouches = {};
 
   function fireKey(key, type) {
     if (type === 'keydown' && keyState[key]) return;
@@ -1467,14 +1467,6 @@ function checkItemPickups() {
       key, code: key.length === 1 ? 'Key' + key.toUpperCase() : key,
       bubbles: true, cancelable: true,
     }));
-  }
-
-  function getBtn(el) {
-    while (el) {
-      if (el.classList && el.classList.contains('btn')) return el;
-      el = el.parentElement;
-    }
-    return null;
   }
 
   function pressBtn(btn) {
@@ -1497,30 +1489,27 @@ function checkItemPickups() {
     }
   }
 
-  document.addEventListener('touchstart', (e) => {
-    for (const touch of e.changedTouches) {
-      const btn = getBtn(document.elementFromPoint(touch.clientX, touch.clientY));
-      if (btn) {
+  document.querySelectorAll('#touch-controls .btn').forEach(btn => {
+    btn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      for (const touch of e.changedTouches) {
         activeTouches[touch.identifier] = btn;
-        pressBtn(btn);
       }
-    }
-  }, { passive: true });
+      pressBtn(btn);
+    }, { passive: false });
 
-  document.addEventListener('touchmove', (e) => {
-    for (const touch of e.changedTouches) {
-      const prevBtn = activeTouches[touch.identifier];
-      const btn = getBtn(document.elementFromPoint(touch.clientX, touch.clientY));
-      if (prevBtn && btn !== prevBtn) {
-        releaseBtn(prevBtn);
-        delete activeTouches[touch.identifier];
+    btn.addEventListener('touchmove', (e) => {
+      for (const touch of e.changedTouches) {
+        const currentBtn = activeTouches[touch.identifier];
+        if (!currentBtn) return;
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (!target || !target.closest('.btn')) {
+          releaseBtn(currentBtn);
+          delete activeTouches[touch.identifier];
+        }
       }
-      if (btn && btn !== prevBtn) {
-        activeTouches[touch.identifier] = btn;
-        pressBtn(btn);
-      }
-    }
-  }, { passive: true });
+    }, { passive: true });
+  });
 
   document.addEventListener('touchend', (e) => {
     for (const touch of e.changedTouches) {
