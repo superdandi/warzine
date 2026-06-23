@@ -2245,7 +2245,7 @@ scene("game", (p1Type, p2Type) => {
       spawnItemDrop(enemy.pos.x, enemy.pos.y);
       spawnItemDrop(enemy.pos.x - 20, enemy.pos.y);
 
-      add([
+      const l1 = add([
         text("LEVEL 1 CLEAR", { size: 36, font: "sans-serif" }),
         pos(W / 2, H / 2 - 30),
         anchor("center"),
@@ -2253,7 +2253,7 @@ scene("game", (p1Type, p2Type) => {
         z(60),
         fixed(),
       ]);
-      add([
+      const l2 = add([
         text("ASCENDING TO THE ROOFTOP...", { size: 14, font: "sans-serif" }),
         pos(W / 2, H / 2 + 15),
         anchor("center"),
@@ -2263,6 +2263,8 @@ scene("game", (p1Type, p2Type) => {
       ]);
 
       wait(3.0, () => {
+        destroy(l1);
+        destroy(l2);
         if (state.gameOver) return;
         // Change background to rooftop
         state.bgType = "rooftop";
@@ -2443,7 +2445,7 @@ scene("game", (p1Type, p2Type) => {
       const score = state.wave;
       if (score > prev) localStorage.setItem("warzine_high", String(score));
 
-      add([
+      const vic1 = add([
         text("VICTORY!", { size: 48, font: "sans-serif" }),
         pos(W / 2, H / 2 - 30),
         anchor("center"),
@@ -2451,7 +2453,7 @@ scene("game", (p1Type, p2Type) => {
         z(60),
         fixed(),
       ]);
-      add([
+      const vic2 = add([
         text("BUT THE FIGHT CONTINUES...", { size: 14, font: "sans-serif" }),
         pos(W / 2, H / 2 + 15),
         anchor("center"),
@@ -2461,6 +2463,8 @@ scene("game", (p1Type, p2Type) => {
       ]);
 
       wait(2, () => {
+        destroy(vic1);
+        destroy(vic2);
         state.waveActive = true;
         state.wave++;
         state.victory = false;
