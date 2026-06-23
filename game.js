@@ -23,6 +23,178 @@ const GRAVITY = 800;
 const JUMP_FORCE = -300;
 
 // ============================================================
+// SOUND SYSTEM (Web Audio API — sin archivos externos)
+// ============================================================
+
+let soundCtx = null;
+let soundEnabled = true;
+let musicNodes = [];
+
+function initAudio() {
+  if (!soundCtx) {
+    try {
+      soundCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      soundEnabled = false;
+    }
+  }
+  if (soundCtx && soundCtx.state === "suspended") soundCtx.resume();
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  if (!soundEnabled) stopMusic();
+  return soundEnabled;
+}
+
+function playNoise(duration, volume, filterFreq, filterType) {
+  if (!soundEnabled) return;
+  initAudio();
+  const bufSize = soundCtx.sampleRate * duration;
+  const buf = soundCtx.createBuffer(1, bufSize, soundCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+  const src = soundCtx.createBufferSource();
+  src.buffer = buf;
+  const gain = soundCtx.createGain();
+  gain.gain.setValueAtTime(volume, soundCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, soundCtx.currentTime + duration);
+  const filter = soundCtx.createBiquadFilter();
+  filter.type = filterType || "lowpass";
+  filter.frequency.setValueAtTime(filterFreq || 2000, soundCtx.currentTime);
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(soundCtx.destination);
+  src.start();
+  src.stop(soundCtx.currentTime + duration);
+}
+
+function playTone(freq, duration, volume, type, sweep) {
+  if (!soundEnabled) return;
+  initAudio();
+  const osc = soundCtx.createOscillator();
+  osc.type = type || "square";
+  osc.frequency.setValueAtTime(freq, soundCtx.currentTime);
+  if (sweep) osc.frequency.exponentialRampToValueAtTime(sweep, soundCtx.currentTime + duration);
+  const gain = soundCtx.createGain();
+  gain.gain.setValueAtTime(volume || 0.3, soundCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, soundCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(soundCtx.destination);
+  osc.start();
+  osc.stop(soundCtx.currentTime + duration);
+}
+
+// Sound effects
+function sfxHit() { playNoise(0.08, 0.4, 3000, "lowpass"); playTone(80, 0.06, 0.3, "square"); }
+
+function sfxHitPlayer() { playNoise(0.06, 0.3, 1500, "lowpass"); playTone(60, 0.08, 0.25, "sawtooth"); }
+
+function sfxJump() { playTone(200, 0.15, 0.2, "square", 600); }
+
+function sfxSuper() {
+  playNoise(0.2, 0.5, 4000, "bandpass");
+  playTone(120, 0.25, 0.4, "sawtooth", 40);
+  playTone(80, 0.15, 0.3, "square");
+}
+
+function sfxDodge() { playNoise(0.12, 0.2, 800, "highpass"); }
+
+function sfxKill() { playNoise(0.15, 0.5, 500, "lowpass"); playTone(50, 0.2, 0.4, "sine"); }
+
+function sfxPlayerDeath() { playTone(400, 0.3, 0.3, "sawtooth", 40); playTone(200, 0.2, 0.2, "square"); }
+
+function sfxRevive() {
+  playTone(300, 0.12, 0.25, "square", 600);
+  setTimeout(() => playTone(500, 0.12, 0.25, "square", 800), 80);
+  setTimeout(() => playTone(700, 0.15, 0.3, "square", 900), 160);
+}
+
+function sfxWave() { playTone(600, 0.1, 0.2, "square"); setTimeout(() => playTone(800, 0.15, 0.3, "square"), 120); }
+
+function sfxBossWarning() {
+  playTone(100, 0.4, 0.5, "sawtooth", 50);
+  setTimeout(() => playTone(80, 0.5, 0.5, "sawtooth"), 300);
+  playNoise(0.6, 0.3, 300, "lowpass");
+}
+
+function sfxBossDeath() { playTone(300, 0.3, 0.4, "square", 900); setTimeout(() => sfxVictory(), 200); }
+
+function sfxVictory() {
+  [400, 500, 600, 800].forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.3, 0.3, "square"), i * 120);
+  });
+}
+
+function sfxGameOver() {
+  playTone(300, 0.3, 0.3, "sawtooth", 50);
+  setTimeout(() => playTone(200, 0.3, 0.25, "sawtooth", 30), 250);
+  setTimeout(() => playTone(100, 0.5, 0.2, "sawtooth"), 500);
+}
+
+function sfxItemPickup() { playTone(800, 0.08, 0.2, "square"); setTimeout(() => playTone(1000, 0.1, 0.25, "square"), 60); }
+
+function sfxCombo() { playTone(500 + Math.random() * 400, 0.08, 0.15, "square"); }
+
+function sfxMenuSelect() { playTone(700, 0.06, 0.15, "square"); }
+
+// Background music: drum & bass loop
+let musicInterval = null;
+
+function startMusic() {
+  if (!soundEnabled || musicInterval) return;
+  initAudio();
+  let beat = 0;
+  const BPM = 120;
+  const interval = (60 / BPM) * 1000;
+
+  function kick() {
+    const osc = soundCtx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(150, soundCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(30, soundCtx.currentTime + 0.1);
+    const gain = soundCtx.createGain();
+    gain.gain.setValueAtTime(0.4, soundCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, soundCtx.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(soundCtx.destination);
+    osc.start();
+    osc.stop(soundCtx.currentTime + 0.2);
+  }
+
+  function snare() {
+    playNoise(0.08, 0.25, 2000, "highpass");
+    playTone(180, 0.06, 0.15, "triangle");
+  }
+
+  function hihat() {
+    playNoise(0.03, 0.1, 8000, "highpass");
+  }
+
+  musicNodes = [kick, snare, hihat];
+  musicInterval = setInterval(() => {
+    if (!soundEnabled) return;
+    if (soundCtx.state === "suspended") soundCtx.resume();
+    // 4/4 beat
+    if (beat % 4 === 0) kick();
+    if (beat % 4 === 2) kick();
+    if (beat % 8 === 3 || beat % 8 === 7) snare();
+    if (beat % 2 === 1) hihat();
+    // Bass on every 4th beat
+    if (beat % 8 === 0) playTone(110, 0.3, 0.1, "square");
+    if (beat % 8 === 4) playTone(82, 0.3, 0.1, "square");
+    beat = (beat + 1) % 16;
+  }, interval / 2);
+}
+
+function stopMusic() {
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+}
+
+// ============================================================
 // PAPER TEXTURE OVERLAY (efecto fotocopia)
 // ============================================================
 
@@ -1050,6 +1222,7 @@ function spawnHitbox(owner, offsetX, offsetY, w, h, damage, knockback, duration)
           setHitPose(player);
           screenShake(4, 0.12);
           curState.hitPause = 0.04;
+          sfxHitPlayer();
           spawnDamagePopup(player.pos.x, player.pos.y - 15, damage, dir);
           wait(0.02, () => {
             if (!player.dead) player.pos.x += -dir * knockback;
@@ -1069,6 +1242,7 @@ function hitEnemy(enemy, damage, knockback, dir, attacker) {
   enemy.hitTimer = 0.15;
   setHitPose(enemy);
   screenShake(3, 0.1);
+  sfxHit();
 
   // Hitpause
   if (curState) curState.hitPause = 0.04;
@@ -1101,6 +1275,7 @@ function hitEnemy(enemy, damage, knockback, dir, attacker) {
 
   if (enemy.hp <= 0) {
     enemy.dead = true;
+    if (!enemy.is("player")) sfxKill();
     if (attacker && attacker.kills !== undefined) attacker.kills++;
     events.emit("enemy-killed", enemy);
     destroy(enemy);
@@ -1182,6 +1357,7 @@ function spawnDamagePopup(x, y, damage, dir) {
 }
 
 function spawnBurstText(text) {
+  sfxCombo();
   const b = add([
     text(text, { size: 28, font: "sans-serif" }),
     pos(W / 2, H / 2 - 40),
@@ -1251,6 +1427,7 @@ function checkItemPickups() {
       if (p.dead) continue;
       if (p.pos.dist(item.pos) < 30) {
         p.hp = Math.min(p.maxHp, p.hp + 30);
+        sfxItemPickup();
         destroy(item);
         curState.items.splice(i, 1);
         // Flash heal effect
@@ -1267,6 +1444,7 @@ function checkItemPickups() {
 // ============================================================
 
 scene("title", () => {
+  stopMusic();
   add([sprite("paperTex"), opacity(0.15), z(100), fixed()]);
 
   // Background
@@ -1359,8 +1537,8 @@ scene("title", () => {
     title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
   });
 
-  onKeyPress("j", () => { if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: p2Ready }); } });
-  onKeyPress("1", () => { if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
+  onKeyPress("j", () => { sfxMenuSelect(); if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: p2Ready }); } });
+  onKeyPress("1", () => { sfxMenuSelect(); if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
 });
 
 // ============================================================
@@ -1483,6 +1661,7 @@ scene("select", (opts) => {
     const taken = (p2Active && p2Locked) ? CHAR_OPTIONS[p2Choice] : null;
     p1Choice = nextAvail(p1Choice, -1, taken);
     if (p2Active && !p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, -1, null);
+    sfxMenuSelect();
     renderSelect();
   });
   onKeyPress("d", () => {
@@ -1490,14 +1669,16 @@ scene("select", (opts) => {
     const taken = (p2Active && p2Locked) ? CHAR_OPTIONS[p2Choice] : null;
     p1Choice = nextAvail(p1Choice, 1, taken);
     if (p2Active && !p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, 1, null);
+    sfxMenuSelect();
     renderSelect();
   });
   onKeyPress("j", () => {
     if (started) return;
     // Late join for P1
-    if (!p1Active) { p1Active = true; p1Choice = nextAvail(p1Choice, 0, p2Locked ? CHAR_OPTIONS[p2Choice] : null); renderSelect(); return; }
+    if (!p1Active) { p1Active = true; p1Choice = nextAvail(p1Choice, 0, p2Locked ? CHAR_OPTIONS[p2Choice] : null); sfxMenuSelect(); renderSelect(); return; }
     if (p1Locked) return;
     p1Locked = true;
+    sfxMenuSelect();
     renderSelect();
   });
 
@@ -1507,6 +1688,7 @@ scene("select", (opts) => {
     const taken = (p1Active && p1Locked) ? CHAR_OPTIONS[p1Choice] : null;
     p2Choice = nextAvail(p2Choice, -1, taken);
     if (p1Active && !p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, -1, null);
+    sfxMenuSelect();
     renderSelect();
   });
   onKeyPress("right", () => {
@@ -1514,14 +1696,16 @@ scene("select", (opts) => {
     const taken = (p1Active && p1Locked) ? CHAR_OPTIONS[p1Choice] : null;
     p2Choice = nextAvail(p2Choice, 1, taken);
     if (p1Active && !p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, 1, null);
+    sfxMenuSelect();
     renderSelect();
   });
   onKeyPress("1", () => {
     if (started) return;
     // Late join for P2
-    if (!p2Active) { p2Active = true; p2Choice = nextAvail(p2Choice, 0, p1Locked ? CHAR_OPTIONS[p1Choice] : null); renderSelect(); return; }
+    if (!p2Active) { p2Active = true; p2Choice = nextAvail(p2Choice, 0, p1Locked ? CHAR_OPTIONS[p1Choice] : null); sfxMenuSelect(); renderSelect(); return; }
     if (p2Locked) return;
     p2Locked = true;
+    sfxMenuSelect();
     renderSelect();
   });
 
@@ -1694,6 +1878,7 @@ scene("game", (p1Type, p2Type) => {
         spawnHitEffect(char.pos.x - 25, char.pos.y);
         spawnHitEffect(char.pos.x + 25, char.pos.y);
         spawnAttackArc(char.pos.x + 30 * char.facing, char.pos.y - 10, char.facing);
+        sfxSuper();
         return;
       }
 
@@ -1754,6 +1939,7 @@ scene("game", (p1Type, p2Type) => {
       char.isAirborne = true;
       char.jumpVy = JUMP_FORCE;
       char.jumpStartY = char.pos.y;
+      sfxJump();
     });
 
     // Dodge / roll
@@ -1772,6 +1958,7 @@ scene("game", (p1Type, p2Type) => {
       char.scale.y = 0.6;
       char.scale.x = char.facing * 1.3;
       spawnWalkDust(char.pos.x, char.pos.y, char.facing);
+      sfxDodge();
       tween(0.3, 0, 0.2, (v) => {
         if (char.dead) return;
         char.scale.y = 1 - v * 0.4;
@@ -1839,6 +2026,7 @@ scene("game", (p1Type, p2Type) => {
         if (char.reviveTimer <= 0) {
           char.downed = false;
           char.dead = true;
+          sfxPlayerDeath();
           const idx = state.players.indexOf(char);
           if (idx >= 0) state.players.splice(idx, 1);
           if (char === p1) { p1 = null; p1Type = null; }
@@ -1859,6 +2047,7 @@ scene("game", (p1Type, p2Type) => {
       char.pos.x = char.facing > 0 ? W / 2 - 40 : W / 2 + 40;
       char.pos.y = H - 100;
       screenShake(5, 0.25);
+      sfxRevive();
       // Get-up animation: rotate back upright from current angle
       const startAngle = char.angle;
       tween(startAngle, 0, 0.25, (v) => {
@@ -2129,6 +2318,7 @@ scene("game", (p1Type, p2Type) => {
     state.enemiesKilled = 0;
     state.enemiesThisWave = 0;
     state.enemiesInWave = config.enemies.reduce((a, e) => a + e.count, 0);
+    sfxWave();
 
     // Wave transition flash
     const flash = add([rect(W, H), color(INK), fixed(), opacity(0), z(45)]);
@@ -2247,6 +2437,7 @@ scene("game", (p1Type, p2Type) => {
   function spawnMiniBoss() {
     if (state.miniBossSpawned) return;
     state.miniBossSpawned = true;
+    sfxBossWarning();
 
     // Warning text
     add([
@@ -2409,6 +2600,7 @@ scene("game", (p1Type, p2Type) => {
   function spawnBoss() {
     if (state.bossSpawned) return;
     state.bossSpawned = true;
+    sfxBossWarning();
 
     // Warning text
     add([
@@ -2568,6 +2760,7 @@ scene("game", (p1Type, p2Type) => {
       state.bossDefeated = true;
       state.boss = null;
       state.victory = true;
+      sfxBossDeath();
 
       // High score
       const prev = parseInt(localStorage.getItem("warzine_high") || "0");
@@ -2806,6 +2999,16 @@ scene("game", (p1Type, p2Type) => {
     state.paused = !state.paused;
   });
 
+  onKeyPress("m", () => {
+    const on = toggleSound();
+    const msg = add([
+      text(on ? "SOUND: ON" : "SOUND: OFF", { size: 16, font: "sans-serif" }),
+      pos(W / 2, H / 2),
+      anchor("center"), color(INK), z(60), fixed(),
+    ]);
+    wait(1.0, () => destroy(msg));
+  });
+
   // ---- MAIN UPDATE ----
   onUpdate(() => {
     if (state.paused) return;
@@ -2898,6 +3101,7 @@ scene("game", (p1Type, p2Type) => {
   state.currentLevel = 0;
   const firstLevel = LEVELS[0];
   state.waveConfigIdx = firstLevel.preMidStart;
+  startMusic();
   startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
 });
 
@@ -2906,7 +3110,9 @@ scene("game", (p1Type, p2Type) => {
 // ============================================================
 
 scene("gameover", (wave) => {
-  wave = wave || 0;
+  wave = wave || 1;
+  stopMusic();
+  sfxGameOver();
 
   // High score
   const prev = parseInt(localStorage.getItem("warzine_high") || "0");
@@ -2956,7 +3162,7 @@ scene("gameover", (wave) => {
     retry.opacity = blink % 1 < 0.6 ? 1 : 0.3;
   });
 
-  onKeyPress("space", () => go("select"));
+  onKeyPress("space", () => { sfxMenuSelect(); go("select"); });
 });
 
 // ============================================================
@@ -2965,6 +3171,7 @@ scene("gameover", (wave) => {
 
 scene("victory", (wave) => {
   wave = wave || 3;
+  stopMusic();
 
   // High score
   const prev = parseInt(localStorage.getItem("warzine_high") || "0");
@@ -3042,8 +3249,8 @@ scene("victory", (wave) => {
     retry.opacity = blink % 1 < 0.6 ? 1 : 0.3;
   });
 
-  onKeyPress("space", () => go("select"));
-  onKeyPress("enter", () => go("title"));
+  onKeyPress("space", () => { sfxMenuSelect(); go("select"); });
+  onKeyPress("enter", () => { sfxMenuSelect(); go("title"); });
 });
 
 // ============================================================
