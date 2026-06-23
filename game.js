@@ -1444,6 +1444,105 @@ function checkItemPickups() {
 }
 
 // ============================================================
+// TOUCH CONTROLS (mobile)
+// ============================================================
+
+(function() {
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  if (!isTouchDevice) return;
+
+  const container = document.getElementById('touch-controls');
+  if (!container) return;
+  container.style.display = 'block';
+
+  const activeTouches = {};
+  const keyState = {};
+
+  function fireKey(key, type) {
+    if (type === 'keydown' && keyState[key]) return;
+    if (type === 'keyup' && !keyState[key]) return;
+    keyState[key] = type === 'keydown';
+    document.dispatchEvent(new KeyboardEvent(type, {
+      key, code: key.length === 1 ? 'Key' + key.toUpperCase() : key,
+      bubbles: true, cancelable: true,
+    }));
+  }
+
+  function getBtn(el) {
+    while (el) {
+      if (el.classList && el.classList.contains('btn')) return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+
+  function pressBtn(btn) {
+    btn.classList.add('pressed');
+    const key = btn.dataset.key;
+    if (key) fireKey(key, 'keydown');
+    if (btn.dataset.super !== undefined) {
+      fireKey('k', 'keydown');
+      fireKey('j', 'keydown');
+    }
+  }
+
+  function releaseBtn(btn) {
+    btn.classList.remove('pressed');
+    const key = btn.dataset.key;
+    if (key) fireKey(key, 'keyup');
+    if (btn.dataset.super !== undefined) {
+      fireKey('j', 'keyup');
+      fireKey('k', 'keyup');
+    }
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    for (const touch of e.changedTouches) {
+      const btn = getBtn(document.elementFromPoint(touch.clientX, touch.clientY));
+      if (btn) {
+        activeTouches[touch.identifier] = btn;
+        pressBtn(btn);
+      }
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    for (const touch of e.changedTouches) {
+      const prevBtn = activeTouches[touch.identifier];
+      const btn = getBtn(document.elementFromPoint(touch.clientX, touch.clientY));
+      if (prevBtn && btn !== prevBtn) {
+        releaseBtn(prevBtn);
+        delete activeTouches[touch.identifier];
+      }
+      if (btn && btn !== prevBtn) {
+        activeTouches[touch.identifier] = btn;
+        pressBtn(btn);
+      }
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    for (const touch of e.changedTouches) {
+      const btn = activeTouches[touch.identifier];
+      if (btn) {
+        releaseBtn(btn);
+        delete activeTouches[touch.identifier];
+      }
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', (e) => {
+    for (const touch of e.changedTouches) {
+      const btn = activeTouches[touch.identifier];
+      if (btn) {
+        releaseBtn(btn);
+        delete activeTouches[touch.identifier];
+      }
+    }
+  }, { passive: true });
+})();
+
+// ============================================================
 // TITLE SCENE
 // ============================================================
 

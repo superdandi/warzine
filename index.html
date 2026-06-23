@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>WARZINE - Beat 'em Up</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
@@ -14,6 +14,11 @@
       align-items: center;
       min-height: 100vh;
       overflow: hidden;
+      position: relative;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
     }
     canvas {
       display: block;
@@ -21,9 +26,141 @@
       max-width: 100vw;
       max-height: 100vh;
     }
+    #touch-controls {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 1000;
+      pointer-events: none;
+      touch-action: none;
+    }
+    #touch-controls .zone {
+      position: absolute;
+      bottom: 16px;
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #touch-controls .dpad {
+      left: 16px;
+      width: 140px;
+      height: 140px;
+      display: grid;
+      grid-template: " .  up  . " 44px
+                     "lt dn rt" 44px
+                     " .  .   . " 0px;
+      gap: 4px;
+    }
+    #touch-controls .dpad .btn {
+      width: 44px; height: 44px;
+      border: 2px solid #1a1a1a;
+      border-radius: 6px;
+      background: rgba(230, 222, 210, 0.7);
+      font-family: 'Special Elite', monospace;
+      font-size: 18px;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.05s;
+    }
+    #touch-controls .dpad .btn:active,
+    #touch-controls .dpad .btn.pressed {
+      background: rgba(26, 26, 26, 0.8);
+      color: #e6ded2;
+    }
+    #touch-controls .dpad .up    { grid-area: up; }
+    #touch-controls .dpad .down  { grid-area: dn; }
+    #touch-controls .dpad .left  { grid-area: lt; }
+    #touch-controls .dpad .right { grid-area: rt; }
+    #touch-controls .actions {
+      right: 16px;
+      gap: 8px;
+      display: grid;
+      grid-template-columns: 52px 52px;
+      grid-template-rows: 52px 52px 44px;
+      grid-template-areas:
+        "punch  ."
+        "jump dodge"
+        "super super";
+    }
+    #touch-controls .actions .btn {
+      border: 2px solid #1a1a1a;
+      border-radius: 50%;
+      background: rgba(230, 222, 210, 0.7);
+      font-family: 'Special Elite', monospace;
+      font-size: 12px;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.05s;
+      font-weight: bold;
+    }
+    #touch-controls .actions .btn:active,
+    #touch-controls .actions .btn.pressed {
+      background: rgba(26, 26, 26, 0.8);
+      color: #e6ded2;
+    }
+    #touch-controls .actions .punch { grid-area: punch; width: 52px; height: 52px; font-size: 13px; }
+    #touch-controls .actions .jump  { grid-area: jump; width: 44px; height: 44px; font-size: 11px; }
+    #touch-controls .actions .dodge { grid-area: dodge; width: 44px; height: 44px; font-size: 11px; }
+    #touch-controls .actions .super { grid-area: super; width: 108px; height: 36px; border-radius: 18px; font-size: 10px; }
+    #touch-controls .pause-btn {
+      position: fixed;
+      top: 12px; right: 12px;
+      width: 36px; height: 36px;
+      border: 2px solid #1a1a1a;
+      border-radius: 6px;
+      background: rgba(230, 222, 210, 0.6);
+      font-family: 'Special Elite', monospace;
+      font-size: 16px;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      z-index: 1001;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #touch-controls .pause-btn:active,
+    #touch-controls .pause-btn.pressed {
+      background: rgba(26, 26, 26, 0.8);
+      color: #e6ded2;
+    }
+    @media (orientation: landscape) {
+      #touch-controls .zone { bottom: 8px; }
+      #touch-controls .dpad { width: 120px; height: 120px; }
+      #touch-controls .dpad .btn { width: 38px; height: 38px; font-size: 16px; }
+      #touch-controls .actions .punch { width: 46px; height: 46px; }
+      #touch-controls .actions .jump  { width: 38px; height: 38px; }
+      #touch-controls .actions .dodge { width: 38px; height: 38px; }
+      #touch-controls .actions .super { width: 96px; height: 32px; }
+    }
   </style>
 </head>
 <body>
+  <div id="touch-controls">
+    <div class="pause-btn" data-key="escape">⏸</div>
+    <div class="zone dpad">
+      <div class="btn up"    data-key="w">↑</div>
+      <div class="btn left"  data-key="a">←</div>
+      <div class="btn down"  data-key="s">↓</div>
+      <div class="btn right" data-key="d">→</div>
+    </div>
+    <div class="zone actions">
+      <div class="btn punch" data-key="j">A</div>
+      <div class="btn jump"  data-key="k">B</div>
+      <div class="btn dodge" data-key="l">C</div>
+      <div class="btn super" data-super>SUPER</div>
+    </div>
+  </div>
   <script src="https://unpkg.com/kaplay@3001.0.19/dist/kaplay.js"></script>
   <script src="game.js"></script>
 </body>
