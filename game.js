@@ -1823,6 +1823,11 @@ scene("game", (p1Type, p2Type) => {
   // ---- VIGNETTE SYSTEM ----
   let vignetteActive = false;
   let vignetteCallback = null;
+  let dismissVignette = null;
+
+  // Persistent handlers (solo se registran una vez)
+  onKeyPress("space", () => { if (vignetteActive && dismissVignette) { sfxMenuSelect(); dismissVignette(); } });
+  onKeyPress("enter", () => { if (vignetteActive && dismissVignette) { sfxMenuSelect(); dismissVignette(); } });
 
   function showVignette(lines, onComplete) {
     vignetteActive = true;
@@ -1893,9 +1898,7 @@ scene("game", (p1Type, p2Type) => {
       vignetteActive = false;
       if (vignetteCallback) vignetteCallback();
     };
-
-    onKeyPress("space", () => { if (vignetteActive) { sfxMenuSelect(); onDone(); } });
-    onKeyPress("enter", () => { if (vignetteActive) { sfxMenuSelect(); onDone(); } });
+    dismissVignette = onDone;
   }
 
   // ---- BACKGROUND (parallax layers) ----
