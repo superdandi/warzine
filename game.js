@@ -146,11 +146,39 @@ function sfxMenuSelect() { playTone(700, 0.06, 0.15, "square"); }
 // Background music: drum & bass loop
 let musicInterval = null;
 
-function startMusic() {
-  if (!soundEnabled || musicInterval) return;
+// ============================================================
+// MUSIC THEMES — cada nivel tiene su propia música para
+// las oleadas normales, el miniboss y el boss
+// ============================================================
+
+const MUSIC_THEMES = {
+  street:        { bpm:120, kicks:[0,2],            snares:[3,7],                hihats:[1,3,5,7,9,11,13,15], bass:[[0,110,0.3,0.1],[4,82,0.3,0.1]] },
+  streetMiniboss:{ bpm:130, kicks:[0,2,4,6],        snares:[3,7,11,15],          hihats:[1,3,5,7,9,11,13,15], bass:[[0,110,0.2,0.1],[2,110,0.2,0.1],[4,82,0.2,0.1],[6,82,0.2,0.1]] },
+  streetBoss:    { bpm:100, kicks:[0,2,4,6,8,10,12,14], snares:[1,3,5,7,9,11,13,15], hihats:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], bass:[[0,55,0.4,0.2],[8,55,0.4,0.2]] },
+
+  rooftop:       { bpm:125, kicks:[0,2],            snares:[3,7],                hihats:[1,2,3,5,6,7,9,10,11,13,14,15], bass:[[0,130,0.25,0.1],[4,98,0.25,0.1]] },
+  rooftopMiniboss:{bpm:140, kicks:[0,2,4,6],        snares:[3,7,11,15],          hihats:[1,3,5,7,9,11,13,15], bass:[[0,130,0.2,0.1],[2,130,0.2,0.1],[4,98,0.2,0.1],[6,98,0.2,0.1]] },
+  rooftopBoss:   { bpm:110, kicks:[0,2,4,6,8,10,12,14], snares:[1,3,5,7,9,11,13,15], hihats:[0,2,4,6,8,10,12,14], bass:[[0,65,0.35,0.15],[6,65,0.35,0.15]] },
+
+  factory:       { bpm:115, kicks:[0,2],            snares:[3,7,11],             hihats:[1,3,5,7,9,11,13,15], bass:[[0,100,0.3,0.1],[4,75,0.3,0.1]] },
+  factoryMiniboss:{bpm:150, kicks:[0,3,6,9,12],     snares:[2,5,8,11,14],        hihats:[1,3,5,7,9,11,13,15], bass:[[0,100,0.15,0.1],[3,100,0.15,0.1],[6,75,0.15,0.1],[9,75,0.15,0.1],[12,100,0.15,0.1]] },
+  factoryBoss:   { bpm:90,  kicks:[0,4,8,12],       snares:[2,6,10,14],          hihats:[0,2,4,6,8,10,12,14], bass:[[0,50,0.5,0.2],[8,50,0.5,0.2]] },
+};
+
+function currentLevelTheme() {
+  const lvl = LEVELS[state.currentLevel];
+  return lvl ? lvl.bgType : "street";
+}
+
+function changeMusic(suffix) {
+  const theme = currentLevelTheme() + suffix;
+  const cfg = MUSIC_THEMES[theme];
+  if (!cfg) return;
+  stopMusic();
+  if (!soundEnabled) return;
   initAudio();
   let beat = 0;
-  const BPM = 120;
+  const BPM = cfg.bpm;
   const interval = (60 / BPM) * 1000;
 
   function kick() {
@@ -176,18 +204,15 @@ function startMusic() {
     playNoise(0.03, 0.1, 8000, "highpass");
   }
 
-  musicNodes = [kick, snare, hihat];
   musicInterval = setInterval(() => {
     if (!soundEnabled) return;
     if (soundCtx.state === "suspended") soundCtx.resume();
-    // 4/4 beat
-    if (beat % 4 === 0) kick();
-    if (beat % 4 === 2) kick();
-    if (beat % 8 === 3 || beat % 8 === 7) snare();
-    if (beat % 2 === 1) hihat();
-    // Bass on every 4th beat
-    if (beat % 8 === 0) playTone(110, 0.3, 0.1, "square");
-    if (beat % 8 === 4) playTone(82, 0.3, 0.1, "square");
+    if (cfg.kicks.includes(beat)) kick();
+    if (cfg.snares.includes(beat)) snare();
+    if (cfg.hihats.includes(beat)) hihat();
+    for (const b of cfg.bass) {
+      if (beat % 16 === b[0]) playTone(b[1], b[2], b[3], "square");
+    }
     beat = (beat + 1) % 16;
   }, interval / 2);
 }
@@ -2725,6 +2750,7 @@ scene("game", (p1Type, p2Type) => {
       const level = LEVELS[lvl];
       state.waveConfigIdx = level.preMidStart;
       switchBg(level.bgType);
+      changeMusic("");
       startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
     });
   }
@@ -2759,6 +2785,7 @@ scene("game", (p1Type, p2Type) => {
   function spawnMiniBoss() {
     if (state.miniBossSpawned) return;
     state.miniBossSpawned = true;
+    changeMusic("Miniboss");
     sfxBossWarning();
 
     // Warning text
@@ -2882,6 +2909,7 @@ scene("game", (p1Type, p2Type) => {
     if (enemy === state.miniBoss) {
       state.miniBossDefeated = true;
       state.miniBoss = null;
+      changeMusic("");
 
       // Guaranteed health drops
       spawnItemDrop(enemy.pos.x, enemy.pos.y);
@@ -2922,6 +2950,7 @@ scene("game", (p1Type, p2Type) => {
   function spawnBoss() {
     if (state.bossSpawned) return;
     state.bossSpawned = true;
+    changeMusic("Boss");
     sfxBossWarning();
 
     // Warning text
@@ -3082,6 +3111,7 @@ scene("game", (p1Type, p2Type) => {
       state.bossDefeated = true;
       state.boss = null;
       state.victory = true;
+      changeMusic("");
       sfxBossDeath();
 
       // High score
@@ -3435,7 +3465,7 @@ scene("game", (p1Type, p2Type) => {
   const firstLevel = LEVELS[0];
   state.waveConfigIdx = firstLevel.preMidStart;
   showVignette(VIGNETTES[0], () => {
-    startMusic();
+    changeMusic("");
     startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
   });
 });
