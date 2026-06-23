@@ -14,6 +14,9 @@ kaplay({
 });
 
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+const touchKeys = {};
+const touchPressCallbacks = {};
+const touchReleaseCallbacks = {};
 
 const PAPER = rgb(230, 222, 210);
 const INK = rgb(0, 0, 0);
@@ -233,6 +236,9 @@ function generatePaperTexture() {
 }
 
 loadSprite("paperTex", generatePaperTexture());
+loadSprite("punkette", "punkette sprite.png");
+loadSprite("antagonic", "antagonic sprite.png");
+loadSprite("xero", "x-ero sprite.png");
 
 // ============================================================
 // PARALLAX BACKGROUND GENERATORS
@@ -710,6 +716,15 @@ function createCharacter(x, y, type, tag) {
     },
   ]);
 
+  // Sprite characters (player selectable types) skip procedural drawing
+  const spriteCfg = CHAR_SPRITES[type];
+  if (spriteCfg) {
+    const scaleFactor = (48 * F) / spriteCfg.h;
+    char.add([sprite(spriteCfg.name), pos(0, 0), anchor("center"), scale(scaleFactor)]);
+    char.useSprite = true;
+    return char;
+  }
+
   const bw = char.bodyW, bh = char.bodyH;
   const hw = char.headW, hh = char.headH;
   const aw = char.armW, ah = char.armH;
@@ -1109,6 +1124,12 @@ const CHAR_CONFIG = {
   },
 };
 
+const CHAR_SPRITES = {
+  punkette: { name: "punkette", w: 300, h: 450 },
+  antagonic: { name: "antagonic", w: 300, h: 450 },
+  xero: { name: "xero", w: 300, h: 450 },
+};
+
 // ============================================================
 // ANIMATION / POSE HELPERS
 // ============================================================
@@ -1459,21 +1480,41 @@ function checkItemPickups() {
   const keyState = {};
   const activeTouches = {};
 
+  const keyCodeMap = {
+    "j":74,"k":75,"l":76,"w":87,"a":65,"s":83,"d":68,"1":49,"2":50,"3":51,
+    "escape":27,"space":32,"enter":13,
+    "left":37,"right":39,"up":38,"down":40,
+  };
+
   function fireKey(key, type) {
     if (type === 'keydown' && keyState[key]) return;
     if (type === 'keyup' && !keyState[key]) return;
     keyState[key] = type === 'keydown';
-    document.dispatchEvent(new KeyboardEvent(type, {
+    const ev = new KeyboardEvent(type, {
       key, code: key.length === 1 ? 'Key' + key.toUpperCase() : key,
       bubbles: true, cancelable: true,
-    }));
+    });
+    const c = keyCodeMap[key];
+    if (c !== undefined) {
+      Object.defineProperty(ev, 'keyCode', { value: c });
+      Object.defineProperty(ev, 'which', { value: c });
+    }
+    window.dispatchEvent(ev);
+    document.dispatchEvent(ev);
   }
 
   function pressBtn(btn) {
     btn.classList.add('pressed');
     const key = btn.dataset.key;
-    if (key) fireKey(key, 'keydown');
+    if (key) {
+      touchKeys[key] = true;
+      if (touchPressCallbacks[key]) touchPressCallbacks[key]();
+      fireKey(key, 'keydown');
+    }
     if (btn.dataset.super !== undefined) {
+      touchKeys['k'] = true; touchKeys['j'] = true;
+      if (touchPressCallbacks['k']) touchPressCallbacks['k']();
+      if (touchPressCallbacks['j']) touchPressCallbacks['j']();
       fireKey('k', 'keydown');
       fireKey('j', 'keydown');
     }
@@ -1482,8 +1523,15 @@ function checkItemPickups() {
   function releaseBtn(btn) {
     btn.classList.remove('pressed');
     const key = btn.dataset.key;
-    if (key) fireKey(key, 'keyup');
+    if (key) {
+      touchKeys[key] = false;
+      if (touchReleaseCallbacks[key]) touchReleaseCallbacks[key]();
+      fireKey(key, 'keyup');
+    }
     if (btn.dataset.super !== undefined) {
+      touchKeys['j'] = false; touchKeys['k'] = false;
+      if (touchReleaseCallbacks['j']) touchReleaseCallbacks['j']();
+      if (touchReleaseCallbacks['k']) touchReleaseCallbacks['k']();
       fireKey('j', 'keyup');
       fireKey('k', 'keyup');
     }
@@ -1636,6 +1684,7 @@ scene("title", () => {
   ]);
 
   let p1Ready = false, p2Ready = false;
+  let _lastTouchJ = false;
 
   onUpdate(() => {
     titleTime += dt();
@@ -1647,6 +1696,9 @@ scene("title", () => {
     title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
     diffText.text = "< DIFFICULTY: " + DIFFICULTIES[gameDifficulty] + " >";
     diffText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
+    // Touch key press polling
+    if (touchKeys['j'] && !_lastTouchJ) { sfxMenuSelect(); if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: isTouchDevice ? false : p2Ready }); } }
+    _lastTouchJ = !!touchKeys['j'];
   });
 
   // Difficulty change
@@ -2057,11 +2109,11 @@ scene("game", (p1Type, p2Type) => {
       const c = controls;
       let dx = 0,
         dy = 0;
-      if (isKeyDown(c.left)) dx -= 1;
-      if (isKeyDown(c.right)) dx += 1;
+      if (isKeyDown(c.left) || touchKeys[c.left]) dx -= 1;
+      if (isKeyDown(c.right) || touchKeys[c.right]) dx += 1;
       if (!char.isAirborne) {
-        if (isKeyDown(c.up)) dy -= 1;
-        if (isKeyDown(c.down)) dy += 1;
+        if (isKeyDown(c.up) || touchKeys[c.up]) dy -= 1;
+        if (isKeyDown(c.down) || touchKeys[c.down]) dy += 1;
       }
 
       if (char.hitTimer > 0) {
@@ -2094,14 +2146,14 @@ scene("game", (p1Type, p2Type) => {
     char.attackCooldown = 0;
 
     // Punch / Super / Air attack
-    onKeyPress(controls.punch, () => {
+    const punchFn = () => {
       if (char.dead || char.downed || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.hitTimer > 0) return;
       if (char.attackCooldown > 0) return;
       if (char.dodgeTimer > 0) return;
 
       // Super attack (A+B)
-      if (isKeyDown(controls.jump) && char.superCooldown <= 0) {
+      if ((isKeyDown(controls.jump) || touchKeys[controls.jump]) && char.superCooldown <= 0) {
         char.superCooldown = 2;
         char.attackCooldown = 0.5;
         screenShake(10, 0.25);
@@ -2169,10 +2221,12 @@ scene("game", (p1Type, p2Type) => {
       tween(0, 1, 0.06, () => {}, () => {
         if (!char.dead) resetPose(char);
       });
-    });
+    };
+    onKeyPress(controls.punch, punchFn);
+    touchPressCallbacks[controls.punch] = punchFn;
 
     // Jump
-    onKeyPress(controls.jump, () => {
+    const jumpFn = () => {
       if (char.dead || char.downed || state.gameOver || state.victory || state.hitPause > 0) return;
       if (char.hitTimer > 0) return;
       if (char.isAirborne) return;
