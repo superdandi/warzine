@@ -1724,7 +1724,8 @@ scene("title", () => {
   add([rect(180, 3), color(INK), pos(W / 2 - 90, H * line1Y), fixed(), z(10)]);
   add([rect(140, 2), color(INK), pos(W / 2 - 70, H * line2Y), fixed(), z(10)]);
 
-  // Version & Credits hint
+  // Version & hints
+  const isFirstTutorial = !localStorage.getItem("warzine_tutorial");
   add([
     text("v1.5", { size: 10, font: "sans-serif" }),
     pos(W - 30, H - 15), anchor("center"), color(INK), fixed(), z(10),
@@ -1733,6 +1734,11 @@ scene("title", () => {
     text("C - CREDITS", { size: 10, font: "sans-serif" }),
     pos(50, H - 15), anchor("center"), color(INK), fixed(), z(10),
   ]);
+  const tutorialHint = add([
+    text(isFirstTutorial ? "T - TUTORIAL (RECOMMENDED)" : "T - TUTORIAL", { size: 10, font: "sans-serif" }),
+    pos(W / 2, H * 0.90), anchor("center"), color(INK), fixed(), z(10),
+  ]);
+  if (isFirstTutorial) tutorialHint.opacity = 0.3;
 
   let p1Ready = false, p2Ready = false;
   let _lastTouchJ = false;
@@ -1747,6 +1753,8 @@ scene("title", () => {
     title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
     diffText.text = "< DIFFICULTY: " + DIFFICULTIES[gameDifficulty] + " >";
     diffText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
+    // Tutorial hint pulse
+    if (isFirstTutorial) tutorialHint.opacity = 0.3 + Math.sin(blink * 2) * 0.2;
     // Touch key press polling
     if (touchKeys['j'] && !_lastTouchJ) { sfxMenuSelect(); if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: isTouchDevice ? false : p2Ready }); } }
     _lastTouchJ = !!touchKeys['j'];
@@ -1765,6 +1773,9 @@ scene("title", () => {
 
   // Credits key
   onKeyPress("c", () => { sfxMenuSelect(); go("credits"); });
+
+  // Tutorial key
+  onKeyPress("t", () => { sfxMenuSelect(); go("tutorial"); });
 });
 
 // ============================================================
@@ -3722,6 +3733,642 @@ scene("credits", () => {
   onKeyPress("space", exitCredits);
   onKeyPress("enter", exitCredits);
   onKeyPress("escape", exitCredits);
+});
+
+// ============================================================
+// TUTORIAL SCENE
+// ============================================================
+
+scene("tutorial", () => {
+  stopMusic();
+  const TF = 2;
+  const T_GRAVITY = 800;
+  const T_JUMP_FORCE = -300;
+  const T_GROUND_Y = H - 70;
+
+  // Background
+  add([rect(W, H), color(PAPER), fixed()]);
+  add([sprite("paperTex"), opacity(0.15), fixed()]);
+
+  // Ground
+  add([rect(W, 4), color(INK), pos(0, T_GROUND_Y), fixed()]);
+
+  // Decorative lines
+  for (let i = 0; i < 6; i++) {
+    add([rect(rand(30, 80), 1), color(INK), pos(rand(20, W - 20), rand(20, T_GROUND_Y - 40)), opacity(rand(0.05, 0.12)), fixed()]);
+  }
+
+  // Player state
+  let p = {
+    pos: vec2(W / 2, T_GROUND_Y),
+    vy: 0, onGround: true, facing: 1,
+    speed: 150, hp: 100, invincible: 0,
+    dodgeCooldown: 0, superCooldown: 0,
+  };
+
+  const spriteCfg = CHAR_SPRITES["punkette"];
+  const playerObj = add([
+    pos(p.pos),
+    area({ shape: new Rect(vec2(-14 * TF, -24 * TF), 28 * TF, 48 * TF) }),
+    anchor("center"),
+    z(10),
+  ]);
+  if (spriteCfg) {
+    playerObj.add([
+      sprite("punkette sprite.png"),
+      scale((48 * TF) / spriteCfg.h * 1.5),
+      anchor("center"),
+    ]);
+  }
+
+  // Step system
+  let stepIdx = -1;
+  const stepObjs = [];
+  let stepDone = false;
+  let completedSteps = [];
+  let jumpCount = 0;
+  let dodgeCount = 0;
+  let hasCollected = false;
+  let stepStartTime = 0;
+  let moveStartPos = null;
+  let fightEnemies = [];
+
+  function cleanupStep() {
+    stepObjs.forEach(o => { if (o.exists()) destroy(o); });
+    stepObjs.length = 0;
+    fightEnemies.forEach(e => { if (e.exists()) destroy(e); });
+    fightEnemies = [];
+    stepDone = false;
+  }
+
+  function showStepComplete(name) {
+    const txt = add([
+      text("✓ " + name, { size: 18, font: "sans-serif" }),
+      pos(W / 2, H / 2 - 40),
+      anchor("center"),
+      color(INK),
+      z(50),
+      fixed(),
+      opacity(1),
+      lifespan(0.8),
+    ]);
+    completedSteps.push(name);
+  }
+
+  function showInstruction(text, subtext) {
+    const yOff = subtext ? 40 : 0;
+    const t1 = add([
+      text(text, { size: subtext ? 14 : 20, font: "sans-serif" }),
+      pos(W / 2, 30 + yOff),
+      anchor("center"),
+      color(INK),
+      z(50),
+      fixed(),
+      opacity(0),
+    ]);
+    stepObjs.push(t1);
+    wait(0.1, () => { if (t1.exists()) t1.opacity = 1; });
+    if (subtext) {
+      const t2 = add([
+        text(subtext, { size: 12, font: "sans-serif" }),
+        pos(W / 2, 55),
+        anchor("center"),
+        color(INK),
+        z(50),
+        fixed(),
+        opacity(0),
+      ]);
+      stepObjs.push(t2);
+      wait(0.2, () => { if (t2.exists()) t2.opacity = 1; });
+    }
+  }
+
+  function showStepCounter(current, total) {
+    const t = add([
+      text("STEP " + current + " / " + total, { size: 9, font: "sans-serif" }),
+      pos(W - 50, 12),
+      anchor("center"),
+      color(INK),
+      z(50),
+      fixed(),
+      opacity(0.4),
+    ]);
+    stepObjs.push(t);
+  }
+
+  function createCrate(x, y, hp, opts) {
+    opts = opts || {};
+    const crate = add([
+      rect(opts.w || 28, opts.h || 28),
+      color(WHITE),
+      outline(3, INK),
+      area(),
+      pos(x, y),
+      anchor("center"),
+      z(10),
+      "crate",
+      { hp, maxHp: hp, superOnly: !!opts.superOnly },
+    ]);
+    stepObjs.push(crate);
+    return crate;
+  }
+
+  function spawnHealthItem(x, y) {
+    const item = add([
+      rect(16, 16),
+      color(WHITE),
+      outline(3, INK),
+      pos(x, y),
+      area(),
+      anchor("center"),
+      z(25),
+      "healthItem",
+      { bob: rand(0, Math.PI * 2) },
+    ]);
+    item.add([rect(10, 3), color(INK), pos(-5, -1.5), anchor("center")]);
+    item.add([rect(3, 10), color(INK), pos(-1.5, -5), anchor("center")]);
+    stepObjs.push(item);
+    return item;
+  }
+
+  function createProjectile(x, y, dir) {
+    const proj = add([
+      rect(10, 6),
+      color(INK),
+      area(),
+      pos(x, y),
+      anchor("center"),
+      move(vec2(dir, 0), 120),
+      z(10),
+      "projectile",
+      lifespan(4),
+    ]);
+    stepObjs.push(proj);
+    return proj;
+  }
+
+  // Step definitions
+  const STEPS = [
+    {
+      name: "INTRO",
+      run: () => {
+        const overlay = add([fixed(), z(200)]);
+        overlay.add([rect(W, H), color(PAPER), opacity(1)]);
+        overlay.add([rect(W - 20, H - 20), outline(4, INK), pos(10, 10), color(PAPER)]);
+        overlay.add([rect(W - 34, H - 34), outline(2, INK), pos(17, 17), color(PAPER)]);
+        const lines = [
+          "THE CITY IS A BATTLEFIELD.",
+          "EVERY STREET, EVERY ROOFTOP,",
+          "EVERY FACTORY FLOOR.",
+          "",
+          "BEFORE YOU FIGHT,",
+          "YOU MUST LEARN.",
+          "",
+        ];
+        const textObjs = [];
+        const sy = H / 2 - (lines.length * 14) / 2;
+        lines.forEach((line, i) => {
+          const t = overlay.add([
+            text(line, { size: line === "" ? 8 : 14, font: "sans-serif" }),
+            pos(W / 2, sy + i * 18),
+            anchor("center"), color(INK), z(201), opacity(0),
+          ]);
+          textObjs.push(t);
+        });
+        textObjs.forEach((t, i) => wait(0.15 + i * 0.12, () => { if (t.exists()) t.opacity = 1; }));
+        const prompt = overlay.add([
+          text("[ SPACE / ENTER ]", { size: 12, font: "sans-serif" }),
+          pos(W / 2, H - 55), anchor("center"), color(INK), z(201), opacity(0),
+        ]);
+        let blink = 0;
+        const upd = onUpdate(() => { blink += dt(); prompt.opacity = blink % 1 < 0.6 ? 0.7 : 0.2; });
+        stepObjs.push(overlay);
+        stepObjs.push({ cancel: () => { upd.cancel(); destroy(overlay); } });
+        stepDone = false;
+        const handler = onKeyPress("space", () => { handler.cancel(); sfxMenuSelect(); advanceStep(); });
+        const handler2 = onKeyPress("enter", () => { handler2.cancel(); sfxMenuSelect(); advanceStep(); });
+        stepObjs.push(handler);
+        stepObjs.push(handler2);
+      },
+    },
+    {
+      name: "MOVE",
+      run: () => {
+        showInstruction("USE WASD TO MOVE", "Move around to learn the streets");
+        showStepCounter(1, 7);
+        moveStartPos = p.pos.clone();
+        stepDone = false;
+      },
+      check: () => p.pos.dist(moveStartPos) > 70,
+    },
+    {
+      name: "JUMP",
+      run: () => {
+        showInstruction("PRESS K TO JUMP", "Jump 3 times to show your spirit");
+        showStepCounter(2, 7);
+        jumpCount = 0;
+        stepDone = false;
+      },
+      check: () => {
+        if (jumpCount >= 3) return true;
+        return false;
+      },
+    },
+    {
+      name: "PUNCH",
+      run: () => {
+        showInstruction("PRESS J TO PUNCH", "Destroy both training crates");
+        showStepCounter(3, 7);
+        createCrate(W / 2 - 60, T_GROUND_Y - 16, 15);
+        createCrate(W / 2 + 60, T_GROUND_Y - 16, 15);
+        stepDone = false;
+      },
+      check: () => {
+        const crates = get("crate");
+        return crates.length === 0;
+      },
+    },
+    {
+      name: "SUPER",
+      run: () => {
+        showInstruction("PRESS J+K FOR SUPER ATTACK", "Destroy the reinforced crate");
+        showStepCounter(4, 7);
+        createCrate(W / 2, T_GROUND_Y - 16, 75, { superOnly: true });
+        stepDone = false;
+      },
+      check: () => {
+        const crates = get("crate");
+        return crates.length === 0;
+      },
+    },
+    {
+      name: "DODGE",
+      run: () => {
+        showInstruction("PRESS L TO DODGE", "Dodge 3 incoming projectiles");
+        showStepCounter(5, 7);
+        dodgeCount = 0;
+
+        // Turret that shoots
+        let shootTimer = 0;
+        const upd = onUpdate(() => {
+          shootTimer += dt();
+          if (shootTimer >= 1.5) {
+            shootTimer = 0;
+            createProjectile(20, T_GROUND_Y - 20, 1);
+          }
+        });
+        stepObjs.push({ cancel: () => upd.cancel() });
+        stepDone = false;
+      },
+      check: () => dodgeCount >= 3,
+    },
+    {
+      name: "COLLECT",
+      run: () => {
+        showInstruction("WALK OVER ITEMS", "Collect the health pickup");
+        showStepCounter(6, 7);
+        spawnHealthItem(W / 2 + 120, T_GROUND_Y - 12);
+        hasCollected = false;
+        stepDone = false;
+      },
+      check: () => hasCollected,
+    },
+    {
+      name: "FIGHT",
+      run: () => {
+        showInstruction("PUT IT ALL TOGETHER", "Defeat 2 enemies");
+        showStepCounter(7, 7);
+        stepDone = false;
+
+        const e1 = createTutorialEnemy(100, T_GROUND_Y, "grunt");
+        const e2 = createTutorialEnemy(W - 100, T_GROUND_Y, "punk");
+        fightEnemies = [e1, e2];
+      },
+      check: () => {
+        return fightEnemies.every(e => !e.exists() || e.hp <= 0);
+      },
+    },
+  ];
+
+  function createTutorialEnemy(x, y, type) {
+    const cfg = CHAR_CONFIG[type];
+    const enemy = add([
+      rect(28 * TF, 48 * TF),
+      color(WHITE),
+      outline(3, INK),
+      area({ shape: new Rect(vec2(-14 * TF, -24 * TF), 28 * TF, 48 * TF) }),
+      pos(x, y),
+      anchor("center"),
+      z(10),
+      "tutorialEnemy",
+      { hp: type === "grunt" ? 30 : 40, invincible: 0, facing: -1, speed: 40 },
+    ]);
+    enemy.add([rect(cfg.bodyW * TF, cfg.bodyH * TF), outline(3), color(WHITE), anchor("center")]);
+    enemy.add([rect(cfg.headW * TF, cfg.headH * TF), outline(3), color(WHITE), pos(0, -cfg.bodyH * TF / 2 - cfg.headH * TF + 2), anchor("center")]);
+    stepObjs.push(enemy);
+    return enemy;
+  }
+
+  function advanceStep() {
+    if (stepIdx >= 0 && stepObjs.length > 0) {
+      // Cleanup any step-specific objects with a cancel method
+      stepObjs.forEach(o => { if (o && o.cancel) o.cancel(); else if (o && o.exists) { try { destroy(o); } catch(e) {} } });
+    }
+    stepObjs.length = 0;
+    cleanupStep();
+
+    stepIdx++;
+    if (stepIdx >= STEPS.length) {
+      showTutorialEnd();
+      return;
+    }
+    STEPS[stepIdx].run();
+    stepStartTime = time();
+  }
+
+  function showTutorialEnd() {
+    add([
+      text("TRAINING COMPLETE", { size: 32, font: "sans-serif" }),
+      pos(W / 2, H / 2 - 30),
+      anchor("center"), color(INK), z(50), fixed(),
+    ]);
+    add([
+      text("YOU ARE READY FOR WARZINE", { size: 14, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 10),
+      anchor("center"), color(INK), z(50), fixed(),
+    ]);
+    let blink = 0;
+    const retry = add([
+      text("[ SPACE ]  RETURN TO TITLE", { size: 13, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 60),
+      anchor("center"), color(INK), z(50), fixed(),
+    ]);
+    onUpdate(() => { blink += dt(); retry.opacity = blink % 1 < 0.6 ? 1 : 0.3; });
+    onKeyPress("space", () => { sfxMenuSelect(); localStorage.setItem("warzine_tutorial", "1"); go("title"); });
+    onKeyPress("enter", () => { sfxMenuSelect(); localStorage.setItem("warzine_tutorial", "1"); go("title"); });
+  }
+
+  // Main update
+  const TUTORIAL_STEP_COUNT = STEPS.length;
+
+  onUpdate(() => {
+    if (stepIdx < 0) return;
+
+    // Physics
+    if (!p.onGround) {
+      p.vy += T_GRAVITY * dt();
+    }
+    p.pos.y += p.vy * dt();
+
+    if (p.pos.y >= T_GROUND_Y) {
+      p.pos.y = T_GROUND_Y;
+      p.onGround = true;
+      p.vy = 0;
+    } else {
+      p.onGround = false;
+    }
+
+    // Keep in bounds
+    p.pos.x = Math.max(30, Math.min(W - 30, p.pos.x));
+
+    // Movement
+    let dx = 0;
+    if (isKeyDown("a") || isKeyDown("left")) dx -= 1;
+    if (isKeyDown("d") || isKeyDown("right")) dx += 1;
+    p.pos.x += dx * p.speed * dt();
+    if (dx !== 0) p.facing = dx > 0 ? 1 : -1;
+
+    // Dodge cooldown
+    if (p.dodgeCooldown > 0) p.dodgeCooldown -= dt();
+    if (p.invincible > 0) p.invincible -= dt();
+
+    // Update player object position
+    playerObj.pos = p.pos;
+
+    // Step-specific logic
+    const step = STEPS[stepIdx];
+    if (step && step.check && !stepDone) {
+      if (step.check()) {
+        stepDone = true;
+        showStepComplete(step.name);
+        wait(0.6, () => advanceStep());
+      }
+    }
+
+    // Crates hit detection
+    if (stepIdx === 3 || stepIdx === 4) {
+      // Check if just punched
+    }
+  });
+
+  // Jump handling
+  onKeyPress("k", () => {
+    if (stepIdx < 0) return;
+    if (p.onGround) {
+      p.vy = T_JUMP_FORCE;
+      p.onGround = false;
+      playTone(200, 0.15, 0.2, "square", 600);
+      jumpCount++;
+    }
+  });
+  onKeyPress("up", () => {
+    if (stepIdx < 0) return;
+    if (p.onGround) {
+      p.vy = T_JUMP_FORCE;
+      p.onGround = false;
+      playTone(200, 0.15, 0.2, "square", 600);
+      jumpCount++;
+    }
+  });
+
+  // Dodge
+  onKeyPress("l", () => {
+    if (p.dodgeCooldown > 0) return;
+    p.dodgeCooldown = 1;
+    p.invincible = 0.3;
+    p.pos.x += p.facing * 60;
+    playNoise(0.1, 0.2, 1000, "highpass");
+    dodgeCount++;
+  });
+  onKeyPress("3", () => {
+    if (p.dodgeCooldown > 0) return;
+    p.dodgeCooldown = 1;
+    p.invincible = 0.3;
+    p.pos.x += p.facing * 60;
+    playNoise(0.1, 0.2, 1000, "highpass");
+    dodgeCount++;
+  });
+
+  // Projectile collision
+  onUpdate(() => {
+    if (stepIdx === 5) {
+      getAll("projectile").forEach(proj => {
+        if (proj.exists() && p.pos.dist(proj.pos) < 25) {
+          if (p.invincible <= 0) {
+            // Hit! This means they didn't dodge
+            p.invincible = 0.5;
+            // Just push back, no health loss
+          }
+          destroy(proj);
+        }
+      });
+    }
+  });
+
+  // Health item collection
+  onUpdate(() => {
+    if (stepIdx === 6) {
+      getAll("healthItem").forEach(item => {
+        if (item.exists() && p.pos.dist(item.pos) < 25) {
+          hasCollected = true;
+          spawnInkSplat(item.pos.x, item.pos.y);
+          destroy(item);
+          sfxItemPickup();
+        }
+      });
+    }
+  });
+
+  // Punch & Super handling
+  onKeyPress("j", () => {
+    if (stepIdx < 0) return;
+    const isSuper = isKeyDown("k") || isKeyDown("2");
+    const punchDir = p.facing;
+
+    if (isSuper && stepIdx >= 4) {
+      // Super attack
+      const hb = add([
+        pos(p.pos.x + punchDir * 30, p.pos.y),
+        rect(50, 40),
+        area(),
+        anchor("center"),
+        z(15),
+        opacity(0),
+        lifespan(0.15),
+        "superHitbox",
+      ]);
+      playNoise(0.15, 0.3, 500, "bandpass");
+      playTone(150, 0.2, 0.3, "sawtooth", 80);
+
+      // Check hit on crates
+      getAll("crate").forEach(c => {
+        if (hb.isColliding(c)) {
+          c.hp -= 75;
+          spawnInkSplat(c.pos.x, c.pos.y);
+          if (c.hp <= 0) { destroy(c); sfxKill(); }
+          else { sfxHit(); }
+        }
+      });
+      // Check hit on enemies
+      getAll("tutorialEnemy").forEach(e => {
+        if (hb.isColliding(e)) {
+          e.hp -= 40;
+          spawnInkSplat(e.pos.x, e.pos.y);
+          if (e.hp <= 0) { destroy(e); sfxKill(); }
+          else { sfxHit(); e.invincible = 0.3; }
+        }
+      });
+    } else {
+      // Normal punch
+      const hb = add([
+        pos(p.pos.x + punchDir * 20, p.pos.y),
+        rect(22, 18),
+        area(),
+        anchor("center"),
+        z(15),
+        opacity(0),
+        lifespan(0.1),
+        "punchHitbox",
+      ]);
+      playNoise(0.08, 0.4, 3000, "lowpass");
+      playTone(80, 0.06, 0.3, "square");
+
+      // Check hit on crates
+      getAll("crate").forEach(c => {
+        if (hb.isColliding(c) && !c.superOnly) {
+          c.hp -= 15;
+          spawnInkSplat(c.pos.x, c.pos.y);
+          if (c.hp <= 0) { destroy(c); sfxKill(); }
+          else { sfxHit(); }
+        }
+      });
+      // Check hit on enemies
+      getAll("tutorialEnemy").forEach(e => {
+        if (hb.isColliding(e)) {
+          e.hp -= 15;
+          spawnInkSplat(e.pos.x, e.pos.y);
+          if (e.hp <= 0) { destroy(e); sfxKill(); }
+          else { sfxHit(); e.invincible = 0.3; }
+        }
+      });
+    }
+  });
+
+  onKeyPress("1", () => {
+    // Same as J for P2 controls
+    if (stepIdx < 0) return;
+    const isSuper = isKeyDown("k") || isKeyDown("2");
+    const punchDir = p.facing; // Simplified
+
+    // Same logic
+    if (isSuper && stepIdx >= 4) {
+      const hb = add([
+        pos(p.pos.x + punchDir * 30, p.pos.y),
+        rect(50, 40),
+        area(), anchor("center"), z(15), opacity(0), lifespan(0.15),
+      ]);
+      playNoise(0.15, 0.3, 500, "bandpass");
+      playTone(150, 0.2, 0.3, "sawtooth", 80);
+      getAll("crate").forEach(c => {
+        if (hb.isColliding(c)) { c.hp -= 75; spawnInkSplat(c.pos.x, c.pos.y); if (c.hp <= 0) { destroy(c); sfxKill(); } else sfxHit(); }
+      });
+      getAll("tutorialEnemy").forEach(e => {
+        if (hb.isColliding(e)) { e.hp -= 40; spawnInkSplat(e.pos.x, e.pos.y); if (e.hp <= 0) { destroy(e); sfxKill(); } else { sfxHit(); e.invincible = 0.3; } }
+      });
+    } else {
+      const hb = add([
+        pos(p.pos.x + punchDir * 20, p.pos.y),
+        rect(22, 18),
+        area(), anchor("center"), z(15), opacity(0), lifespan(0.1),
+      ]);
+      playNoise(0.08, 0.4, 3000, "lowpass");
+      playTone(80, 0.06, 0.3, "square");
+      getAll("crate").forEach(c => {
+        if (hb.isColliding(c) && !c.superOnly) { c.hp -= 15; spawnInkSplat(c.pos.x, c.pos.y); if (c.hp <= 0) { destroy(c); sfxKill(); } else sfxHit(); }
+      });
+      getAll("tutorialEnemy").forEach(e => {
+        if (hb.isColliding(e)) { e.hp -= 15; spawnInkSplat(e.pos.x, e.pos.y); if (e.hp <= 0) { destroy(e); sfxKill(); } else { sfxHit(); e.invincible = 0.3; } }
+      });
+    }
+  });
+
+  // Enemy AI
+  onUpdate(() => {
+    getAll("tutorialEnemy").forEach(e => {
+      if (e.hp <= 0) return;
+      // Simple chase
+      const dir = p.pos.x > e.pos.x ? 1 : -1;
+      e.facing = dir;
+      e.pos.x += dir * e.speed * dt();
+
+      // Keep in bounds
+      e.pos.x = Math.max(30, Math.min(W - 30, e.pos.x));
+
+      // Push player slightly on contact
+      if (p.pos.dist(e.pos) < 30) {
+        if (p.invincible <= 0) {
+          p.invincible = 0.3;
+        }
+        // Push apart
+        const pushDir = p.pos.x > e.pos.x ? 1 : -1;
+        p.pos.x += pushDir * 3;
+        e.pos.x -= pushDir * 3;
+      }
+    });
+  });
+
+  // Start
+  advanceStep();
 });
 
 // ============================================================

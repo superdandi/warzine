@@ -109,7 +109,7 @@
 | 💧 | Selector de dificultad en título | ✅ | A/D para cambiar, Easy/Normal/Hard, multiplicadores en HP/daño/cantidad |
 | 🌱 | Pantalla de créditos | ✅ | Scrolling, tecla C en título, estilo terminal |
 | 🌱 | Dificultad (Fácil / Normal / Duro) | ⬜ | HP, daño, velocidad enemiga |
-| 🌱 | Tutorial interactivo | ⬜ | Primera partida guiada |
+| 🌱 | Tutorial interactivo | ✅ | Escena separada, tecla T, 8 pasos + fight final |
 
 ---
 
