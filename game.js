@@ -3815,10 +3815,10 @@ scene("tutorial", () => {
     completedSteps.push(name);
   }
 
-  function showInstruction(text, subtext) {
+  function showInstruction(msg, subtext) {
     const yOff = subtext ? 40 : 0;
     const t1 = add([
-      text(text, { size: subtext ? 14 : 20, font: "sans-serif" }),
+      text(msg, { size: subtext ? 14 : 20, font: "sans-serif" }),
       pos(W / 2, 30 + yOff),
       anchor("center"),
       color(INK),
