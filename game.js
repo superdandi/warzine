@@ -287,7 +287,7 @@ loadSprite("bossDirector", "big boss 1 sprite.png");
 loadSprite("bossQuimica", "big boss 2 sprite.png");
 loadSprite("bossColoso", "big boss 3 sprite.png");
 loadSprite("versusBg", "versus scene.png");
-loadSprite("titleBg", "title scene.png");
+loadSprite("titleBg", "title-screen-640.png");
 
 // ============================================================
 // PARALLAX BACKGROUND GENERATORS
@@ -1680,7 +1680,7 @@ function checkItemPickups() {
 
 scene("title", () => {
   stopMusic();
-  add([sprite("titleBg"), fixed(), scale(W / 1448), z(0)]);
+  add([sprite("titleBg"), fixed(), z(0)]);
   // paperTex over background for ink texture
   add([sprite("paperTex"), opacity(0.12), z(100), fixed()]);
 
