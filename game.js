@@ -4110,7 +4110,7 @@ scene("versus", () => {
     onUpdate(() => {
       if (p1 && p1.exists()) p1Bar.width = 200 * Math.max(0, p1.hp / p1.maxHp);
       if (p2 && p2.exists()) p2Bar.width = 200 * Math.max(0, p2.hp / p2.maxHp);
-      scoreDisp.text = "ROUND " + round + "   P1 [" + p1Wins + "]  -  [" + p2Wins + "] P2";
+      scoreDisp.text = "ROUND " + round + "   P1 \\[" + p1Wins + "\\]  -  \\[" + p2Wins + "\\] P2";
       vsTime += dt();
     });
 
