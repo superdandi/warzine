@@ -275,6 +275,12 @@ loadSprite("paperTex", generatePaperTexture());
 loadSprite("punkette", "punkette sprite.png");
 loadSprite("antagonic", "antagonic sprite.png");
 loadSprite("xero", "x-ero sprite.png");
+loadSprite("matonBasico", "maton basico sprite.png");
+loadSprite("matonMedio", "maton medio sprite.png");
+loadSprite("elBruto", "el bruto sprite.png");
+loadSprite("bossDirector", "big boss 1 sprite.png");
+loadSprite("bossQuimica", "big boss 2 sprite.png");
+loadSprite("bossColoso", "big boss 3 sprite.png");
 
 // ============================================================
 // PARALLAX BACKGROUND GENERATORS
@@ -705,14 +711,14 @@ function screenShake(intensity = 4, duration = 0.15) {
 // CHARACTER FACTORY
 // ============================================================
 
-function createCharacter(x, y, type, tag) {
+function createCharacter(x, y, type, tag, spriteName) {
   const F = tag === "boss" ? 3 : 2;
   const DS = F;
 
   const cfg = CHAR_CONFIG[type];
 
   // Sprite characters — no white rect, collision via explicit area
-  const spriteCfg = CHAR_SPRITES[type];
+  const spriteCfg = spriteName ? { name: spriteName, w: 95, h: 125 } : CHAR_SPRITES[type];
   if (spriteCfg) {
     const scaleFactor = (48 * F) / spriteCfg.h * 1.5;
     const char = add([
@@ -1186,6 +1192,21 @@ const CHAR_SPRITES = {
   punkette: { name: "punkette", w: 300, h: 450 },
   antagonic: { name: "antagonic", w: 300, h: 450 },
   xero: { name: "xero", w: 300, h: 450 },
+  grunt: { name: "matonBasico", w: 95, h: 125 },
+  punk: { name: "matonMedio", w: 95, h: 125 },
+  tough: { name: "elBruto", w: 95, h: 125 },
+};
+
+const BOSS_SPRITE_KEYS = {
+  street: "bossDirector",
+  rooftop: "bossQuimica",
+  factory: "bossColoso",
+};
+
+const BOSS_NAMES = {
+  street: "EL DIRECTOR",
+  rooftop: "LA QUIMICA",
+  factory: "EL COLOSO",
 };
 
 // ============================================================
@@ -3055,8 +3076,9 @@ scene("game", (p1Type, p2Type) => {
       opacity(1),
       lifespan(2),
     ]);
+    const bossName = BOSS_NAMES[state.bgType] || "BOSS";
     add([
-      text("BOSS INCOMING", { size: 24, font: "sans-serif" }),
+      text(bossName + " APPROACHING", { size: 20, font: "sans-serif" }),
       pos(W / 2, H / 2 + 10),
       anchor("center"),
       color(INK),
@@ -3067,7 +3089,7 @@ scene("game", (p1Type, p2Type) => {
     ]);
 
     wait(1.5, () => {
-      const boss = createCharacter(W / 2, H - 100, "boss", "boss");
+      const boss = createCharacter(W / 2, H - 100, "boss", "boss", BOSS_SPRITE_KEYS[state.bgType]);
       state.boss = boss;
       state.enemies.push(boss);
 
