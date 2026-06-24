@@ -17,6 +17,7 @@ const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 const touchKeys = {};
 const touchPressCallbacks = {};
 const touchReleaseCallbacks = {};
+let isVersusMode = false;
 
 const PAPER = rgb(230, 222, 210);
 const INK = rgb(0, 0, 0);
@@ -1281,6 +1282,21 @@ function spawnHitbox(owner, offsetX, offsetY, w, h, damage, knockback, duration)
     destroy(hb);
   });
 
+  function hitPlayer(other) {
+    if (other === owner || other.invincible > 0 || other.dead || other.downed) return;
+    other.hp -= damage;
+    other.invincible = 0.3;
+    other.hitTimer = 0.15;
+    setHitPose(other);
+    screenShake(4, 0.12);
+    if (curState) curState.hitPause = 0.04;
+    sfxHitPlayer();
+    spawnDamagePopup(other.pos.x, other.pos.y - 15, damage, dir);
+    wait(0.02, () => {
+      if (!other.dead) other.pos.x += -dir * knockback;
+    });
+  }
+
   if (isPlayer) {
     hb.onCollide("enemy", (enemy) => {
         if (enemy.invincible > 0 || enemy.dead) return;
@@ -1290,23 +1306,16 @@ function spawnHitbox(owner, offsetX, offsetY, w, h, damage, knockback, duration)
         if (boss.invincible > 0 || boss.dead) return;
         hitEnemy(boss, damage, knockback, dir, owner);
       });
+      if (isVersusMode || (curState && curState.friendlyFire)) {
+        hb.onCollide("player", hitPlayer);
+      }
   } else {
     hb.onUpdate(() => {
       if (!curState) return;
       for (const player of curState.players) {
         if (player.dead || player.downed || player === owner || player.invincible > 0) continue;
         if (hb.isColliding(player)) {
-          player.hp -= damage;
-          player.invincible = 0.3;
-          player.hitTimer = 0.15;
-          setHitPose(player);
-          screenShake(4, 0.12);
-          curState.hitPause = 0.04;
-          sfxHitPlayer();
-          spawnDamagePopup(player.pos.x, player.pos.y - 15, damage, dir);
-          wait(0.02, () => {
-            if (!player.dead) player.pos.x += -dir * knockback;
-          });
+          hitPlayer(player);
           break;
         }
       }
@@ -1717,8 +1726,20 @@ scene("title", () => {
     z(10),
   ]);
 
+  // Friendly fire toggle
+  let friendlyFireOn = false;
+  const ffY = isTouchDevice ? 0.78 : 0.84;
+  const ffText = add([
+    text("< FF: CO-OP >", { size: 14, font: "sans-serif" }),
+    pos(W / 2, H * ffY),
+    anchor("center"),
+    color(INK),
+    fixed(),
+    z(10),
+  ]);
+
   // Difficulty selector
-  const diffY = isTouchDevice ? 0.78 : 0.84;
+  const diffY = isTouchDevice ? 0.84 : 0.90;
   const diffText = add([
     text("< DIFFICULTY: NORMAL >", { size: 14, font: "sans-serif" }),
     pos(W / 2, H * diffY),
@@ -1730,7 +1751,7 @@ scene("title", () => {
 
   // Decorative lines
   const line1Y = isTouchDevice ? 0.68 : 0.73;
-  const line2Y = isTouchDevice ? 0.80 : 0.85;
+  const line2Y = isTouchDevice ? 0.72 : 0.77;
   add([rect(180, 3), color(INK), pos(W / 2 - 90, H * line1Y), fixed(), z(10)]);
   add([rect(140, 2), color(INK), pos(W / 2 - 70, H * line2Y), fixed(), z(10)]);
 
@@ -1744,6 +1765,12 @@ scene("title", () => {
     text("C - CREDITS", { size: 10, font: "sans-serif" }),
     pos(50, H - 15), anchor("center"), color(INK), fixed(), z(10),
   ]);
+  if (!isTouchDevice) {
+    add([
+      text("V - VERSUS", { size: 10, font: "sans-serif" }),
+      pos(50, H - 30), anchor("center"), color(INK), fixed(), z(10),
+    ]);
+  }
   const tutorialHint = add([
     text(isFirstTutorial ? "T - TUTORIAL (RECOMMENDED)" : "T - TUTORIAL", { size: 10, font: "sans-serif" }),
     pos(W / 2, H * 0.90), anchor("center"), color(INK), fixed(), z(10),
@@ -1761,12 +1788,14 @@ scene("title", () => {
     ctrlText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
     title.pos.x = W / 2 + Math.sin(titleTime * 0.5) * 3;
     title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
+    ffText.text = "< FF: " + (friendlyFireOn ? "FRIENDLY FIRE" : "CO-OP") + " >";
+    ffText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
     diffText.text = "< DIFFICULTY: " + DIFFICULTIES[gameDifficulty] + " >";
     diffText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
     // Tutorial hint pulse
     if (isFirstTutorial) tutorialHint.opacity = 0.3 + Math.sin(blink * 2) * 0.2;
     // Touch key press polling
-    if (touchKeys['j'] && !_lastTouchJ) { sfxMenuSelect(); if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: isTouchDevice ? false : p2Ready }); } }
+    if (touchKeys['j'] && !_lastTouchJ) { sfxMenuSelect(); gameFriendlyFire = friendlyFireOn; if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: isTouchDevice ? false : p2Ready }); } }
     _lastTouchJ = !!touchKeys['j'];
   });
 
@@ -1775,10 +1804,16 @@ scene("title", () => {
   onKeyPress("d", () => { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); });
   onKeyPress("left", () => { gameDifficulty = (gameDifficulty - 1 + 3) % 3; sfxMenuSelect(); });
   onKeyPress("right", () => { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); });
+  onKeyPress("f", () => { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); });
 
-  onKeyPress("j", () => { sfxMenuSelect(); if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: isTouchDevice ? false : p2Ready }); } });
+  onKeyPress("j", () => { sfxMenuSelect(); gameFriendlyFire = friendlyFireOn; if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: isTouchDevice ? false : p2Ready }); } });
   if (!isTouchDevice) {
-    onKeyPress("1", () => { sfxMenuSelect(); if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
+    onKeyPress("1", () => { sfxMenuSelect(); gameFriendlyFire = friendlyFireOn; if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
+  }
+
+  // Versus mode
+  if (!isTouchDevice) {
+    onKeyPress("v", () => { sfxMenuSelect(); go("versus"); });
   }
 
   // Credits key
@@ -1797,6 +1832,7 @@ const CHAR_NAMES = { punkette: "PUNKETTE", antagonic: "ANTAGONIC", xero: "X-ERO"
 
 const DIFFICULTIES = ["EASY", "NORMAL", "HARD"];
 let gameDifficulty = 1; // 0=easy, 1=normal, 2=hard
+let gameFriendlyFire = false;
 
 const VIGNETTES = [
   [
@@ -2037,6 +2073,7 @@ scene("game", (p1Type, p2Type) => {
     items: [],
     boss: null,
     time: 0,
+    friendlyFire: gameFriendlyFire,
   };
   curState = state;
 
@@ -3754,6 +3791,418 @@ scene("credits", () => {
   onKeyPress("space", exitCredits);
   onKeyPress("enter", exitCredits);
   onKeyPress("escape", exitCredits);
+});
+
+// ============================================================
+// VERSUS SCENE
+// ============================================================
+
+scene("versus", () => {
+  stopMusic();
+  isVersusMode = true;
+
+  const V_GRAVITY = 800;
+  const V_JUMP_FORCE = -300;
+  const V_GROUND_Y = H - 80;
+
+  let phase = "select";
+  let p1Choice = 0, p2Choice = 1;
+  let p1Locked = false, p2Locked = false;
+  let p1 = null, p2 = null;
+  let p1Wins = 0, p2Wins = 0;
+  let round = 1;
+  let vsTime = 0;
+  let selectObjs = [];
+
+  const vsState = { players: [], hitPause: 0, gameOver: false, victory: false, paused: false };
+  curState = vsState;
+
+  // Background
+  add([rect(W, H), color(PAPER), fixed()]);
+  add([sprite("paperTex"), opacity(0.15), fixed()]);
+  add([rect(W, 4), color(INK), pos(0, V_GROUND_Y), fixed()]);
+
+  function nextAvail(current, dir, taken) {
+    let c = current;
+    for (let tries = 0; tries < CHAR_OPTIONS.length; tries++) {
+      c = (c + dir + CHAR_OPTIONS.length) % CHAR_OPTIONS.length;
+      if (CHAR_OPTIONS[c] !== taken) return c;
+    }
+    return current;
+  }
+
+  function renderSelect() {
+    for (const o of selectObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+    selectObjs.length = 0;
+
+    const title = add([text("VERSUS - SELECT YOUR FIGHTER", { size: 16, font: "sans-serif" }),
+      pos(W / 2, 30), anchor("center"), color(INK), fixed(), z(10)]);
+    selectObjs.push(title);
+
+    const p1Taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
+    const p1Label = add([text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"),
+      { size: 12, font: "sans-serif" }), pos(W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
+    selectObjs.push(p1Label);
+    const p1Char = createCharacter(W / 4, 230, CHAR_OPTIONS[p1Choice], "preview");
+    selectObjs.push(p1Char);
+
+    const p2Taken = p1Locked && CHAR_OPTIONS[p1Choice] === CHAR_OPTIONS[p2Choice];
+    const p2LabelTxt = "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? (p2Taken ? " (TAKEN)" : " (LOCKED)") : " (< >)");
+    const p2Label = add([text(p2LabelTxt, { size: 12, font: "sans-serif" }),
+      pos(3 * W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
+    selectObjs.push(p2Label);
+    const p2Char = createCharacter(3 * W / 4, 230, CHAR_OPTIONS[p2Choice], "preview");
+    p2Char.scale.x = -1;
+    if (p2Locked && p2Taken) p2Char.opacity = 0.3;
+    selectObjs.push(p2Char);
+
+    for (let i = 0; i < CHAR_OPTIONS.length; i++) {
+      const bx = W / 2 - (CHAR_OPTIONS.length - 1) * 45 + i * 90;
+      selectObjs.push(add([rect(70, 20), outline(2), color(WHITE), pos(bx, 320), anchor("center"), fixed(), z(10)]));
+      selectObjs.push(add([text(CHAR_NAMES[CHAR_OPTIONS[i]], { size: 7, font: "sans-serif" }),
+        pos(bx, 320), anchor("center"), color(INK), fixed(), z(11)]));
+    }
+
+    let msg = "";
+    if (p1Locked && p2Locked) msg = "FIGHT!";
+    else if (p1Locked) msg = "P2: 1 to lock";
+    else if (p2Locked) msg = "P1: J to lock";
+    else msg = "P1: J to lock | P2: 1 to lock";
+    selectObjs.push(add([text(msg, { size: 12, font: "sans-serif" }),
+      pos(W / 2, 360), anchor("center"), color(INK), fixed(), z(10)]));
+  }
+
+  renderSelect();
+
+  onKeyPress("a", () => {
+    if (phase !== "select" || p1Locked) return;
+    const taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
+    p1Choice = nextAvail(p1Choice, -1, taken);
+    if (!p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, -1, null);
+    sfxMenuSelect(); renderSelect();
+  });
+  onKeyPress("d", () => {
+    if (phase !== "select" || p1Locked) return;
+    const taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
+    p1Choice = nextAvail(p1Choice, 1, taken);
+    if (!p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, 1, null);
+    sfxMenuSelect(); renderSelect();
+  });
+  onKeyPress("j", () => {
+    if (phase !== "select" || p1Locked) return;
+    p1Locked = true;
+    if (p2Locked) startCountdown();
+    else { sfxMenuSelect(); renderSelect(); }
+  });
+
+  if (!isTouchDevice) {
+    onKeyPress("left", () => {
+      if (phase !== "select" || p2Locked) return;
+      const taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
+      p2Choice = nextAvail(p2Choice, -1, taken);
+      if (!p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, -1, null);
+      sfxMenuSelect(); renderSelect();
+    });
+    onKeyPress("right", () => {
+      if (phase !== "select" || p2Locked) return;
+      const taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
+      p2Choice = nextAvail(p2Choice, 1, taken);
+      if (!p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, 1, null);
+      sfxMenuSelect(); renderSelect();
+    });
+    onKeyPress("1", () => {
+      if (phase !== "select" || p2Locked) return;
+      p2Locked = true;
+      if (p1Locked) startCountdown();
+      else { sfxMenuSelect(); renderSelect(); }
+    });
+  }
+
+  function createVersusPlayer(type, x, y, controls, id) {
+    const char = createCharacter(x, y, type, "player");
+    vsState.players.push(char);
+    char.playerId = id;
+    char.controls = controls;
+    char.attackCooldown = 0;
+    char.walkTime = 0;
+    char.isWalking = false;
+    char.dodgeTimer = 0;
+    char.dodgeCooldown = 0;
+    char.superCooldown = 0;
+    char.isAirborne = false;
+    char.jumpVy = 0;
+    char.jumpStartY = y;
+    char.comboCount = 0;
+    char.comboTimer = 0;
+    char.hitTimer = 0;
+    char.invincible = 0;
+    char.dead = false;
+    char.downed = false;
+
+    char.onUpdate(() => {
+      if (char.hp <= 0 || char.dead || vsState.hitPause > 0) return;
+      char.pos.x = clamp(char.pos.x, 30, W - 30);
+      if (!char.isAirborne) char.pos.y = V_GROUND_Y;
+    });
+
+    char.onUpdate(() => {
+      if (char.hp <= 0 || char.dead || vsState.hitPause > 0) return;
+      if (char.isAirborne) {
+        char.jumpVy += V_GRAVITY * dt();
+        char.pos.y += char.jumpVy * dt();
+        if (char.pos.y >= char.jumpStartY) {
+          char.pos.y = char.jumpStartY;
+          char.jumpVy = 0;
+          char.isAirborne = false;
+        }
+      }
+      if (char.superCooldown > 0) char.superCooldown -= dt();
+      if (char.attackCooldown > 0) char.attackCooldown -= dt();
+      if (char.dodgeTimer > 0) char.dodgeTimer -= dt();
+      if (char.dodgeCooldown > 0) char.dodgeCooldown -= dt();
+    });
+
+    char.onUpdate(() => {
+      if (char.hp <= 0 || char.dead || vsState.hitPause > 0) return;
+      if (char.dodgeTimer > 0) return;
+      const c = controls;
+      let dx = 0, dy = 0;
+      if (isKeyDown(c.left) || touchKeys[c.left]) dx -= 1;
+      if (isKeyDown(c.right) || touchKeys[c.right]) dx += 1;
+      if (!char.isAirborne) {
+        if (isKeyDown(c.up) || touchKeys[c.up]) dy -= 1;
+        if (isKeyDown(c.down) || touchKeys[c.down]) dy += 1;
+      }
+      if (char.hitTimer > 0) {
+        char.hitTimer -= dt();
+        char.invincible -= dt();
+        return;
+      }
+      char.invincible = Math.max(0, char.invincible - dt());
+      if (dx !== 0 || dy !== 0) {
+        const len = Math.sqrt(dx*dx + dy*dy);
+        char.move((dx/len)*char.speed, (dy/len)*char.speed);
+        char.facing = dx < 0 ? -1 : dx > 0 ? 1 : char.facing;
+        char.scale.x = char.facing > 0 ? 1 : -1;
+        char.isWalking = true;
+        char.walkTime += dt();
+        setWalkPose(char, char.walkTime * 10);
+      } else {
+        char.isWalking = false;
+        setIdlePose(char, vsTime);
+      }
+    });
+
+    const punchFn = () => {
+      if (char.hp <= 0 || char.dead || char.downed || vsState.hitPause > 0) return;
+      if (char.hitTimer > 0 || char.attackCooldown > 0 || char.dodgeTimer > 0) return;
+
+      if ((isKeyDown(controls.jump) || touchKeys[controls.jump]) && char.superCooldown <= 0) {
+        char.superCooldown = 2;
+        char.attackCooldown = 0.5;
+        screenShake(10, 0.25);
+        spawnHitbox(char, 0, -10, 60, 50, 25, 300, 0.2);
+        spawnHitbox(char, -25, -5, 25, 35, 15, 180, 0.15);
+        spawnHitbox(char, 25, -5, 25, 35, 15, 180, 0.15);
+        setKickPose(char);
+        tween(0, 1, 0.12, () => {}, () => { if (!char.dead) resetPose(char); });
+        spawnHitEffect(char.pos.x, char.pos.y - 10);
+        sfxSuper();
+        return;
+      }
+
+      char.attackCooldown = 0.3;
+      setPunchPose(char);
+      spawnHitbox(char, 24, -5, 22, 18, 12, 100, 0.08);
+      spawnAttackArc(char.pos.x + 26 * char.facing, char.pos.y - 5, char.facing);
+      tween(0, 1, 0.06, () => {}, () => { if (!char.dead) resetPose(char); });
+    };
+    onKeyPress(controls.punch, punchFn);
+
+    onKeyPress(controls.jump, () => {
+      if (char.hp <= 0 || char.dead || char.downed || vsState.hitPause > 0) return;
+      if (char.hitTimer > 0 || char.isAirborne) return;
+      char.isAirborne = true;
+      char.jumpVy = V_JUMP_FORCE;
+      char.jumpStartY = char.pos.y;
+      sfxJump();
+    });
+
+    onKeyPress(controls.dodge, () => {
+      if (char.hp <= 0 || char.dead || char.downed || vsState.hitPause > 0) return;
+      if (char.hitTimer > 0 || char.isAirborne || char.dodgeTimer > 0 || char.dodgeCooldown > 0) return;
+      char.dodgeTimer = 0.3;
+      char.dodgeCooldown = 1.0;
+      char.invincible = 0.35;
+      char.move(char.facing * 200, 0);
+      char.scale.y = 0.6;
+      char.scale.x = char.facing * 1.3;
+      spawnWalkDust(char.pos.x, char.pos.y, char.facing);
+      sfxDodge();
+      tween(0.3, 0, 0.2, (v) => {
+        if (char.dead) return;
+        char.scale.y = 1 - v * 0.4;
+        char.scale.x = (char.facing > 0 ? 1 : -1) * (1 + v * 0.3);
+      }, () => {
+        if (!char.dead) { char.scale.y = 1; char.scale.x = char.facing > 0 ? 1 : -1; }
+      });
+    });
+
+    return char;
+  }
+
+  function startCountdown() {
+    phase = "countdown";
+    for (const o of selectObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+    selectObjs.length = 0;
+
+    p1 = createVersusPlayer(CHAR_OPTIONS[p1Choice], 150, V_GROUND_Y, {
+      left: "a", right: "d", up: "w", down: "s",
+      punch: "j", jump: "k", dodge: "l",
+    }, 1);
+
+    p2 = createVersusPlayer(CHAR_OPTIONS[p2Choice], W - 150, V_GROUND_Y, {
+      left: "left", right: "right", up: "up", down: "down",
+      punch: "1", jump: "2", dodge: "3",
+    }, 2);
+    p2.scale.x = -1;
+
+    // HUD
+    const p1BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(20, 20), fixed(), z(20)]);
+    const p1Bar = add([rect(200, 16), color(INK), pos(20, 20), fixed(), z(19)]);
+    add([text("P1", { size: 10, font: "sans-serif" }), pos(20, 40), fixed(), color(INK), z(20)]);
+
+    const p2BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(W - 220, 20), fixed(), z(20)]);
+    const p2Bar = add([rect(200, 16), color(INK), pos(W - 220, 20), fixed(), z(19)]);
+    add([text("P2", { size: 10, font: "sans-serif" }), pos(W - 220, 40), fixed(), color(INK), z(20)]);
+
+    const scoreDisp = add([text("", { size: 12, font: "sans-serif" }),
+      pos(W / 2, 20), anchor("center"), fixed(), color(INK), z(20)]);
+
+    // Time tracker
+    // HUD update
+    onUpdate(() => {
+      if (p1 && p1.exists()) p1Bar.width = 200 * Math.max(0, p1.hp / p1.maxHp);
+      if (p2 && p2.exists()) p2Bar.width = 200 * Math.max(0, p2.hp / p2.maxHp);
+      scoreDisp.text = "ROUND " + round + "   P1 [" + p1Wins + "]  -  [" + p2Wins + "] P2";
+      vsTime += dt();
+    });
+
+    // HP check
+    onUpdate(() => {
+      if (phase !== "fight") return;
+      if (p1 && p1.hp <= 0 && !p1.dead) { p1.dead = true; sfxKill(); endRound(2); }
+      if (p2 && p2.hp <= 0 && !p2.dead) { p2.dead = true; sfxKill(); endRound(1); }
+    });
+
+    // Countdown overlay
+    const overlay = add([fixed(), z(100)]);
+    overlay.add([rect(W, H), color(PAPER), opacity(0.6)]);
+    const countText = overlay.add([
+      text("3", { size: 60, font: "sans-serif" }),
+      pos(W / 2, H / 2), anchor("center"), color(INK), z(101),
+    ]);
+    let count = 3;
+    const ci = setInterval(() => {
+      count--;
+      if (count > 0) countText.text = String(count);
+      else if (count === 0) countText.text = "FIGHT!";
+      else { clearInterval(ci); destroy(overlay); phase = "fight"; }
+    }, 800);
+  }
+
+  function startRound() {
+    if (p1 && p1.exists()) {
+      p1.hp = p1.maxHp; p1.pos = vec2(150, V_GROUND_Y);
+      p1.dead = false; p1.downed = false; p1.invincible = 2;
+      p1.isAirborne = false; p1.jumpVy = 0;
+    }
+    if (p2 && p2.exists()) {
+      p2.hp = p2.maxHp; p2.pos = vec2(W - 150, V_GROUND_Y);
+      p2.dead = false; p2.downed = false; p2.invincible = 2;
+      p2.scale.x = -1; p2.isAirborne = false; p2.jumpVy = 0;
+    }
+
+    phase = "countdown";
+    const overlay = add([fixed(), z(100)]);
+    overlay.add([rect(W, H), color(PAPER), opacity(0.6)]);
+    const countText = overlay.add([
+      text("3", { size: 60, font: "sans-serif" }),
+      pos(W / 2, H / 2), anchor("center"), color(INK), z(101),
+    ]);
+    let count = 3;
+    const ci = setInterval(() => {
+      count--;
+      if (count > 0) countText.text = String(count);
+      else if (count === 0) countText.text = "FIGHT!";
+      else { clearInterval(ci); destroy(overlay); phase = "fight"; }
+    }, 800);
+  }
+
+  function endRound(winner) {
+    phase = "roundEnd";
+    if (winner === 1) p1Wins++;
+    else p2Wins++;
+
+    const overlay = add([fixed(), z(100)]);
+    overlay.add([rect(W, H), color(PAPER), opacity(0.5)]);
+    const winText = add([
+      text("P" + winner + " WINS THE ROUND!", { size: 24, font: "sans-serif" }),
+      pos(W / 2, H / 2 - 20), anchor("center"), color(INK), fixed(), z(101),
+    ]);
+    add([
+      text("P1 " + p1Wins + " - " + p2Wins + " P2", { size: 16, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 20), anchor("center"), color(INK), fixed(), z(101),
+    ]);
+
+    if (p1Wins >= 2 || p2Wins >= 2) {
+      wait(2, () => {
+        destroy(overlay); destroy(winText);
+        endMatch(p1Wins >= 2 ? 1 : 2);
+      });
+    } else {
+      round++;
+      wait(2, () => {
+        destroy(overlay); destroy(winText);
+        startRound();
+      });
+    }
+  }
+
+  function endMatch(winner) {
+    phase = "matchEnd";
+    for (const o of vsState.players) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+    vsState.players.length = 0;
+
+    add([rect(W, H), color(PAPER), fixed(), z(50)]);
+    add([sprite("paperTex"), opacity(0.15), fixed(), z(51)]);
+    add([
+      text("P" + winner + " WINS!", { size: 40, font: "sans-serif" }),
+      pos(W / 2, H / 3), anchor("center"), color(INK), fixed(), z(52),
+    ]);
+    add([
+      text("FINAL: P1 " + p1Wins + " - " + p2Wins + " P2", { size: 16, font: "sans-serif" }),
+      pos(W / 2, H / 2), anchor("center"), color(INK), fixed(), z(52),
+    ]);
+
+    let blink = 0;
+    const rematch = add([
+      text("PRESS SPACE TO REMATCH  |  ESC TO EXIT", { size: 12, font: "sans-serif" }),
+      pos(W / 2, H * 0.75), anchor("center"), color(INK), fixed(), z(52),
+    ]);
+    onUpdate(() => { blink += dt(); rematch.opacity = blink % 1 < 0.6 ? 1 : 0.3; });
+
+    onKeyPress("space", () => {
+      isVersusMode = false; sfxMenuSelect(); go("versus");
+    });
+    onKeyPress("escape", () => {
+      isVersusMode = false; sfxMenuSelect(); go("title");
+    });
+  }
+
+  onKeyPress("escape", () => {
+    if (phase === "select") { isVersusMode = false; go("title"); }
+  });
 });
 
 // ============================================================
