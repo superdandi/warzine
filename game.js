@@ -3722,6 +3722,19 @@ scene("versus", () => {
   const vsState = { players: [], hitPause: 0, gameOver: false, victory: false, paused: false };
   curState = vsState;
 
+  // Ladder mode state
+  let p1Entered = false, p2Entered = false;
+  let ladderData = null;
+  let isLadderFight = false;
+  let cpuOpponent = null;
+  let ladderHudObjs = [];
+  let ladderFightResolved = false;
+  let isChallengePick = false;
+  let isChallengeFight = false;
+  let challengeState = null;
+  let challengeCharChoice = 0;
+  let challengeObjs = [];
+
   // Rematch directo — salta seleccion de personajes
   if (vsRematchData) {
     p1Choice = vsRematchData.p1;
@@ -3801,10 +3814,17 @@ scene("versus", () => {
     sfxMenuSelect(); renderSelect();
   });
   onKeyPress("j", () => {
-    if (phase !== "select" || p1Locked) return;
+    if (phase !== "select" || p1Locked) {
+      if (phase === "fight" && isLadderFight && ladderData && ladderData.pid === 2 && !isChallengePick && !isChallengeFight) {
+        startChallenge(1);
+      }
+      return;
+    }
+    p1Entered = true;
     p1Locked = true;
-    if (p2Locked) startCountdown();
-    else { sfxMenuSelect(); renderSelect(); }
+    if (p2Entered && p2Locked) { sfxMenuSelect(); startCountdown(); }
+    else if (p2Entered) { sfxMenuSelect(); renderSelect(); }
+    else { sfxMenuSelect(); startLadder(1, CHAR_OPTIONS[p1Choice]); }
   });
 
   if (!isTouchDevice) {
@@ -3823,10 +3843,17 @@ scene("versus", () => {
       sfxMenuSelect(); renderSelect();
     });
     onKeyPress("1", () => {
-      if (phase !== "select" || p2Locked) return;
+      if (phase !== "select" || p2Locked) {
+        if (phase === "fight" && isLadderFight && ladderData && ladderData.pid === 1 && !isChallengePick && !isChallengeFight) {
+          startChallenge(2);
+        }
+        return;
+      }
+      p2Entered = true;
       p2Locked = true;
-      if (p1Locked) startCountdown();
-      else { sfxMenuSelect(); renderSelect(); }
+      if (p1Entered && p1Locked) { sfxMenuSelect(); startCountdown(); }
+      else if (p1Entered) { sfxMenuSelect(); renderSelect(); }
+      else { sfxMenuSelect(); startLadder(2, CHAR_OPTIONS[p2Choice]); }
     });
   }
 
@@ -3963,12 +3990,13 @@ scene("versus", () => {
     return char;
   }
 
-  function startCountdown() {
+  function startCountdown(skipCreate) {
     changeMusic("versusFight");
     phase = "countdown";
     for (const o of selectObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
     selectObjs.length = 0;
 
+    if (!skipCreate) {
     p1 = createVersusPlayer(CHAR_OPTIONS[p1Choice], 150, V_GROUND_Y, {
       left: "a", right: "d", up: "w", down: "s",
       punch: "j", jump: "k", dodge: "l",
@@ -3979,6 +4007,7 @@ scene("versus", () => {
       punch: "1", jump: "2", dodge: "3",
     }, 2);
     p2.scale.x = -1;
+    }
 
     // HUD
     const p1BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(20, 20), fixed(), z(19)]);
@@ -4005,6 +4034,7 @@ scene("versus", () => {
     // HP check
     onUpdate(() => {
       if (phase !== "fight") return;
+      if (isLadderFight && !isChallengeFight) return;
       if (p1 && p1.hp <= 0 && !p1.dead) { p1.dead = true; sfxKill(); endRound(2); }
       if (p2 && p2.hp <= 0 && !p2.dead) { p2.dead = true; sfxKill(); endRound(1); }
     });
@@ -4088,6 +4118,44 @@ scene("versus", () => {
     for (const o of vsState.players) { try { if (o && o.exists) destroy(o); } catch(e) {} }
     vsState.players.length = 0;
 
+    // Challenge match ladder resolution
+    if (isChallengeFight) {
+      add([rect(W, H), color(PAPER), fixed(), z(50)]);
+      add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]).baseOpacity = 0.15;
+
+      const defenderPid = ladderData.pid;
+      const challengerPid = defenderPid === 1 ? 2 : 1;
+      const defenderWon = winner === defenderPid;
+
+      if (defenderWon) {
+        add([
+          text("CHAMPION RETAINS!", { size: 24, font: "sans-serif" }),
+          pos(W / 2, H / 3), anchor("center"), color(INK), fixed(), z(52),
+        ]);
+      } else {
+        add([
+          text("NEW CHALLENGER WINS!", { size: 24, font: "sans-serif" }),
+          pos(W / 2, H / 3), anchor("center"), color(INK), fixed(), z(52),
+        ]);
+        ladderData.pid = challengerPid;
+        ladderData.charType = CHAR_OPTIONS[challengeCharChoice];
+      }
+
+      add([
+        text("P" + winner + " WINS " + p1Wins + "-" + p2Wins, { size: 14, font: "sans-serif" }),
+        pos(W / 2, H / 2 + 10), anchor("center"), color(INK), fixed(), z(52),
+      ]);
+
+      isChallengeFight = false;
+      wait(2.5, () => {
+        if (ladderData) {
+          ladderData.currentIdx++;
+          spawnLadderFight();
+        }
+      });
+      return;
+    }
+
     add([rect(W, H), color(PAPER), fixed(), z(50)]);
     add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]).baseOpacity = 0.15;
     add([
@@ -4117,8 +4185,580 @@ scene("versus", () => {
     });
   }
 
+  // ============================================================
+  // LADDER MODE
+  // ============================================================
+
+  const LADDER_BOSSES = [
+    { name: "EL DIRECTOR", spriteKey: "bossDirector", bgForAI: "street" },
+    { name: "LA QUIMICA", spriteKey: "bossQuimica", bgForAI: "rooftop" },
+    { name: "EL COLOSO", spriteKey: "bossColoso", bgForAI: "factory" },
+  ];
+
+  function buildLadder(pid, charType) {
+    const unselected = CHAR_OPTIONS.filter(c => c !== charType);
+    return {
+      pid,
+      opponents: [
+        { type: "grunt", name: "GRUNT", isBoss: false },
+        { type: "punk", name: "PUNK", isBoss: false },
+        { type: "tough", name: "EL BRUTO", isBoss: false },
+        { type: unselected[0], name: CHAR_NAMES[unselected[0]], isBoss: false },
+        { type: unselected[1], name: CHAR_NAMES[unselected[1]], isBoss: false },
+        { type: "boss", name: LADDER_BOSSES[0].name, isBoss: true, spriteKey: LADDER_BOSSES[0].spriteKey, bgForAI: LADDER_BOSSES[0].bgForAI },
+        { type: "boss", name: LADDER_BOSSES[1].name, isBoss: true, spriteKey: LADDER_BOSSES[1].spriteKey, bgForAI: LADDER_BOSSES[1].bgForAI },
+        { type: "boss", name: LADDER_BOSSES[2].name, isBoss: true, spriteKey: LADDER_BOSSES[2].spriteKey, bgForAI: LADDER_BOSSES[2].bgForAI },
+      ],
+      currentIdx: 0,
+      charType,
+    };
+  }
+
+  function spawnCPUOpponent(opp, x, y) {
+    let char;
+    if (opp.isBoss) {
+      char = createCharacter(x, y, "boss", "boss", opp.spriteKey);
+      char.hp = 250;
+      char.maxHp = 250;
+      char.speed = 130;
+      char.damage = 20;
+      char.attackRange = 55;
+    } else if (opp.type === "grunt" || opp.type === "punk" || opp.type === "tough") {
+      char = createCharacter(x, y, opp.type, "enemy");
+      const hpMap = { grunt: 60, punk: 90, tough: 140 };
+      const dmgMap = { grunt: 10, punk: 14, tough: 20 };
+      const spdMap = { grunt: 140, punk: 170, tough: 120 };
+      char.hp = hpMap[opp.type];
+      char.maxHp = char.hp;
+      char.speed = spdMap[opp.type];
+      char.damage = dmgMap[opp.type];
+      char.attackRange = opp.type === "tough" ? 45 : 35;
+    } else {
+      char = createCharacter(x, y, opp.type, "enemy");
+      char.hp = 100;
+      char.maxHp = 100;
+      char.speed = 200;
+      char.damage = 14;
+      char.attackRange = 35;
+    }
+
+    char.attackCooldown = rand(0.5, 1.5);
+    char.aiState = "chase";
+    char.facing = ladderData.pid === 1 ? -1 : 1;
+    char.walkTime = rand(0, 100);
+    char.isAirborne = false;
+    char.jumpVy = 0;
+    char.jumpStartY = y;
+    char.jumpTimer = 0;
+    char.dead = false;
+    char.downed = false;
+    char.invincible = 0;
+    char.hitTimer = 0;
+
+    char.onUpdate(() => {
+      if (char.dead || vsState.hitPause > 0) return;
+      char.pos.x = clamp(char.pos.x, 30, W - 30);
+      if (!char.isAirborne) char.pos.y = V_GROUND_Y;
+    });
+
+    char.onUpdate(() => {
+      if (char.dead || vsState.hitPause > 0) return;
+      if (char.isAirborne) {
+        char.jumpVy += V_GRAVITY * dt();
+        char.pos.y += char.jumpVy * dt();
+        if (char.pos.y >= char.jumpStartY) {
+          char.pos.y = char.jumpStartY;
+          char.jumpVy = 0;
+          char.isAirborne = false;
+        }
+      }
+    });
+
+    if (opp.isBoss) {
+      addBossAI(char);
+    } else {
+      addEnemyAI(char);
+    }
+
+    return char;
+  }
+
+  function addEnemyAI(char) {
+    char.onUpdate(() => {
+      if (char.dead || vsState.hitPause > 0) return;
+      if (char.isAirborne) return;
+      if (char.hitTimer > 0) {
+        char.hitTimer -= dt();
+        char.invincible -= dt();
+        return;
+      }
+      char.invincible = Math.max(0, char.invincible - dt());
+      char.attackCooldown -= dt();
+      char.jumpTimer -= dt();
+
+      let target = null;
+      let minDist = Infinity;
+      for (const p of vsState.players) {
+        if (p.dead || p.downed || p === char) continue;
+        const d = p.pos.dist(char.pos);
+        if (d < minDist) { minDist = d; target = p; }
+      }
+      if (!target) return;
+
+      const dx = target.pos.x - char.pos.x;
+      const dy = target.pos.y - char.pos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist > 100 && char.jumpTimer <= 0 && Math.random() < 0.02) {
+        char.isAirborne = true;
+        char.jumpStartY = char.pos.y;
+        char.jumpVy = V_JUMP_FORCE * rand(0.8, 1.0);
+        char.pos.x += dx > 0 ? 20 : -20;
+        char.jumpTimer = rand(2, 4);
+      }
+
+      if (dist < char.attackRange && char.attackCooldown <= 0 && !char.isAirborne) {
+        char.aiState = "attack";
+        char.attackCooldown = rand(0.8, 1.5);
+        char.facing = dx > 0 ? 1 : -1;
+        char.scale.x = char.facing;
+        setPunchPose(char);
+        spawnHitbox(char, 16, -4, 14, 12, char.damage, 80, 0.08);
+        spawnAttackArc(char.pos.x + 20 * char.facing, char.pos.y - 5, char.facing);
+        tween(0, 1, 0.05, () => {}, () => { if (!char.dead) resetPose(char); });
+      } else {
+        char.aiState = "chase";
+        char.facing = dx > 0 ? 1 : -1;
+        char.scale.x = char.facing;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > 0) {
+          char.move((dx / len) * char.speed, (dy / len) * char.speed * 0.6);
+          char.walkTime += dt();
+          setWalkPose(char, char.walkTime * 10);
+        }
+      }
+    });
+  }
+
+  function addBossAI(char) {
+    char.phase = 1;
+    char.attackPattern = 0;
+    char.onUpdate(() => {
+      if (char.dead || vsState.hitPause > 0) return;
+      if (char.hitTimer > 0) {
+        char.hitTimer -= dt();
+        char.invincible -= dt();
+        return;
+      }
+      char.invincible = Math.max(0, char.invincible - dt());
+      char.attackCooldown -= dt();
+
+      if (char.hp < char.maxHp * 0.5 && char.phase === 1) {
+        char.phase = 2;
+        char.speed *= 1.3;
+        char.attackCooldown = 0.5;
+        char.invincible = 1.5;
+        screenShake(10, 0.5);
+        spawnHitEffect(char.pos.x, char.pos.y - 20);
+        spawnInkSplat(char.pos.x, char.pos.y);
+        spawnHitEffect(char.pos.x - 30, char.pos.y);
+        spawnHitEffect(char.pos.x + 30, char.pos.y);
+        char.attackCooldown = 1.5;
+      }
+
+      let target = null;
+      let minDist = Infinity;
+      for (const p of vsState.players) {
+        if (p.dead || p.downed || p === char) continue;
+        const d = p.pos.dist(char.pos);
+        if (d < minDist) { minDist = d; target = p; }
+      }
+      if (!target) return;
+
+      const dx = target.pos.x - char.pos.x;
+      const dy = target.pos.y - char.pos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      char.facing = dx > 0 ? 1 : -1;
+      char.scale.x = char.facing;
+
+      if (dist < char.attackRange && char.attackCooldown <= 0) {
+        const maxPattern = char.phase === 2 ? 4 : 2;
+        char.attackCooldown = char.phase === 2 ? rand(0.6, 1.2) : rand(1.2, 2.0);
+        char.attackPattern = (char.attackPattern + 1) % (maxPattern + 1);
+
+        if (char.attackPattern === 0) {
+          setPunchPose(char);
+          screenShake(2, 0.05);
+          spawnHitbox(char, 28, -6, 24, 18, char.damage * 1.2, 200, 0.12);
+          spawnAttackArc(char.pos.x + 30 * char.facing, char.pos.y - 5, char.facing);
+        } else if (char.attackPattern === 1) {
+          setKickPose(char);
+          screenShake(5, 0.1);
+          spawnHitbox(char, 0, 16, 40, 20, char.damage * 0.8, 120, 0.15);
+          spawnHitbox(char, -20, 16, 30, 20, char.damage * 0.6, 100, 0.12);
+          spawnHitEffect(char.pos.x, char.pos.y + 10);
+          spawnHitEffect(char.pos.x - 15, char.pos.y + 5);
+          spawnHitEffect(char.pos.x + 15, char.pos.y + 5);
+        } else if (char.attackPattern === 2) {
+          char.move(char.facing * 150, 0);
+          spawnHitbox(char, 10, -2, 30, 20, char.damage, 180, 0.2);
+          screenShake(3, 0.08);
+          spawnAttackArc(char.pos.x + 20 * char.facing, char.pos.y - 5, char.facing);
+        } else if (char.attackPattern === 3 && char.phase === 2) {
+          screenShake(8, 0.2);
+          spawnHitbox(char, -30, 24, 60, 30, char.damage * 0.7, 80, 0.2);
+          spawnHitEffect(char.pos.x - 20, char.pos.y + 15);
+          spawnHitEffect(char.pos.x, char.pos.y + 20);
+          spawnHitEffect(char.pos.x + 20, char.pos.y + 15);
+        } else if (char.attackPattern === 4 && char.phase === 2) {
+          setPunchPose(char);
+          spawnHitbox(char, 24, -4, 20, 16, char.damage * 0.6, 120, 0.06);
+          wait(0.12, () => {
+            if (!char.dead) {
+              setPunchPose(char);
+              spawnHitbox(char, 24, -4, 20, 16, char.damage * 0.6, 120, 0.06);
+            }
+          });
+        }
+
+        tween(0, 1, 0.08, () => {}, () => {
+          if (!char.dead) resetPose(char);
+        });
+      } else if (dist > char.attackRange * 0.6) {
+        char.aiState = "chase";
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > 0) {
+          const spd = char.phase === 2 ? char.speed * 1.3 : char.speed;
+          char.move((dx / len) * spd, (dy / len) * spd * 0.5);
+          char.walkTime += dt();
+          setWalkPose(char, char.walkTime * 10);
+        }
+      }
+    });
+  }
+
+  function createLadderHUD(oppName, fightNum, totalFights) {
+    const objs = [];
+    const p1BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(20, 20), fixed(), z(19)]);
+    const p1Bar = add([rect(200, 16), color(INK), pos(20, 20), fixed(), z(20)]);
+    objs.push(p1BarBg, p1Bar);
+    add([text("P1", { size: 10, font: "sans-serif" }), pos(20, 40), fixed(), color(INK), z(20)]);
+
+    const oppBarBg = add([rect(200, 16), outline(2), color(WHITE), pos(W - 220, 20), fixed(), z(19)]);
+    const oppBar = add([rect(200, 16), color(INK), pos(W - 220, 20), fixed(), z(20)]);
+    objs.push(oppBarBg, oppBar);
+    add([text(oppName, { size: 10, font: "sans-serif" }), pos(W - 220, 40), fixed(), color(INK), z(20)]);
+
+    const fightLabel = add([text("FIGHT " + fightNum + "/" + totalFights, { size: 12, font: "sans-serif" }),
+      pos(W / 2, 20), anchor("center"), fixed(), color(INK), z(20)]);
+    objs.push(fightLabel);
+
+    return { objs, p1Bar, oppBar };
+  }
+
+  // Scene-level ladder fight monitoring
+  onUpdate(() => {
+    if (!isLadderFight || isChallengeFight || isChallengePick || phase === "ladderEnd" || phase === "matchEnd" || phase === "champion") return;
+    if (phase === "fight" && !ladderFightResolved) {
+      if (cpuOpponent && cpuOpponent.exists && cpuOpponent.hp <= 0 && !cpuOpponent.dead) {
+        ladderFightResolved = true;
+        cpuOpponent.dead = true;
+        sfxKill();
+        endLadderFight(true);
+      }
+      if (p1 && p1.exists && p1.hp <= 0 && !p1.dead) {
+        ladderFightResolved = true;
+        p1.dead = true;
+        sfxKill();
+        endLadderFight(false);
+      }
+    }
+  });
+
+  function startLadder(pid, charType) {
+    ladderData = buildLadder(pid, charType);
+    isLadderFight = true;
+    phase = "ladderIntro";
+    for (const o of selectObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+    selectObjs.length = 0;
+
+    const intro = add([fixed(), z(100)]);
+    intro.add([rect(W, H), color(PAPER), opacity(0.9)]);
+    intro.add([
+      text("LADDER MODE", { size: 32, font: "sans-serif" }),
+      pos(W / 2, H / 2 - 30), anchor("center"), color(INK), z(101),
+    ]);
+    intro.add([
+      text("8 OPPONENTS AWAIT", { size: 14, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 5), anchor("center"), color(INK), z(101),
+    ]);
+    const c = pid === 1 ? "J" : "1";
+    intro.add([
+      text("PRESS " + c + " TO START", { size: 12, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 30), anchor("center"), color(INK), z(101), opacity(0.7),
+    ]);
+
+    const key = pid === 1 ? "j" : "1";
+    let introDone = false;
+    onKeyPress(key, () => {
+      if (introDone || phase !== "ladderIntro") return;
+      introDone = true;
+      sfxMenuSelect();
+      destroy(intro);
+      spawnLadderFight();
+    });
+  }
+
+  function spawnLadderFight() {
+    if (!ladderData || ladderData.currentIdx >= ladderData.opponents.length) {
+      showLadderChampion();
+      return;
+    }
+
+    ladderFightResolved = false;
+    const opp = ladderData.opponents[ladderData.currentIdx];
+    const fightNum = ladderData.currentIdx + 1;
+    const totalFights = ladderData.opponents.length;
+
+    const h = createLadderHUD(opp.name, fightNum, totalFights);
+    ladderHudObjs = h.objs;
+
+    const humanPid = ladderData.pid;
+    const humanX = humanPid === 1 ? 150 : W - 150;
+    const humanControls = humanPid === 1
+      ? { left: "a", right: "d", up: "w", down: "s", punch: "j", jump: "k", dodge: "l" }
+      : { left: "left", right: "right", up: "up", down: "down", punch: "1", jump: "2", dodge: "3" };
+
+    const human = createVersusPlayer(ladderData.charType, humanX, V_GROUND_Y, humanControls, 1);
+    if (humanPid === 2) human.scale.x = -1;
+    p1 = human;
+
+    const cpuX = humanPid === 1 ? W - 150 : 150;
+    cpuOpponent = spawnCPUOpponent(opp, cpuX, V_GROUND_Y);
+
+    changeMusic("versusFight");
+    startLadderCountdown(h);
+  }
+
+  function startLadderCountdown(hud) {
+    phase = "countdown";
+
+    const overlay = add([fixed(), z(100)]);
+    overlay.add([rect(W, H), color(PAPER), opacity(0.6)]);
+    const countText = overlay.add([
+      text("3", { size: 60, font: "sans-serif" }),
+      pos(W / 2, H / 2), anchor("center"), color(INK), z(101),
+    ]);
+    let count = 3;
+    const ci = setInterval(() => {
+      count--;
+      if (count > 0) countText.text = String(count);
+      else if (count === 0) countText.text = "FIGHT!";
+      else { clearInterval(ci); destroy(overlay); phase = "fight"; }
+    }, 800);
+  }
+
+  function endLadderFight(humanWon) {
+    phase = "ladderEnd";
+
+    for (const o of ladderHudObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+    ladderHudObjs.length = 0;
+
+    if (p1 && p1.exists) { p1.dead = true; vsState.players = vsState.players.filter(p => p !== p1); destroy(p1); p1 = null; }
+    if (cpuOpponent && cpuOpponent.exists) { cpuOpponent.dead = true; destroy(cpuOpponent); cpuOpponent = null; }
+
+    if (humanWon) {
+      const winText = add([
+        text("YOU WIN!", { size: 30, font: "sans-serif" }),
+        pos(W / 2, H / 2), anchor("center"), color(INK), fixed(), z(100),
+      ]);
+      wait(1.5, () => {
+        destroy(winText);
+        ladderData.currentIdx++;
+        spawnLadderFight();
+      });
+    } else {
+      add([rect(W, H), color(PAPER), fixed(), z(50)]);
+      add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]).baseOpacity = 0.15;
+      add([
+        text("GAME OVER", { size: 40, font: "sans-serif" }),
+        pos(W / 2, H / 2 - 20), anchor("center"), color(INK), fixed(), z(52),
+      ]);
+      add([
+        text("REACHED FIGHT " + (ladderData.currentIdx + 1) + "/" + ladderData.opponents.length, { size: 14, font: "sans-serif" }),
+        pos(W / 2, H / 2 + 15), anchor("center"), color(INK), fixed(), z(52),
+      ]);
+      sfxGameOver();
+      wait(3, () => {
+        isVersusMode = false;
+        go("title");
+      });
+    }
+  }
+
+  function showLadderChampion() {
+    sfxVictory();
+    add([rect(W, H), color(PAPER), fixed(), z(50)]);
+    add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]).baseOpacity = 0.15;
+    add([
+      text("LADDER CHAMPION!", { size: 36, font: "sans-serif" }),
+      pos(W / 2, H / 2 - 20), anchor("center"), color(INK), fixed(), z(52),
+    ]);
+    const blink = add([
+      text("SPACE: MENU", { size: 14, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 20), anchor("center"), color(INK), fixed(), z(52),
+    ]);
+    let b = 0;
+    onUpdate(() => { b += dt(); blink.opacity = b % 1 < 0.6 ? 1 : 0.3; });
+    onKeyPress("space", () => {
+      isVersusMode = false;
+      sfxMenuSelect();
+      go("title");
+    });
+  }
+
+  // ============================================================
+  // CHALLENGER INTERRUPTION
+  // ============================================================
+
+  function startChallenge(challengerPid) {
+    isChallengePick = true;
+    phase = "challengePick";
+
+    if (p1 && p1.exists) p1.paused = true;
+    if (cpuOpponent && cpuOpponent.exists) cpuOpponent.paused = true;
+    vsState.hitPause = 0;
+
+    challengeState = { challengerPid };
+    challengeCharChoice = 0;
+    challengeObjs = [];
+    const overlay = add([fixed(), z(100)]);
+    overlay.add([rect(W, H), color(PAPER), opacity(0.85)]);
+    challengeObjs.push(overlay);
+
+    const title = add([
+      text("NEW CHALLENGER!", { size: 24, font: "sans-serif" }),
+      pos(W / 2, 50), anchor("center"), color(INK), fixed(), z(101),
+    ]);
+    challengeObjs.push(title);
+    const sub = add([
+      text("P" + challengerPid + " CHALLENGES!", { size: 14, font: "sans-serif" }),
+      pos(W / 2, 80), anchor("center"), color(INK), fixed(), z(101),
+    ]);
+    challengeObjs.push(sub);
+
+    renderChallengePick(challengerPid);
+  }
+
+  function renderChallengePick(challengerPid) {
+    while (challengeObjs.length > 3) {
+      const o = challengeObjs.pop();
+      try { if (o && o.exists) destroy(o); } catch(e) {}
+    }
+
+    const charPreview = createCharacter(W / 2, 230, CHAR_OPTIONS[challengeCharChoice], "preview");
+    challengeObjs.push(charPreview);
+
+    const nameLabel = add([
+      text(CHAR_NAMES[CHAR_OPTIONS[challengeCharChoice]], { size: 14, font: "sans-serif" }),
+      pos(W / 2, 320), anchor("center"), color(INK), fixed(), z(101),
+    ]);
+    challengeObjs.push(nameLabel);
+    const promptLabel = add([
+      text("A/D CYCLE  |  " + (challengerPid === 1 ? "J" : "1") + " CONFIRM", { size: 11, font: "sans-serif" }),
+      pos(W / 2, 360), anchor("center"), color(INK), fixed(), z(101),
+    ]);
+    challengeObjs.push(promptLabel);
+    const defLabel = add([
+      text("P" + (challengerPid === 1 ? 2 : 1) + " (DEFENDER): " + CHAR_NAMES[ladderData.charType], { size: 11, font: "sans-serif" }),
+      pos(W / 2, 390), anchor("center"), color(INK), fixed(), z(101),
+    ]);
+    challengeObjs.push(defLabel);
+  }
+
+  function startChallengeFight() {
+    isChallengePick = false;
+    isChallengeFight = true;
+
+    for (const o of challengeObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+    challengeObjs.length = 0;
+
+    if (cpuOpponent && cpuOpponent.exists) { cpuOpponent.dead = true; destroy(cpuOpponent); cpuOpponent = null; }
+    if (p1 && p1.exists) { p1.dead = true; vsState.players = vsState.players.filter(p => p !== p1); destroy(p1); p1 = null; }
+    vsState.players.length = 0;
+
+    const defenderPid = ladderData.pid;
+    const challengerPid = defenderPid === 1 ? 2 : 1;
+    const defenderChar = ladderData.charType;
+    const challengerChar = CHAR_OPTIONS[challengeCharChoice];
+
+    const defenderControls = defenderPid === 1
+      ? { left: "a", right: "d", up: "w", down: "s", punch: "j", jump: "k", dodge: "l" }
+      : { left: "left", right: "right", up: "up", down: "down", punch: "1", jump: "2", dodge: "3" };
+
+    const challengerControls = challengerPid === 1
+      ? { left: "a", right: "d", up: "w", down: "s", punch: "j", jump: "k", dodge: "l" }
+      : { left: "left", right: "right", up: "up", down: "down", punch: "1", jump: "2", dodge: "3" };
+
+    p1 = createVersusPlayer(defenderChar, 150, V_GROUND_Y, defenderControls, 1);
+    p2 = createVersusPlayer(challengerChar, W - 150, V_GROUND_Y, challengerControls, 2);
+    p2.scale.x = -1;
+
+    p1Wins = 0;
+    p2Wins = 0;
+    round = 1;
+
+    startCountdown(true);
+  }
+
+  // Challenge pick key handlers
+  onKeyPress("a", () => {
+    if (!isChallengePick) return;
+    challengeCharChoice = (challengeCharChoice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length;
+    sfxMenuSelect();
+    renderChallengePick(challengeState ? challengeState.challengerPid : 1);
+  });
+  onKeyPress("d", () => {
+    if (!isChallengePick) return;
+    challengeCharChoice = (challengeCharChoice + 1) % CHAR_OPTIONS.length;
+    sfxMenuSelect();
+    renderChallengePick(challengeState ? challengeState.challengerPid : 1);
+  });
+  onKeyPress("left", () => {
+    if (!isChallengePick) return;
+    challengeCharChoice = (challengeCharChoice - 1 + CHAR_OPTIONS.length) % CHAR_OPTIONS.length;
+    sfxMenuSelect();
+    renderChallengePick(challengeState ? challengeState.challengerPid : 1);
+  });
+  onKeyPress("right", () => {
+    if (!isChallengePick) return;
+    challengeCharChoice = (challengeCharChoice + 1) % CHAR_OPTIONS.length;
+    sfxMenuSelect();
+    renderChallengePick(challengeState ? challengeState.challengerPid : 1);
+  });
+  onKeyPress("j", () => {
+    if (!isChallengePick || !challengeState || challengeState.challengerPid !== 1) return;
+    sfxMenuSelect();
+    startChallengeFight();
+  });
+  onKeyPress("1", () => {
+    if (!isChallengePick || !challengeState || challengeState.challengerPid !== 2) return;
+    sfxMenuSelect();
+    startChallengeFight();
+  });
+
   onKeyPress("escape", () => {
-    if (phase === "select") { isVersusMode = false; go("title"); }
+    if (phase === "select" || phase === "ladderIntro") { isVersusMode = false; go("title"); }
+    if (phase === "challengePick") {
+      isChallengePick = false;
+      phase = "fight";
+      for (const o of challengeObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+      challengeObjs.length = 0;
+      challengeState = null;
+      if (p1 && p1.exists) p1.paused = false;
+      if (cpuOpponent && cpuOpponent.exists) cpuOpponent.paused = false;
+    }
   });
 
   // Auto-start si ambos jugadores ya lockearon (rematch directo)
