@@ -721,7 +721,7 @@ function createCharacter(x, y, type, tag, spriteName) {
   // Sprite characters — no white rect, collision via explicit area
   const spriteCfg = spriteName ? { name: spriteName, w: 95, h: 125 } : CHAR_SPRITES[type];
   if (spriteCfg) {
-    const scaleFactor = (48 * F) / spriteCfg.h * 3.0;
+    const scaleFactor = (48 * F) / spriteCfg.h * (isVersusMode ? 3.0 : 1.5);
     const char = add([
       pos(x, y),
       area({ shape: new Rect(vec2(-14 * F, -24 * F), 28 * F, 48 * F) }),
@@ -4296,7 +4296,7 @@ scene("tutorial", () => {
   ]);
   let spriteChild = null;
   if (spriteCfg) {
-    const s = (48 * TF) / spriteCfg.h * 3.0;
+    const s = (48 * TF) / spriteCfg.h * 1.5;
     spriteChild = playerObj.add([
       sprite(spriteCfg.name),
       scale(s),
