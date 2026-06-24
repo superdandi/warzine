@@ -1748,7 +1748,7 @@ scene("title", () => {
     pos(W - 30, H - 15), anchor("center"), color(WHITE), fixed(), z(10),
   ]);
   const paperTexLabel = add([
-    text("[P]", { size: 10, font: "sans-serif" }),
+    text("\[P\]", { size: 10, font: "sans-serif" }),
     pos(W - 55, H - 15), anchor("center"), color(WHITE), fixed(), z(10),
   ]);
   add([
@@ -2189,7 +2189,7 @@ scene("game", (p1Type, p2Type) => {
 
     // Continue prompt
     const prompt = overlay.add([
-      text("[ SPACE / ENTER ]", { size: 12, font: "sans-serif" }),
+      text("\[ SPACE / ENTER \]", { size: 12, font: "sans-serif" }),
       pos(W / 2, H - 55),
       anchor("center"), color(INK), z(201), opacity(0),
     ]);
@@ -4332,7 +4332,7 @@ scene("tutorial", () => {
         });
         textObjs.forEach((t, i) => wait(0.15 + i * 0.12, () => { if (t.exists()) t.opacity = 1; }));
         const prompt = overlay.add([
-          text("[ SPACE / ENTER ]", { size: 12, font: "sans-serif" }),
+          text("\[ SPACE / ENTER \]", { size: 12, font: "sans-serif" }),
           pos(W / 2, H - 55), anchor("center"), color(INK), z(201), opacity(0),
         ]);
         let blink = 0;
@@ -4494,7 +4494,7 @@ scene("tutorial", () => {
     ]);
     let blink = 0;
     const retry = add([
-      text("[ SPACE ]  RETURN TO TITLE", { size: 13, font: "sans-serif" }),
+      text("\[ SPACE \]  RETURN TO TITLE", { size: 13, font: "sans-serif" }),
       pos(W / 2, H / 2 + 60),
       anchor("center"), color(INK), z(50), fixed(),
     ]);
