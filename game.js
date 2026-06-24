@@ -54,6 +54,14 @@ function toggleSound() {
 }
 
 let vsRematchData = null;
+let paperTexEnabled = true;
+
+function togglePaperTex() {
+  paperTexEnabled = !paperTexEnabled;
+  for (const obj of get("paperTex")) {
+    obj.opacity = paperTexEnabled ? obj.baseOpacity : 0;
+  }
+}
 
 function playNoise(duration, volume, filterFreq, filterType) {
   if (!soundEnabled) return;
@@ -1682,7 +1690,7 @@ scene("title", () => {
   stopMusic();
   add([sprite("titleBg"), fixed(), z(0)]);
   // paperTex over background for ink texture
-  add([sprite("paperTex"), opacity(0.12), z(100), fixed()]);
+  add([sprite("paperTex"), opacity(0.12), z(100), fixed(), "paperTex"]).baseOpacity = 0.12;
 
   let blink = 0;
 
@@ -1734,10 +1742,14 @@ scene("title", () => {
     z(10),
   ]);
 
-  // Version & credits
+  // Version & dev toggles
   add([
     text("v1.5", { size: 10, font: "sans-serif" }),
-    pos(W - 30, H - 15), anchor("center"), color(INK), fixed(), z(10),
+    pos(W - 30, H - 15), anchor("center"), color(WHITE), fixed(), z(10),
+  ]);
+  const paperTexLabel = add([
+    text("[P]", { size: 10, font: "sans-serif" }),
+    pos(W - 55, H - 15), anchor("center"), color(WHITE), fixed(), z(10),
   ]);
   add([
     text("C - CREDITS", { size: 10, font: "sans-serif" }),
@@ -1765,6 +1777,9 @@ scene("title", () => {
     for (let i = 0; i < ITEM_COUNT; i++) {
       menuItems[i].opacity = (i === cursorP1 || i === cursorP2) ? 1 : 0.4;
     }
+
+    // [P] indicator opacity
+    paperTexLabel.opacity = paperTexEnabled ? 1 : 0.4;
 
     // Touch key press polling
     if (touchKeys['j'] && !_lastTouchJ && !started) {
@@ -1843,6 +1858,9 @@ scene("title", () => {
 
   // Credits key (direct shortcut)
   onKeyPress("c", () => { if (!started) { sfxMenuSelect(); go("credits"); } });
+
+  // Paper texture toggle
+  onKeyPress("p", togglePaperTex);
 });
 
 // ============================================================
@@ -1888,7 +1906,7 @@ scene("select", (opts) => {
   let p2Active = opts.p2 === true;
   if (isTouchDevice) p2Active = false;
 
-  add([sprite("paperTex"), opacity(0.15), z(100), fixed()]);
+  add([sprite("paperTex"), opacity(0.15), z(100), fixed(), "paperTex"]).baseOpacity = 0.15;
   add([rect(W, H), color(PAPER), fixed()]);
 
   add([
@@ -2062,6 +2080,9 @@ scene("select", (opts) => {
     else if (p1Active && !p2Active && p1Locked) startGame();
     else if (p2Active && !p1Active && p2Locked) startGame();
   });
+
+  // Paper texture toggle
+  onKeyPress("p", togglePaperTex);
 });
 
 // ============================================================
@@ -2197,7 +2218,7 @@ scene("game", (p1Type, p2Type) => {
     if (!layer) console.warn("bg layer " + i + " failed to create");
     bgLayers.push(layer);
   }
-  add([sprite("paperTex"), opacity(0.18), z(90), fixed()]);
+  add([sprite("paperTex"), opacity(0.18), z(90), fixed(), "paperTex"]).baseOpacity = 0.18;
 
   // ---- PLAYER CREATION ----
   function createPlayer(type, x, y, controls, tag, reviveKey) {
@@ -3567,6 +3588,9 @@ scene("game", (p1Type, p2Type) => {
     changeMusic("");
     startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
   });
+
+  // Paper texture toggle
+  onKeyPress("p", togglePaperTex);
 });
 
 // ============================================================
@@ -3584,7 +3608,7 @@ scene("gameover", (wave) => {
   if (score > prev) localStorage.setItem("warzine_high", String(score));
   const high = Math.max(prev, score);
 
-  add([sprite("paperTex"), opacity(0.15), z(100), fixed()]);
+  add([sprite("paperTex"), opacity(0.15), z(100), fixed(), "paperTex"]).baseOpacity = 0.15;
   add([rect(W, H), color(PAPER), fixed()]);
 
   add([
@@ -3627,6 +3651,9 @@ scene("gameover", (wave) => {
   });
 
   onKeyPress("space", () => { sfxMenuSelect(); go("select"); });
+
+  // Paper texture toggle
+  onKeyPress("p", togglePaperTex);
 });
 
 // ============================================================
@@ -3643,79 +3670,13 @@ scene("victory", (wave) => {
   if (score > prev) localStorage.setItem("warzine_high", String(score));
   const high = Math.max(prev, score);
 
-  add([sprite("paperTex"), opacity(0.2), fixed()]);
+  add([sprite("paperTex"), opacity(0.15), z(100), fixed(), "paperTex"]).baseOpacity = 0.15;
   add([rect(W, H), color(PAPER), fixed()]);
 
-  // Scanline overlay
-  const scanCanvas = document.createElement("canvas");
-  scanCanvas.width = W; scanCanvas.height = H;
-  const sctx = scanCanvas.getContext("2d");
-  sctx.fillStyle = "rgba(0,0,0,0.06)";
-  for (let y = 0; y < H; y += 3) sctx.fillRect(0, y, W, 1);
-  loadSprite("scanlines", scanCanvas);
-  add([sprite("scanlines"), opacity(0.3), fixed(), z(5)]);
-
-  // Top border line
-  add([rect(W - 80, 2), color(INK), pos(40, 60), fixed(), z(10)]);
-  add([rect(W - 80, 2), color(INK), pos(40, H - 60), fixed(), z(10)]);
-
-  // Main header
-  add([
-    text("> //////////////////////////////", { size: 10, font: "sans-serif" }),
-    pos(60, 90), color(INK), fixed(), z(10),
-  ]);
-  add([
-    text("> //  SYSTEM.PURGE: COMPLETE  //", { size: 16, font: "sans-serif" }),
-    pos(60, 108), color(INK), fixed(), z(10),
-  ]);
-  add([
-    text("> //////////////////////////////", { size: 10, font: "sans-serif" }),
-    pos(60, 130), color(INK), fixed(), z(10),
-  ]);
-
-  // Status lines
-  const lines = [
-    "> THREAT.LEVEL:  NEUTRALIZED",
-    "> CITY.STATUS:  SECURE",
-    "> WAVES.CLEARED:  " + wave,
-    "> HIGH.SCORE:  WAVE " + high,
-  ];
-  lines.forEach((line, i) => {
-    add([
-      text(line, { size: 12, font: "sans-serif" }),
-      pos(60, 170 + i * 22), color(INK), fixed(), z(10),
-    ]);
-  });
-
-  // Quote
-  add([
-    text('"the streets may run black,', { size: 14, font: "sans-serif" }),
-    pos(W / 2, H * 0.62), anchor("center"), color(INK), fixed(), z(10),
-  ]);
-  add([
-    text(' but tonight they run clean."', { size: 14, font: "sans-serif" }),
-    pos(W / 2, H * 0.62 + 20), anchor("center"), color(INK), fixed(), z(10),
-  ]);
-
-  // Bottom divider
-  add([rect(W - 80, 1), color(INK), pos(40, H * 0.73), fixed(), z(10)]);
-
-  // Pulsing retry
-  let blink = 0;
-  const retry = add([
-    text("[ SPACE ]  RETRY        [ ENTER ]  TITLE", { size: 13, font: "sans-serif" }),
-    pos(W / 2, H * 0.80),
-    anchor("center"), color(INK), fixed(), z(10),
-  ]);
-
-  onUpdate(() => {
-    blink += dt();
-    retry.opacity = blink % 1 < 0.6 ? 1 : 0.3;
-  });
-
-  onKeyPress("space", () => { sfxMenuSelect(); go("select"); });
-  onKeyPress("enter", () => { sfxMenuSelect(); go("title"); });
+  // Paper texture toggle
+  onKeyPress("p", togglePaperTex);
 });
+
 
 // ============================================================
 // CREDITS SCENE
@@ -3724,97 +3685,13 @@ scene("victory", (wave) => {
 scene("credits", () => {
   stopMusic();
 
-  add([sprite("paperTex"), opacity(0.2), fixed()]);
+  add([sprite("paperTex"), opacity(0.2), fixed(), "paperTex"]).baseOpacity = 0.2;
   add([rect(W, H), color(PAPER), fixed()]);
 
-  const CREDITS = [
-    "",
-    "",
-    "",
-    "",
-    "",
-    "= WARZINE =",
-    "",
-    "A BEAT 'EM UP OF INK AND ANGER",
-    "",
-    "",
-    "— CREDITS —",
-    "",
-    "CODE & DESIGN",
-    "SUPERDANDI",
-    "",
-    "SPRITE ART",
-    "SUPERDANDI",
-    "",
-    "PROCEDURAL AUDIO",
-    "SUPERDANDI",
-    "",
-    "MUSIC SYSTEMS",
-    "SUPERDANDI",
-    "",
-    "— SPECIAL THANKS —",
-    "",
-    "THE PUNK ZINES THAT INSPIRED THIS",
-    "THE BEAT 'EM UP LEGENDS",
-    "OPENCODE FOR THE COMPANIONSHIP",
-    "",
-    "",
-    "— BUILT WITH —",
-    "",
-    "KAPLAY 3001",
-    "WEB AUDIO API",
-    "PURE GRIT",
-    "",
-    "",
-    "ALL RIGHTS RESERVED.",
-    "NO MERCY. NO SURRENDER.",
-    "JUST BLOOD AND INK.",
-    "",
-    "",
-    "",
-    "",
-    "",
-    "[ PRESS SPACE / ENTER / ESC TO RETURN ]",
-    "",
-    "",
-    "",
-    "",
-  ];
-
-  let scrollY = H + 20;
-  const lines = [];
-
-  CREDITS.forEach((line, i) => {
-    const isHeader = line.startsWith("= ") && line.endsWith(" =");
-    const isSub = line.startsWith("—") && line.endsWith("—");
-    const size = isHeader ? 20 : isSub ? 14 : line.startsWith("[") ? 10 : 12;
-    const obj = add([
-      text(line, { size, font: "sans-serif" }),
-      pos(W / 2, scrollY + i * 30),
-      anchor("center"),
-      color(INK),
-      fixed(),
-      z(10),
-    ]);
-    obj.opacity = line === "" ? 0 : (line.startsWith("[") ? 0.4 : 1);
-    lines.push(obj);
-  });
-
-  const totalHeight = CREDITS.length * 30 + H + 40;
-
-  onUpdate(() => {
-    scrollY -= 30 * dt();
-    lines.forEach((obj, i) => {
-      obj.pos.y = scrollY + i * 30;
-    });
-    if (scrollY < -totalHeight) scrollY = H + 20;
-  });
-
-  const exitCredits = () => { sfxMenuSelect(); go("title"); };
-  onKeyPress("space", exitCredits);
-  onKeyPress("enter", exitCredits);
-  onKeyPress("escape", exitCredits);
+  // Paper texture toggle
+  onKeyPress("p", togglePaperTex);
 });
+
 
 // ============================================================
 // VERSUS SCENE
@@ -4208,7 +4085,7 @@ scene("versus", () => {
     vsState.players.length = 0;
 
     add([rect(W, H), color(PAPER), fixed(), z(50)]);
-    add([sprite("paperTex"), opacity(0.15), fixed(), z(51)]);
+    add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]).baseOpacity = 0.15;
     add([
       text("P" + winner + " WINS!", { size: 40, font: "sans-serif" }),
       pos(W / 2, H / 3), anchor("center"), color(INK), fixed(), z(52),
@@ -4242,6 +4119,9 @@ scene("versus", () => {
 
   // Auto-start si ambos jugadores ya lockearon (rematch directo)
   if (p1Locked && p2Locked) startCountdown();
+
+  // Paper texture toggle
+  onKeyPress("p", togglePaperTex);
 });
 
 // ============================================================
@@ -4258,7 +4138,7 @@ scene("tutorial", () => {
 
   // Background
   add([rect(W, H), color(PAPER), fixed()]);
-  add([sprite("paperTex"), opacity(0.15), fixed()]);
+  add([sprite("paperTex"), opacity(0.15), fixed(), "paperTex"]).baseOpacity = 0.15;
 
   // Ground
   add([rect(W, 4), color(INK), pos(0, T_GROUND_Y), fixed()]);
@@ -4848,6 +4728,9 @@ scene("tutorial", () => {
 
   // Start
   advanceStep();
+
+  // Paper texture toggle
+  onKeyPress("p", togglePaperTex);
 });
 
 // ============================================================
