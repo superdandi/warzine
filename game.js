@@ -3775,7 +3775,7 @@ scene("tutorial", () => {
   ]);
   if (spriteCfg) {
     playerObj.add([
-      sprite("punkette sprite.png"),
+      sprite(spriteCfg.name),
       scale((48 * TF) / spriteCfg.h * 1.5),
       anchor("center"),
     ]);
