@@ -4116,12 +4116,12 @@ scene("versus", () => {
     p2.scale.x = -1;
 
     // HUD
-    const p1BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(20, 20), fixed(), z(20)]);
-    const p1Bar = add([rect(200, 16), color(INK), pos(20, 20), fixed(), z(19)]);
+    const p1BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(20, 20), fixed(), z(19)]);
+    const p1Bar = add([rect(200, 16), color(INK), pos(20, 20), fixed(), z(20)]);
     add([text("P1", { size: 10, font: "sans-serif" }), pos(20, 40), fixed(), color(INK), z(20)]);
 
-    const p2BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(W - 220, 20), fixed(), z(20)]);
-    const p2Bar = add([rect(200, 16), color(INK), pos(W - 220, 20), fixed(), z(19)]);
+    const p2BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(W - 220, 20), fixed(), z(19)]);
+    const p2Bar = add([rect(200, 16), color(INK), pos(W - 220, 20), fixed(), z(20)]);
     add([text("P2", { size: 10, font: "sans-serif" }), pos(W - 220, 40), fixed(), color(INK), z(20)]);
 
     const scoreDisp = add([text("", { size: 12, font: "sans-serif" }),
