@@ -1684,31 +1684,7 @@ scene("title", () => {
   // paperTex over background for ink texture
   add([sprite("paperTex"), opacity(0.12), z(100), fixed()]);
 
-  let titleTime = 0;
   let blink = 0;
-
-  // Title with drift
-  const title = add([
-    text("WARZINE", { size: 80, font: "sans-serif" }),
-    pos(W / 2, H / 3 - 20),
-    anchor("center"),
-    color(INK),
-    fixed(),
-    z(10),
-  ]);
-
-  // Subtitle
-  add([
-    text("BEAT 'EM UP", { size: 18, font: "sans-serif" }),
-    pos(W / 2, H / 3 + 40),
-    anchor("center"),
-    color(INK),
-    fixed(),
-    z(10),
-  ]);
-
-  // Decorative arrows
-  add([text("< >", { size: 24, font: "sans-serif" }), pos(W / 2, H / 3 + 65), anchor("center"), color(INK), fixed(), z(10)]);
 
   // Menu items
   const MENU_LABELS = ["VERSUS MODE", "PUSH START", "FF: CO-OP", "DIFFICULTY: NORMAL", "TUTORIAL"];
@@ -1774,11 +1750,8 @@ scene("title", () => {
   let started = false;
 
   onUpdate(() => {
-    titleTime += dt();
     blink += dt();
     ctrlText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
-    title.pos.x = W / 2 + Math.sin(titleTime * 0.5) * 3;
-    title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
 
     // Update labels
     menuItems[2].text = "< FF: " + (friendlyFireOn ? "FRIENDLY FIRE" : "CO-OP") + " >";
