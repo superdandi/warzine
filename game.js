@@ -281,6 +281,7 @@ loadSprite("elBruto", "el bruto sprite.png");
 loadSprite("bossDirector", "big boss 1 sprite.png");
 loadSprite("bossQuimica", "big boss 2 sprite.png");
 loadSprite("bossColoso", "big boss 3 sprite.png");
+loadSprite("versusBg", "versus scene.png");
 
 // ============================================================
 // PARALLAX BACKGROUND GENERATORS
@@ -3866,9 +3867,8 @@ scene("versus", () => {
   curState = vsState;
 
   // Background
-  add([rect(W, H), color(PAPER), fixed()]);
-  add([sprite("paperTex"), opacity(0.15), fixed()]);
-  add([rect(W, 4), color(INK), pos(0, V_GROUND_Y), fixed()]);
+  add([sprite("versusBg"), fixed(), z(0)]);
+  add([rect(W, 4), color(INK), pos(0, V_GROUND_Y), fixed(), z(1)]);
 
   function nextAvail(current, dir, taken) {
     let c = current;
