@@ -181,6 +181,8 @@ const MUSIC_THEMES = {
   versusSelect:{bpm:100, kicks:[0,6],            snares:[3,11],                hihats:[1,3,5,7,9,11,13,15], bass:[[0,110,0.3,0.1],[6,82,0.3,0.1]] },
   versusFight: {bpm:130, kicks:[0,2,4,6],        snares:[3,7,11,15],           hihats:[1,3,5,7,9,11,13,15], bass:[[0,55,0.4,0.2],[4,73,0.3,0.15],[8,82,0.3,0.15],[12,73,0.3,0.15]] },
 
+  title: { bpm:95, kicks:[0,4,8,12], snares:[2,6,10,14], hihats:[1,3,5,7,9,11,13,15], bass:[[0,110,0.3,0.15],[8,82,0.3,0.15]] },
+
   streetRevive:{ bpm:60,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,55,0.5,0.3],[8,55,0.5,0.3]] },
   rooftopRevive:{bpm:55,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,65,0.5,0.3],[8,65,0.5,0.3]] },
   factoryRevive:{bpm:50,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,50,0.6,0.3],[8,50,0.6,0.3]] },
@@ -1688,6 +1690,7 @@ function checkItemPickups() {
 
 scene("title", () => {
   stopMusic();
+  changeMusic("title");
   add([sprite("titleBg"), fixed(), z(0)]);
   // paperTex over background for ink texture
   add([sprite("paperTex"), opacity(0.12), z(100), fixed(), "paperTex"]).baseOpacity = 0.12;
@@ -1695,7 +1698,7 @@ scene("title", () => {
   let blink = 0;
 
   // Menu items
-  const MENU_LABELS = ["VERSUS MODE", "PUSH START", "FF: CO-OP", "DIFFICULTY: NORMAL", "TUTORIAL"];
+  const MENU_LABELS = ["VERSUS MODE", "STORY MODE", "FF: CO-OP", "DIFFICULTY: NORMAL", "TUTORIAL"];
   const ITEM_COUNT = 5;
   const ITEM_YS = [230, 265, 310, 340, 370];
   let menuItems = [];
@@ -1716,7 +1719,8 @@ scene("title", () => {
     text(">", { size: 14, font: "sans-serif" }),
     pos(W / 2 - 155, ITEM_YS[1]),
     anchor("center"),
-    color(INK),
+    color(WHITE),
+    outline(2),
     fixed(),
     z(10),
   ]);
@@ -1724,7 +1728,8 @@ scene("title", () => {
     text("<", { size: 14, font: "sans-serif" }),
     pos(W / 2 + 155, ITEM_YS[1]),
     anchor("center"),
-    color(INK),
+    color(WHITE),
+    outline(2),
     fixed(),
     z(10),
   ]);
@@ -1732,10 +1737,9 @@ scene("title", () => {
   let friendlyFireOn = false;
 
   // Controls
-  const ctrlY = isTouchDevice ? 0.72 : 0.78;
   const ctrlText = add([
     text(isTouchDevice ? "P1: TOUCH BUTTONS" : "P1: WASD+J/K/L  P2: ARROWS+1/2+3", { size: 12, font: "sans-serif" }),
-    pos(W / 2, H * ctrlY),
+    pos(W / 2, H - 15),
     anchor("center"),
     color(INK),
     fixed(),
@@ -1753,7 +1757,7 @@ scene("title", () => {
   ]);
   add([
     text("C - CREDITS", { size: 10, font: "sans-serif" }),
-    pos(50, H - 15), anchor("center"), color(INK), fixed(), z(10),
+    pos(50, H - 15), anchor("center"), color(WHITE), fixed(), z(10),
   ]);
 
   let _lastTouchJ = false;
