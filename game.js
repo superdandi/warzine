@@ -3871,7 +3871,7 @@ scene("tutorial", () => {
       anchor("center"),
       z(10),
       "crate",
-      { hp, maxHp: hp, superOnly: !!opts.superOnly },
+      { hp, maxHp: hp, superOnly: !!opts.superOnly, hitTimer: 0 },
     ]);
     stepObjs.push(crate);
     return crate;
@@ -3904,6 +3904,7 @@ scene("tutorial", () => {
       anchor("center"),
       move(vec2(dir, 0), 120),
       z(10),
+      opacity(1),
       "projectile",
       lifespan(4),
     ]);
@@ -4065,7 +4066,7 @@ scene("tutorial", () => {
       anchor("center"),
       z(10),
       "tutorialEnemy",
-      { hp: type === "grunt" ? 30 : 40, invincible: 0, facing: -1, speed: 40 },
+      { hp: type === "grunt" ? 30 : 40, invincible: 0, facing: -1, speed: 40, hitTimer: 0 },
     ]);
     enemy.add([rect(cfg.bodyW * TF, cfg.bodyH * TF), outline(3), color(WHITE), anchor("center")]);
     enemy.add([rect(cfg.headW * TF, cfg.headH * TF), outline(3), color(WHITE), pos(0, -cfg.bodyH * TF / 2 - cfg.headH * TF + 2), anchor("center")]);
@@ -4166,33 +4167,58 @@ scene("tutorial", () => {
       if (p.punchHitbox && p.punchHitbox.exists()) {
         const dir = p.punchDir;
         p.punchHitbox.pos = vec2(p.pos.x + dir * 20, p.pos.y);
+        // Check crates
+        let hitSomething = false;
         get("crate").forEach(c => {
           if (p.punchHitbox.isColliding(c) && (!c.superOnly || p.punchIsSuper)) {
-            if (p.punchIsSuper) {
-              c.hp -= 75;
-            } else {
-              c.hp -= 15;
+            if (c.hitTimer <= 0) {
+              if (p.punchIsSuper) c.hp -= 75;
+              else c.hp -= 15;
+              c.hitTimer = 0.1;
+              c.color = INK;
+              spawnInkSplat(c.pos.x, c.pos.y);
+              if (c.hp <= 0) { destroy(c); sfxKill(); }
+              else sfxHit();
+              hitSomething = true;
             }
-            spawnInkSplat(c.pos.x, c.pos.y);
-            if (c.hp <= 0) { destroy(c); sfxKill(); }
-            else sfxHit();
           }
         });
+        // Check enemies
         get("tutorialEnemy").forEach(e => {
           if (p.punchHitbox.isColliding(e)) {
-            const dmg = p.punchIsSuper ? 40 : 15;
-            e.hp -= dmg;
-            spawnInkSplat(e.pos.x, e.pos.y);
-            if (e.hp <= 0) { destroy(e); sfxKill(); }
-            else { sfxHit(); e.invincible = 0.3; }
+            if (e.hitTimer <= 0) {
+              const dmg = p.punchIsSuper ? 40 : 15;
+              e.hp -= dmg;
+              e.hitTimer = 0.1;
+              e.color = INK;
+              spawnInkSplat(e.pos.x, e.pos.y);
+              if (e.hp <= 0) { destroy(e); sfxKill(); }
+              else { sfxHit(); e.invincible = 0.3; }
+              hitSomething = true;
+            }
           }
         });
+        if (hitSomething) p.punchTimer = Math.max(p.punchTimer, 0.04); // brief hitpause
       }
       if (p.punchTimer <= 0) {
         if (p.punchHitbox && p.punchHitbox.exists()) destroy(p.punchHitbox);
         p.punchHitbox = null;
       }
     }
+
+    // Hit flash reset
+    get("crate").forEach(c => {
+      if (c.hitTimer > 0) {
+        c.hitTimer -= dt();
+        if (c.hitTimer <= 0) c.color = WHITE;
+      }
+    });
+    get("tutorialEnemy").forEach(e => {
+      if (e.hitTimer > 0) {
+        e.hitTimer -= dt();
+        if (e.hitTimer <= 0) e.color = WHITE;
+      }
+    });
   });
 
   // Jump handling
