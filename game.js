@@ -3852,7 +3852,7 @@ scene("versus", () => {
 
   const V_GRAVITY = 800;
   const V_JUMP_FORCE = -300;
-  const V_GROUND_Y = H - 80;
+  const V_GROUND_Y = H - 160;
 
   let phase = "select";
   let p1Choice = 0, p2Choice = 1;
