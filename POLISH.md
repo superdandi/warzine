@@ -88,7 +88,7 @@
 | 💧 | SFX de boss | ✅ | Rumble grave + noise al aparecer; fanfare al morir |
 | 💧 | SFX de game over | ✅ | Descenso cromático sawtooth |
 | 💧 | SFX de victoria | ✅ | Arpegio ascendente 4 notas (cuadrado) |
-| 🌱 | Banda sonora por nivel | ⬜ | Track diferente por escenario |
+| 🌱 | Banda sonora por nivel | ✅ | MUSIC_THEMES: 3 niveles × 3 fases (normal/miniboss/boss) |
 
 ---
 
@@ -107,7 +107,7 @@
 | 💧 | Pantalla de victoria | ✅ | Terminal cyberpunk, scanlines, quote, [SPACE] retry / [ENTER] título |
 | 💧 | Viñetas de historia entre niveles | ✅ | Paneles comic con texto narrativo, fondo papel, splatters |
 | 💧 | Selector de dificultad en título | ✅ | A/D para cambiar, Easy/Normal/Hard, multiplicadores en HP/daño/cantidad |
-| 🌱 | Pantalla de créditos | ⬜ | Con scrolling tipo cine |
+| 🌱 | Pantalla de créditos | ✅ | Scrolling, tecla C en título, estilo terminal |
 | 🌱 | Dificultad (Fácil / Normal / Duro) | ⬜ | HP, daño, velocidad enemiga |
 | 🌱 | Tutorial interactivo | ⬜ | Primera partida guiada |
 

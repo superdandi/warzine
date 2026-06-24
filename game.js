@@ -1724,10 +1724,14 @@ scene("title", () => {
   add([rect(180, 3), color(INK), pos(W / 2 - 90, H * line1Y), fixed(), z(10)]);
   add([rect(140, 2), color(INK), pos(W / 2 - 70, H * line2Y), fixed(), z(10)]);
 
-  // Version
+  // Version & Credits hint
   add([
     text("v1.5", { size: 10, font: "sans-serif" }),
     pos(W - 30, H - 15), anchor("center"), color(INK), fixed(), z(10),
+  ]);
+  add([
+    text("C - CREDITS", { size: 10, font: "sans-serif" }),
+    pos(50, H - 15), anchor("center"), color(INK), fixed(), z(10),
   ]);
 
   let p1Ready = false, p2Ready = false;
@@ -1758,6 +1762,9 @@ scene("title", () => {
   if (!isTouchDevice) {
     onKeyPress("1", () => { sfxMenuSelect(); if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
   }
+
+  // Credits key
+  onKeyPress("c", () => { sfxMenuSelect(); go("credits"); });
 });
 
 // ============================================================
@@ -3616,6 +3623,105 @@ scene("victory", (wave) => {
 
   onKeyPress("space", () => { sfxMenuSelect(); go("select"); });
   onKeyPress("enter", () => { sfxMenuSelect(); go("title"); });
+});
+
+// ============================================================
+// CREDITS SCENE
+// ============================================================
+
+scene("credits", () => {
+  stopMusic();
+
+  add([sprite("paperTex"), opacity(0.2), fixed()]);
+  add([rect(W, H), color(PAPER), fixed()]);
+
+  const CREDITS = [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "= WARZINE =",
+    "",
+    "A BEAT 'EM UP OF INK AND ANGER",
+    "",
+    "",
+    "— CREDITS —",
+    "",
+    "CODE & DESIGN",
+    "SUPERDANDI",
+    "",
+    "SPRITE ART",
+    "SUPERDANDI",
+    "",
+    "PROCEDURAL AUDIO",
+    "SUPERDANDI",
+    "",
+    "MUSIC SYSTEMS",
+    "SUPERDANDI",
+    "",
+    "— SPECIAL THANKS —",
+    "",
+    "THE PUNK ZINES THAT INSPIRED THIS",
+    "THE BEAT 'EM UP LEGENDS",
+    "OPENCODE FOR THE COMPANIONSHIP",
+    "",
+    "",
+    "— BUILT WITH —",
+    "",
+    "KAPLAY 3001",
+    "WEB AUDIO API",
+    "PURE GRIT",
+    "",
+    "",
+    "ALL RIGHTS RESERVED.",
+    "NO MERCY. NO SURRENDER.",
+    "JUST BLOOD AND INK.",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "[ PRESS SPACE / ENTER / ESC TO RETURN ]",
+    "",
+    "",
+    "",
+    "",
+  ];
+
+  let scrollY = H + 20;
+  const lines = [];
+
+  CREDITS.forEach((line, i) => {
+    const isHeader = line.startsWith("= ") && line.endsWith(" =");
+    const isSub = line.startsWith("—") && line.endsWith("—");
+    const size = isHeader ? 20 : isSub ? 14 : line.startsWith("[") ? 10 : 12;
+    const obj = add([
+      text(line, { size, font: "sans-serif" }),
+      pos(W / 2, scrollY + i * 30),
+      anchor("center"),
+      color(INK),
+      fixed(),
+      z(10),
+    ]);
+    obj.opacity = line === "" ? 0 : (line.startsWith("[") ? 0.4 : 1);
+    lines.push(obj);
+  });
+
+  const totalHeight = CREDITS.length * 30 + H + 40;
+
+  onUpdate(() => {
+    scrollY -= 30 * dt();
+    lines.forEach((obj, i) => {
+      obj.pos.y = scrollY + i * 30;
+    });
+    if (scrollY < -totalHeight) scrollY = H + 20;
+  });
+
+  const exitCredits = () => { sfxMenuSelect(); go("title"); };
+  onKeyPress("space", exitCredits);
+  onKeyPress("enter", exitCredits);
+  onKeyPress("escape", exitCredits);
 });
 
 // ============================================================
