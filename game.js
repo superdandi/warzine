@@ -181,7 +181,7 @@ const MUSIC_THEMES = {
   versusSelect:{bpm:100, kicks:[0,6],            snares:[3,11],                hihats:[1,3,5,7,9,11,13,15], bass:[[0,110,0.3,0.1],[6,82,0.3,0.1]] },
   versusFight: {bpm:130, kicks:[0,2,4,6],        snares:[3,7,11,15],           hihats:[1,3,5,7,9,11,13,15], bass:[[0,55,0.4,0.2],[4,73,0.3,0.15],[8,82,0.3,0.15],[12,73,0.3,0.15]] },
 
-  title: { bpm:95, kicks:[0,4,8,12], snares:[2,6,10,14], hihats:[1,3,5,7,9,11,13,15], bass:[[0,110,0.3,0.15],[8,82,0.3,0.15]] },
+  title: { bpm:170, kicks:[0,2,4,6,8,10,12,14], snares:[3,7,11,15], hihats:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], bass:[[0,55,0.4,0.15],[4,73,0.3,0.1],[8,55,0.4,0.15],[12,73,0.3,0.1]] },
 
   streetRevive:{ bpm:60,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,55,0.5,0.3],[8,55,0.5,0.3]] },
   rooftopRevive:{bpm:55,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,65,0.5,0.3],[8,65,0.5,0.3]] },
@@ -1716,20 +1716,20 @@ scene("title", () => {
   // Cursors
   let cursorP1 = 1, cursorP2 = 1;
   const p1Arrow = add([
-    text(">", { size: 14, font: "sans-serif" }),
-    pos(W / 2 - 155, ITEM_YS[1]),
+    text(">", { size: 18, font: "sans-serif" }),
+    pos(W / 2 - 160, ITEM_YS[1]),
     anchor("center"),
     color(WHITE),
-    outline(2),
+    outline(3),
     fixed(),
     z(10),
   ]);
   const p2Arrow = add([
-    text("<", { size: 14, font: "sans-serif" }),
-    pos(W / 2 + 155, ITEM_YS[1]),
+    text("<", { size: 18, font: "sans-serif" }),
+    pos(W / 2 + 160, ITEM_YS[1]),
     anchor("center"),
     color(WHITE),
-    outline(2),
+    outline(3),
     fixed(),
     z(10),
   ]);
@@ -1741,7 +1741,7 @@ scene("title", () => {
     text(isTouchDevice ? "P1: TOUCH BUTTONS" : "P1: WASD+J/K/L  P2: ARROWS+1/2+3", { size: 12, font: "sans-serif" }),
     pos(W / 2, H - 15),
     anchor("center"),
-    color(INK),
+    color(WHITE),
     fixed(),
     z(10),
   ]);
