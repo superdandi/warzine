@@ -3868,7 +3868,6 @@ scene("versus", () => {
 
   // Background
   add([sprite("versusBg"), fixed(), z(0)]);
-  add([rect(W, 4), color(INK), pos(0, V_GROUND_Y), fixed(), z(1)]);
 
   function nextAvail(current, dir, taken) {
     let c = current;
