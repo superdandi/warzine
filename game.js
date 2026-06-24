@@ -3764,6 +3764,7 @@ scene("tutorial", () => {
     vy: 0, onGround: true, facing: 1,
     speed: 150, hp: 100, invincible: 0,
     dodgeCooldown: 0, superCooldown: 0,
+    punchTimer: 0, punchHitbox: null, punchDir: 1, punchIsSuper: false,
   };
 
   const spriteCfg = CHAR_SPRITES["punkette"];
@@ -3773,12 +3774,15 @@ scene("tutorial", () => {
     anchor("center"),
     z(10),
   ]);
+  let spriteChild = null;
   if (spriteCfg) {
-    playerObj.add([
+    const s = (48 * TF) / spriteCfg.h * 1.5;
+    spriteChild = playerObj.add([
       sprite(spriteCfg.name),
-      scale((48 * TF) / spriteCfg.h * 1.5),
+      scale(s),
       anchor("center"),
     ]);
+    spriteChild.flipX = false;
   }
 
   // Step system
@@ -3979,8 +3983,8 @@ scene("tutorial", () => {
       run: () => {
         showInstruction("PRESS J TO PUNCH", "Destroy both training crates");
         showStepCounter(3, 7);
-        createCrate(W / 2 - 60, T_GROUND_Y - 16, 15);
-        createCrate(W / 2 + 60, T_GROUND_Y - 16, 15);
+        createCrate(W / 2 - 50, T_GROUND_Y - 22, 15, { w: 40, h: 40 });
+        createCrate(W / 2 + 50, T_GROUND_Y - 22, 15, { w: 40, h: 40 });
         stepDone = false;
       },
       check: () => {
@@ -3993,7 +3997,7 @@ scene("tutorial", () => {
       run: () => {
         showInstruction("PRESS J+K FOR SUPER ATTACK", "Destroy the reinforced crate");
         showStepCounter(4, 7);
-        createCrate(W / 2, T_GROUND_Y - 16, 75, { superOnly: true });
+        createCrate(W / 2, T_GROUND_Y - 22, 75, { w: 40, h: 40, superOnly: true });
         stepDone = false;
       },
       check: () => {
@@ -4144,6 +4148,7 @@ scene("tutorial", () => {
 
     // Update player object position
     playerObj.pos = p.pos;
+    if (spriteChild) spriteChild.flipX = p.facing < 0;
 
     // Step-specific logic
     const step = STEPS[stepIdx];
@@ -4155,9 +4160,38 @@ scene("tutorial", () => {
       }
     }
 
-    // Crates hit detection
-    if (stepIdx === 3 || stepIdx === 4) {
-      // Check if just punched
+    // Punch hitbox collision (onUpdate to ensure collision system is ready)
+    if (p.punchTimer > 0) {
+      p.punchTimer -= dt();
+      if (p.punchHitbox && p.punchHitbox.exists()) {
+        const dir = p.punchDir;
+        p.punchHitbox.pos = vec2(p.pos.x + dir * 20, p.pos.y);
+        get("crate").forEach(c => {
+          if (p.punchHitbox.isColliding(c) && (!c.superOnly || p.punchIsSuper)) {
+            if (p.punchIsSuper) {
+              c.hp -= 75;
+            } else {
+              c.hp -= 15;
+            }
+            spawnInkSplat(c.pos.x, c.pos.y);
+            if (c.hp <= 0) { destroy(c); sfxKill(); }
+            else sfxHit();
+          }
+        });
+        get("tutorialEnemy").forEach(e => {
+          if (p.punchHitbox.isColliding(e)) {
+            const dmg = p.punchIsSuper ? 40 : 15;
+            e.hp -= dmg;
+            spawnInkSplat(e.pos.x, e.pos.y);
+            if (e.hp <= 0) { destroy(e); sfxKill(); }
+            else { sfxHit(); e.invincible = 0.3; }
+          }
+        });
+      }
+      if (p.punchTimer <= 0) {
+        if (p.punchHitbox && p.punchHitbox.exists()) destroy(p.punchHitbox);
+        p.punchHitbox = null;
+      }
     }
   });
 
@@ -4229,118 +4263,27 @@ scene("tutorial", () => {
     }
   });
 
-  // Punch & Super handling
-  onKeyPress("j", () => {
+  // Punch & Super handling — sets flag, collision processed in onUpdate
+  function doPunch(isSuper) {
     if (stepIdx < 0) return;
-    const isSuper = isKeyDown("k") || isKeyDown("2");
-    const punchDir = p.facing;
-
-    if (isSuper && stepIdx >= 4) {
-      // Super attack
-      const hb = add([
-        pos(p.pos.x + punchDir * 30, p.pos.y),
-        rect(50, 40),
-        area(),
-        anchor("center"),
-        z(15),
-        opacity(0),
-        lifespan(0.15),
-        "superHitbox",
-      ]);
+    if (p.punchTimer > 0) return;
+    p.punchDir = p.facing;
+    p.punchIsSuper = isSuper && stepIdx >= 4;
+    if (p.punchIsSuper) {
       playNoise(0.15, 0.3, 500, "bandpass");
       playTone(150, 0.2, 0.3, "sawtooth", 80);
-
-      // Check hit on crates
-      get("crate").forEach(c => {
-        if (hb.isColliding(c)) {
-          c.hp -= 75;
-          spawnInkSplat(c.pos.x, c.pos.y);
-          if (c.hp <= 0) { destroy(c); sfxKill(); }
-          else { sfxHit(); }
-        }
-      });
-      // Check hit on enemies
-      get("tutorialEnemy").forEach(e => {
-        if (hb.isColliding(e)) {
-          e.hp -= 40;
-          spawnInkSplat(e.pos.x, e.pos.y);
-          if (e.hp <= 0) { destroy(e); sfxKill(); }
-          else { sfxHit(); e.invincible = 0.3; }
-        }
-      });
+      p.punchHitbox = add([pos(0, 0), rect(50, 40), area(), anchor("center"), z(15), opacity(0)]);
+      p.punchTimer = 0.15;
     } else {
-      // Normal punch
-      const hb = add([
-        pos(p.pos.x + punchDir * 20, p.pos.y),
-        rect(22, 18),
-        area(),
-        anchor("center"),
-        z(15),
-        opacity(0),
-        lifespan(0.1),
-        "punchHitbox",
-      ]);
       playNoise(0.08, 0.4, 3000, "lowpass");
       playTone(80, 0.06, 0.3, "square");
-
-      // Check hit on crates
-      get("crate").forEach(c => {
-        if (hb.isColliding(c) && !c.superOnly) {
-          c.hp -= 15;
-          spawnInkSplat(c.pos.x, c.pos.y);
-          if (c.hp <= 0) { destroy(c); sfxKill(); }
-          else { sfxHit(); }
-        }
-      });
-      // Check hit on enemies
-      get("tutorialEnemy").forEach(e => {
-        if (hb.isColliding(e)) {
-          e.hp -= 15;
-          spawnInkSplat(e.pos.x, e.pos.y);
-          if (e.hp <= 0) { destroy(e); sfxKill(); }
-          else { sfxHit(); e.invincible = 0.3; }
-        }
-      });
+      p.punchHitbox = add([pos(0, 0), rect(26, 22), area(), anchor("center"), z(15), opacity(0)]);
+      p.punchTimer = 0.12;
     }
-  });
+  }
 
-  onKeyPress("1", () => {
-    // Same as J for P2 controls
-    if (stepIdx < 0) return;
-    const isSuper = isKeyDown("k") || isKeyDown("2");
-    const punchDir = p.facing; // Simplified
-
-    // Same logic
-    if (isSuper && stepIdx >= 4) {
-      const hb = add([
-        pos(p.pos.x + punchDir * 30, p.pos.y),
-        rect(50, 40),
-        area(), anchor("center"), z(15), opacity(0), lifespan(0.15),
-      ]);
-      playNoise(0.15, 0.3, 500, "bandpass");
-      playTone(150, 0.2, 0.3, "sawtooth", 80);
-      get("crate").forEach(c => {
-        if (hb.isColliding(c)) { c.hp -= 75; spawnInkSplat(c.pos.x, c.pos.y); if (c.hp <= 0) { destroy(c); sfxKill(); } else sfxHit(); }
-      });
-      get("tutorialEnemy").forEach(e => {
-        if (hb.isColliding(e)) { e.hp -= 40; spawnInkSplat(e.pos.x, e.pos.y); if (e.hp <= 0) { destroy(e); sfxKill(); } else { sfxHit(); e.invincible = 0.3; } }
-      });
-    } else {
-      const hb = add([
-        pos(p.pos.x + punchDir * 20, p.pos.y),
-        rect(22, 18),
-        area(), anchor("center"), z(15), opacity(0), lifespan(0.1),
-      ]);
-      playNoise(0.08, 0.4, 3000, "lowpass");
-      playTone(80, 0.06, 0.3, "square");
-      get("crate").forEach(c => {
-        if (hb.isColliding(c) && !c.superOnly) { c.hp -= 15; spawnInkSplat(c.pos.x, c.pos.y); if (c.hp <= 0) { destroy(c); sfxKill(); } else sfxHit(); }
-      });
-      get("tutorialEnemy").forEach(e => {
-        if (hb.isColliding(e)) { e.hp -= 15; spawnInkSplat(e.pos.x, e.pos.y); if (e.hp <= 0) { destroy(e); sfxKill(); } else { sfxHit(); e.invincible = 0.3; } }
-      });
-    }
-  });
+  onKeyPress("j", () => doPunch(isKeyDown("k") || isKeyDown("2")));
+  onKeyPress("1", () => doPunch(isKeyDown("k") || isKeyDown("2")));
 
   // Enemy AI
   onUpdate(() => {
