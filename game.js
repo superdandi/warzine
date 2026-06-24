@@ -1685,17 +1685,7 @@ scene("title", () => {
   add([rect(W, H), color(PAPER), fixed()]);
 
   let titleTime = 0;
-  // Animated decorative lines (scanlines style)
-  for (let i = 0; i < 12; i++) {
-    const y = 20 + i * 38;
-    const line = add([
-      rect(W - 40, 1),
-      color(INK),
-      pos(20, y),
-      opacity(rand(0.1, 0.3)),
-      fixed(),
-    ]);
-  }
+  let blink = 0;
 
   // Title with drift
   const title = add([
@@ -1720,27 +1710,42 @@ scene("title", () => {
   // Decorative arrows
   add([text("< >", { size: 24, font: "sans-serif" }), pos(W / 2, H / 3 + 65), anchor("center"), color(INK), fixed(), z(10)]);
 
-  // Push Start prompts
-  let blink = 0;
-  const p1Start = add([
-    text("1 - PUSH START", { size: 18, font: "sans-serif" }),
-    pos(W / 2, H * 0.6),
+  // Menu items
+  const MENU_LABELS = ["VERSUS MODE", "PUSH START", "FF: CO-OP", "DIFFICULTY: NORMAL", "TUTORIAL"];
+  const ITEM_COUNT = 5;
+  const ITEM_YS = [230, 265, 310, 340, 370];
+  let menuItems = [];
+  for (let i = 0; i < ITEM_COUNT; i++) {
+    menuItems.push(add([
+      text(MENU_LABELS[i], { size: i >= 2 ? 14 : 16, font: "sans-serif" }),
+      pos(W / 2, ITEM_YS[i]),
+      anchor("center"),
+      color(INK),
+      fixed(),
+      z(10),
+    ]));
+  }
+
+  // Cursors
+  let cursorP1 = 1, cursorP2 = 1;
+  const p1Arrow = add([
+    text(">", { size: 14, font: "sans-serif" }),
+    pos(W / 2 - 155, ITEM_YS[1]),
     anchor("center"),
     color(INK),
     fixed(),
     z(10),
   ]);
-  let p2Start = null;
-  if (!isTouchDevice) {
-    p2Start = add([
-      text("2 - PUSH START", { size: 18, font: "sans-serif" }),
-      pos(W / 2, H * 0.66),
-      anchor("center"),
-      color(INK),
-      fixed(),
-      z(10),
-    ]);
-  }
+  const p2Arrow = add([
+    text("<", { size: 14, font: "sans-serif" }),
+    pos(W / 2 + 155, ITEM_YS[1]),
+    anchor("center"),
+    color(INK),
+    fixed(),
+    z(10),
+  ]);
+
+  let friendlyFireOn = false;
 
   // Controls
   const ctrlY = isTouchDevice ? 0.72 : 0.78;
@@ -1753,48 +1758,7 @@ scene("title", () => {
     z(10),
   ]);
 
-  // Menu selection cursor (0=FF, 1=Difficulty)
-  let menuCursor = 0;
-  let friendlyFireOn = false;
-  const ffY = isTouchDevice ? 0.78 : 0.84;
-  const ffText = add([
-    text("< FF: CO-OP >", { size: 14, font: "sans-serif" }),
-    pos(W / 2, H * ffY),
-    anchor("center"),
-    color(INK),
-    fixed(),
-    z(10),
-  ]);
-
-  // Difficulty selector
-  const diffY = isTouchDevice ? 0.84 : 0.90;
-  const diffText = add([
-    text("< DIFFICULTY: NORMAL >", { size: 14, font: "sans-serif" }),
-    pos(W / 2, H * diffY),
-    anchor("center"),
-    color(INK),
-    fixed(),
-    z(10),
-  ]);
-
-  // Cursor indicator
-  const cursorArrow = add([
-    text(">", { size: 14, font: "sans-serif" }),
-    pos(0, 0),
-    anchor("center"),
-    color(INK),
-    fixed(),
-    z(10),
-  ]);
-
-  // Decorative lines
-  const line1Y = isTouchDevice ? 0.68 : 0.73;
-  const line2Y = isTouchDevice ? 0.72 : 0.77;
-  add([rect(180, 3), color(INK), pos(W / 2 - 90, H * line1Y), fixed(), z(10)]);
-  add([rect(140, 2), color(INK), pos(W / 2 - 70, H * line2Y), fixed(), z(10)]);
-
-  // Version & hints
-  const isFirstTutorial = !localStorage.getItem("warzine_tutorial");
+  // Version & credits
   add([
     text("v1.5", { size: 10, font: "sans-serif" }),
     pos(W - 30, H - 15), anchor("center"), color(INK), fixed(), z(10),
@@ -1803,77 +1767,109 @@ scene("title", () => {
     text("C - CREDITS", { size: 10, font: "sans-serif" }),
     pos(50, H - 15), anchor("center"), color(INK), fixed(), z(10),
   ]);
-  if (!isTouchDevice) {
-    add([
-      text("V - VERSUS", { size: 10, font: "sans-serif" }),
-      pos(50, H - 30), anchor("center"), color(INK), fixed(), z(10),
-    ]);
-  }
-  const tutorialHint = add([
-    text(isFirstTutorial ? "T - TUTORIAL (RECOMMENDED)" : "T - TUTORIAL", { size: 10, font: "sans-serif" }),
-    pos(W / 2, H * 0.90), anchor("center"), color(INK), fixed(), z(10),
-  ]);
-  if (isFirstTutorial) tutorialHint.opacity = 0.3;
 
-  let p1Ready = false, p2Ready = false;
   let _lastTouchJ = false;
+  let _lastTouchUp = false, _lastTouchDown = false;
+  let _lastTouchLeft = false, _lastTouchRight = false;
+  let started = false;
 
   onUpdate(() => {
     titleTime += dt();
     blink += dt();
-    p1Start.opacity = blink % 1 < 0.6 ? 1 : 0.3;
-    if (p2Start) p2Start.opacity = p2Ready ? 0.15 : (blink % 1 < 0.6 ? 1 : 0.3);
     ctrlText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
     title.pos.x = W / 2 + Math.sin(titleTime * 0.5) * 3;
     title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
-    ffText.text = "< FF: " + (friendlyFireOn ? "FRIENDLY FIRE" : "CO-OP") + " >";
-    diffText.text = "< DIFFICULTY: " + DIFFICULTIES[gameDifficulty] + " >";
-    // Highlight selected option
-    const selectedY = menuCursor === 0 ? H * ffY : H * diffY;
-    cursorArrow.pos = vec2(W / 2 - 140, selectedY);
-    ffText.opacity = menuCursor === 0 ? 1 : 0.4;
-    diffText.opacity = menuCursor === 1 ? 1 : 0.4;
-    // Tutorial hint pulse
-    if (isFirstTutorial) tutorialHint.opacity = 0.3 + Math.sin(blink * 2) * 0.2;
+
+    // Update labels
+    menuItems[2].text = "< FF: " + (friendlyFireOn ? "FRIENDLY FIRE" : "CO-OP") + " >";
+    menuItems[3].text = "< DIFFICULTY: " + DIFFICULTIES[gameDifficulty] + " >";
+
+    // Cursor arrows
+    p1Arrow.pos.y = ITEM_YS[cursorP1];
+    p2Arrow.pos.y = ITEM_YS[cursorP2];
+
+    // Highlight items where either cursor is
+    for (let i = 0; i < ITEM_COUNT; i++) {
+      menuItems[i].opacity = (i === cursorP1 || i === cursorP2) ? 1 : 0.4;
+    }
+
     // Touch key press polling
-    if (touchKeys['j'] && !_lastTouchJ) { sfxMenuSelect(); gameFriendlyFire = friendlyFireOn; if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: isTouchDevice ? false : p2Ready }); } }
+    if (touchKeys['j'] && !_lastTouchJ && !started) {
+      started = true; sfxMenuSelect();
+      gameFriendlyFire = friendlyFireOn;
+      if (cursorP1 === 0) go("versus");
+      else if (cursorP1 === 1) go("select", { p1: true, p2: false });
+      else if (cursorP1 === 4) go("tutorial");
+      else started = false;
+    }
     _lastTouchJ = !!touchKeys['j'];
+
+    if (touchKeys['up'] && !_lastTouchUp) { cursorP1 = (cursorP1 - 1 + ITEM_COUNT) % ITEM_COUNT; sfxMenuSelect(); }
+    if (touchKeys['down'] && !_lastTouchDown) { cursorP1 = (cursorP1 + 1) % ITEM_COUNT; sfxMenuSelect(); }
+    if (touchKeys['left'] && !_lastTouchLeft) {
+      if (cursorP1 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
+      if (cursorP1 === 3) { gameDifficulty = (gameDifficulty + 2) % 3; sfxMenuSelect(); }
+    }
+    if (touchKeys['right'] && !_lastTouchRight) {
+      if (cursorP1 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
+      if (cursorP1 === 3) { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); }
+    }
+    _lastTouchUp = !!touchKeys['up'];
+    _lastTouchDown = !!touchKeys['down'];
+    _lastTouchLeft = !!touchKeys['left'];
+    _lastTouchRight = !!touchKeys['right'];
   });
 
-  // Cursor navigation
-  onKeyPress("up", () => { menuCursor = (menuCursor - 1 + 2) % 2; sfxMenuSelect(); });
-  onKeyPress("down", () => { menuCursor = (menuCursor + 1) % 2; sfxMenuSelect(); });
+  // --- P1 controls ---
+  onKeyPress("w", () => { cursorP1 = (cursorP1 - 1 + ITEM_COUNT) % ITEM_COUNT; sfxMenuSelect(); });
+  onKeyPress("s", () => { cursorP1 = (cursorP1 + 1) % ITEM_COUNT; sfxMenuSelect(); });
 
-  // Change selected option
-  function changeOption(dir) {
-    if (menuCursor === 0) {
-      friendlyFireOn = !friendlyFireOn;
-    } else {
-      gameDifficulty = (gameDifficulty + dir + 3) % 3;
-    }
-    sfxMenuSelect();
-  }
-  onKeyPress("a", () => changeOption(-1));
-  onKeyPress("d", () => changeOption(1));
-  onKeyPress("left", () => changeOption(-1));
-  onKeyPress("right", () => changeOption(1));
-  onKeyPress("f", () => { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); });
+  onKeyPress("a", () => {
+    if (cursorP1 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
+    if (cursorP1 === 3) { gameDifficulty = (gameDifficulty + 2) % 3; sfxMenuSelect(); }
+  });
+  onKeyPress("d", () => {
+    if (cursorP1 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
+    if (cursorP1 === 3) { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); }
+  });
 
-  onKeyPress("j", () => { sfxMenuSelect(); gameFriendlyFire = friendlyFireOn; if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: isTouchDevice ? false : p2Ready }); } });
+  onKeyPress("j", () => {
+    if (started) return;
+    started = true; sfxMenuSelect();
+    gameFriendlyFire = friendlyFireOn;
+    if (cursorP1 === 0) go("versus");
+    else if (cursorP1 === 1) go("select", { p1: true, p2: false });
+    else if (cursorP1 === 4) go("tutorial");
+    else started = false;
+  });
+
+  // --- P2 controls ---
   if (!isTouchDevice) {
-    onKeyPress("1", () => { sfxMenuSelect(); gameFriendlyFire = friendlyFireOn; if (!p2Ready) { p2Ready = true; go("select", { p1: p1Ready, p2: true }); } });
+    onKeyPress("up", () => { cursorP2 = (cursorP2 - 1 + ITEM_COUNT) % ITEM_COUNT; sfxMenuSelect(); });
+    onKeyPress("down", () => { cursorP2 = (cursorP2 + 1) % ITEM_COUNT; sfxMenuSelect(); });
+
+    onKeyPress("left", () => {
+      if (cursorP2 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
+      if (cursorP2 === 3) { gameDifficulty = (gameDifficulty + 2) % 3; sfxMenuSelect(); }
+    });
+    onKeyPress("right", () => {
+      if (cursorP2 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
+      if (cursorP2 === 3) { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); }
+    });
+
+    onKeyPress("1", () => {
+      if (started) return;
+      started = true; sfxMenuSelect();
+      gameFriendlyFire = friendlyFireOn;
+      if (cursorP2 === 0) go("versus");
+      else if (cursorP2 === 1) go("select", { p1: false, p2: true });
+      else if (cursorP2 === 4) go("tutorial");
+      else started = false;
+    });
   }
 
-  // Versus mode
-  if (!isTouchDevice) {
-    onKeyPress("v", () => { sfxMenuSelect(); go("versus"); });
-  }
-
-  // Credits key
-  onKeyPress("c", () => { sfxMenuSelect(); go("credits"); });
-
-  // Tutorial key
-  onKeyPress("t", () => { sfxMenuSelect(); go("tutorial"); });
+  // Credits key (direct shortcut)
+  onKeyPress("c", () => { if (!started) { sfxMenuSelect(); go("credits"); } });
 });
 
 // ============================================================
