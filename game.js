@@ -4202,7 +4202,7 @@ scene("tutorial", () => {
   // Projectile collision
   onUpdate(() => {
     if (stepIdx === 5) {
-      getAll("projectile").forEach(proj => {
+      get("projectile").forEach(proj => {
         if (proj.exists() && p.pos.dist(proj.pos) < 25) {
           if (p.invincible <= 0) {
             // Hit! This means they didn't dodge
@@ -4218,7 +4218,7 @@ scene("tutorial", () => {
   // Health item collection
   onUpdate(() => {
     if (stepIdx === 6) {
-      getAll("healthItem").forEach(item => {
+      get("healthItem").forEach(item => {
         if (item.exists() && p.pos.dist(item.pos) < 25) {
           hasCollected = true;
           spawnInkSplat(item.pos.x, item.pos.y);
@@ -4251,7 +4251,7 @@ scene("tutorial", () => {
       playTone(150, 0.2, 0.3, "sawtooth", 80);
 
       // Check hit on crates
-      getAll("crate").forEach(c => {
+      get("crate").forEach(c => {
         if (hb.isColliding(c)) {
           c.hp -= 75;
           spawnInkSplat(c.pos.x, c.pos.y);
@@ -4260,7 +4260,7 @@ scene("tutorial", () => {
         }
       });
       // Check hit on enemies
-      getAll("tutorialEnemy").forEach(e => {
+      get("tutorialEnemy").forEach(e => {
         if (hb.isColliding(e)) {
           e.hp -= 40;
           spawnInkSplat(e.pos.x, e.pos.y);
@@ -4284,7 +4284,7 @@ scene("tutorial", () => {
       playTone(80, 0.06, 0.3, "square");
 
       // Check hit on crates
-      getAll("crate").forEach(c => {
+      get("crate").forEach(c => {
         if (hb.isColliding(c) && !c.superOnly) {
           c.hp -= 15;
           spawnInkSplat(c.pos.x, c.pos.y);
@@ -4293,7 +4293,7 @@ scene("tutorial", () => {
         }
       });
       // Check hit on enemies
-      getAll("tutorialEnemy").forEach(e => {
+      get("tutorialEnemy").forEach(e => {
         if (hb.isColliding(e)) {
           e.hp -= 15;
           spawnInkSplat(e.pos.x, e.pos.y);
@@ -4319,10 +4319,10 @@ scene("tutorial", () => {
       ]);
       playNoise(0.15, 0.3, 500, "bandpass");
       playTone(150, 0.2, 0.3, "sawtooth", 80);
-      getAll("crate").forEach(c => {
+      get("crate").forEach(c => {
         if (hb.isColliding(c)) { c.hp -= 75; spawnInkSplat(c.pos.x, c.pos.y); if (c.hp <= 0) { destroy(c); sfxKill(); } else sfxHit(); }
       });
-      getAll("tutorialEnemy").forEach(e => {
+      get("tutorialEnemy").forEach(e => {
         if (hb.isColliding(e)) { e.hp -= 40; spawnInkSplat(e.pos.x, e.pos.y); if (e.hp <= 0) { destroy(e); sfxKill(); } else { sfxHit(); e.invincible = 0.3; } }
       });
     } else {
@@ -4333,10 +4333,10 @@ scene("tutorial", () => {
       ]);
       playNoise(0.08, 0.4, 3000, "lowpass");
       playTone(80, 0.06, 0.3, "square");
-      getAll("crate").forEach(c => {
+      get("crate").forEach(c => {
         if (hb.isColliding(c) && !c.superOnly) { c.hp -= 15; spawnInkSplat(c.pos.x, c.pos.y); if (c.hp <= 0) { destroy(c); sfxKill(); } else sfxHit(); }
       });
-      getAll("tutorialEnemy").forEach(e => {
+      get("tutorialEnemy").forEach(e => {
         if (hb.isColliding(e)) { e.hp -= 15; spawnInkSplat(e.pos.x, e.pos.y); if (e.hp <= 0) { destroy(e); sfxKill(); } else { sfxHit(); e.invincible = 0.3; } }
       });
     }
@@ -4344,7 +4344,7 @@ scene("tutorial", () => {
 
   // Enemy AI
   onUpdate(() => {
-    getAll("tutorialEnemy").forEach(e => {
+    get("tutorialEnemy").forEach(e => {
       if (e.hp <= 0) return;
       // Simple chase
       const dir = p.pos.x > e.pos.x ? 1 : -1;
