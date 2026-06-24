@@ -4112,6 +4112,7 @@ scene("versus", () => {
       if (p2 && p2.exists()) p2Bar.width = 200 * Math.max(0, p2.hp / p2.maxHp);
       scoreDisp.text = "ROUND " + round + "   P1 \\[" + p1Wins + "\\]  -  \\[" + p2Wins + "\\] P2";
       vsTime += dt();
+      if (vsState.hitPause > 0) vsState.hitPause -= dt();
     });
 
     // HP check
