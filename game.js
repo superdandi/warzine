@@ -1726,7 +1726,8 @@ scene("title", () => {
     z(10),
   ]);
 
-  // Friendly fire toggle
+  // Menu selection cursor (0=FF, 1=Difficulty)
+  let menuCursor = 0;
   let friendlyFireOn = false;
   const ffY = isTouchDevice ? 0.78 : 0.84;
   const ffText = add([
@@ -1743,6 +1744,16 @@ scene("title", () => {
   const diffText = add([
     text("< DIFFICULTY: NORMAL >", { size: 14, font: "sans-serif" }),
     pos(W / 2, H * diffY),
+    anchor("center"),
+    color(INK),
+    fixed(),
+    z(10),
+  ]);
+
+  // Cursor indicator
+  const cursorArrow = add([
+    text(">", { size: 14, font: "sans-serif" }),
+    pos(0, 0),
     anchor("center"),
     color(INK),
     fixed(),
@@ -1789,9 +1800,12 @@ scene("title", () => {
     title.pos.x = W / 2 + Math.sin(titleTime * 0.5) * 3;
     title.pos.y = H / 3 - 20 + Math.sin(titleTime * 0.7) * 2;
     ffText.text = "< FF: " + (friendlyFireOn ? "FRIENDLY FIRE" : "CO-OP") + " >";
-    ffText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
     diffText.text = "< DIFFICULTY: " + DIFFICULTIES[gameDifficulty] + " >";
-    diffText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
+    // Highlight selected option
+    const selectedY = menuCursor === 0 ? H * ffY : H * diffY;
+    cursorArrow.pos = vec2(W / 2 - 140, selectedY);
+    ffText.opacity = menuCursor === 0 ? 1 : 0.4;
+    diffText.opacity = menuCursor === 1 ? 1 : 0.4;
     // Tutorial hint pulse
     if (isFirstTutorial) tutorialHint.opacity = 0.3 + Math.sin(blink * 2) * 0.2;
     // Touch key press polling
@@ -1799,11 +1813,23 @@ scene("title", () => {
     _lastTouchJ = !!touchKeys['j'];
   });
 
-  // Difficulty change
-  onKeyPress("a", () => { gameDifficulty = (gameDifficulty - 1 + 3) % 3; sfxMenuSelect(); });
-  onKeyPress("d", () => { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); });
-  onKeyPress("left", () => { gameDifficulty = (gameDifficulty - 1 + 3) % 3; sfxMenuSelect(); });
-  onKeyPress("right", () => { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); });
+  // Cursor navigation
+  onKeyPress("up", () => { menuCursor = (menuCursor - 1 + 2) % 2; sfxMenuSelect(); });
+  onKeyPress("down", () => { menuCursor = (menuCursor + 1) % 2; sfxMenuSelect(); });
+
+  // Change selected option
+  function changeOption(dir) {
+    if (menuCursor === 0) {
+      friendlyFireOn = !friendlyFireOn;
+    } else {
+      gameDifficulty = (gameDifficulty + dir + 3) % 3;
+    }
+    sfxMenuSelect();
+  }
+  onKeyPress("a", () => changeOption(-1));
+  onKeyPress("d", () => changeOption(1));
+  onKeyPress("left", () => changeOption(-1));
+  onKeyPress("right", () => changeOption(1));
   onKeyPress("f", () => { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); });
 
   onKeyPress("j", () => { sfxMenuSelect(); gameFriendlyFire = friendlyFireOn; if (!p1Ready) { p1Ready = true; go("select", { p1: true, p2: isTouchDevice ? false : p2Ready }); } });
