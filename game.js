@@ -135,6 +135,7 @@ function sfxGameOver() {
   playTone(300, 0.3, 0.3, "sawtooth", 50);
   setTimeout(() => playTone(200, 0.3, 0.25, "sawtooth", 30), 250);
   setTimeout(() => playTone(100, 0.5, 0.2, "sawtooth"), 500);
+  setTimeout(() => playNoise(1.5, 1.0, 500, "lowpass"), 800);
 }
 
 function sfxItemPickup() { playTone(800, 0.08, 0.2, "square"); setTimeout(() => playTone(1000, 0.1, 0.25, "square"), 60); }
@@ -163,6 +164,12 @@ const MUSIC_THEMES = {
   factory:       { bpm:115, kicks:[0,2],            snares:[3,7,11],             hihats:[1,3,5,7,9,11,13,15], bass:[[0,100,0.3,0.1],[4,75,0.3,0.1]] },
   factoryMiniboss:{bpm:150, kicks:[0,3,6,9,12],     snares:[2,5,8,11,14],        hihats:[1,3,5,7,9,11,13,15], bass:[[0,100,0.15,0.1],[3,100,0.15,0.1],[6,75,0.15,0.1],[9,75,0.15,0.1],[12,100,0.15,0.1]] },
   factoryBoss:   { bpm:90,  kicks:[0,4,8,12],       snares:[2,6,10,14],          hihats:[0,2,4,6,8,10,12,14], bass:[[0,50,0.5,0.2],[8,50,0.5,0.2]] },
+
+  tutorial: { bpm:110, kicks:[0,2,4,6],        snares:[3,7,11,15],          hihats:[1,3,5,7,9,11,13,15], bass:[[0,260,0.15,0.1],[4,260,0.15,0.1],[8,196,0.15,0.1],[12,196,0.15,0.1]] },
+
+  streetRevive:{ bpm:60,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,55,0.5,0.3],[8,55,0.5,0.3]] },
+  rooftopRevive:{bpm:55,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,65,0.5,0.3],[8,65,0.5,0.3]] },
+  factoryRevive:{bpm:50,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,50,0.6,0.3],[8,50,0.6,0.3]] },
 };
 
 function currentLevelTheme() {
@@ -170,9 +177,12 @@ function currentLevelTheme() {
   return lvl ? lvl.bgType : "street";
 }
 
+let currentMusicSuffix = "";
+
 function changeMusic(suffix) {
-  const theme = currentLevelTheme() + suffix;
+  const theme = MUSIC_THEMES[suffix] ? suffix : currentLevelTheme() + suffix;
   const cfg = MUSIC_THEMES[theme];
+  currentMusicSuffix = suffix;
   if (!cfg) return;
   stopMusic();
   if (!soundEnabled) return;
@@ -3358,7 +3368,18 @@ scene("game", (p1Type, p2Type) => {
     if (p) {
       revivePrompt.text = "PRESS " + p.reviveKey.toUpperCase() + " - " + Math.ceil(p.reviveTimer);
       revivePrompt.opacity = 0.5 + Math.sin(state.time * 4) * 0.5;
+      if (!state.lastAliveDowned) {
+        state.prevMusicSuffix = currentMusicSuffix;
+        if (!state.paused) changeMusic("Revive");
+        state.lastAliveDowned = true;
+      }
     } else {
+      if (state.lastAliveDowned) {
+        state.lastAliveDowned = false;
+        if (state.prevMusicSuffix !== undefined && !state.gameOver) {
+          changeMusic(state.prevMusicSuffix === "Revive" ? "" : state.prevMusicSuffix);
+        }
+      }
       revivePrompt.opacity = 0;
     }
   });
@@ -3741,6 +3762,7 @@ scene("credits", () => {
 
 scene("tutorial", () => {
   stopMusic();
+  changeMusic("tutorial");
   const TF = 2;
   const T_GRAVITY = 800;
   const T_JUMP_FORCE = -300;
