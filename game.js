@@ -53,6 +53,8 @@ function toggleSound() {
   return soundEnabled;
 }
 
+let vsRematchData = null;
+
 function playNoise(duration, volume, filterFreq, filterType) {
   if (!soundEnabled) return;
   initAudio();
@@ -167,6 +169,9 @@ const MUSIC_THEMES = {
   factoryBoss:   { bpm:90,  kicks:[0,4,8,12],       snares:[2,6,10,14],          hihats:[0,2,4,6,8,10,12,14], bass:[[0,50,0.5,0.2],[8,50,0.5,0.2]] },
 
   tutorial: { bpm:110, kicks:[0,2,4,6],        snares:[3,7,11,15],          hihats:[1,3,5,7,9,11,13,15], bass:[[0,260,0.15,0.1],[4,260,0.15,0.1],[8,196,0.15,0.1],[12,196,0.15,0.1]] },
+
+  versusSelect:{bpm:100, kicks:[0,6],            snares:[3,11],                hihats:[1,3,5,7,9,11,13,15], bass:[[0,110,0.3,0.1],[6,82,0.3,0.1]] },
+  versusFight: {bpm:130, kicks:[0,2,4,6],        snares:[3,7,11,15],           hihats:[1,3,5,7,9,11,13,15], bass:[[0,55,0.4,0.2],[4,73,0.3,0.15],[8,82,0.3,0.15],[12,73,0.3,0.15]] },
 
   streetRevive:{ bpm:60,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,55,0.5,0.3],[8,55,0.5,0.3]] },
   rooftopRevive:{bpm:55,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,65,0.5,0.3],[8,65,0.5,0.3]] },
@@ -3848,6 +3853,7 @@ scene("credits", () => {
 
 scene("versus", () => {
   stopMusic();
+  changeMusic("versusSelect");
   isVersusMode = true;
 
   const V_GRAVITY = 800;
@@ -3865,6 +3871,15 @@ scene("versus", () => {
 
   const vsState = { players: [], hitPause: 0, gameOver: false, victory: false, paused: false };
   curState = vsState;
+
+  // Rematch directo — salta seleccion de personajes
+  if (vsRematchData) {
+    p1Choice = vsRematchData.p1;
+    p2Choice = vsRematchData.p2;
+    p1Locked = true;
+    p2Locked = true;
+    vsRematchData = null;
+  }
 
   // Background
   add([sprite("versusBg"), fixed(), z(0)]);
@@ -4099,6 +4114,7 @@ scene("versus", () => {
   }
 
   function startCountdown() {
+    changeMusic("versusFight");
     phase = "countdown";
     for (const o of selectObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
     selectObjs.length = 0;
@@ -4235,13 +4251,16 @@ scene("versus", () => {
 
     let blink = 0;
     const rematch = add([
-      text("PRESS SPACE TO REMATCH  |  ESC TO EXIT", { size: 12, font: "sans-serif" }),
+      text("SPACE: SELECT  |  R: REMATCH  |  ESC: MENU", { size: 12, font: "sans-serif" }),
       pos(W / 2, H * 0.75), anchor("center"), color(INK), fixed(), z(52),
     ]);
     onUpdate(() => { blink += dt(); rematch.opacity = blink % 1 < 0.6 ? 1 : 0.3; });
 
     onKeyPress("space", () => {
-      isVersusMode = false; sfxMenuSelect(); go("versus");
+      vsRematchData = null; sfxMenuSelect(); go("versus");
+    });
+    onKeyPress("r", () => {
+      vsRematchData = { p1: p1Choice, p2: p2Choice }; sfxMenuSelect(); go("versus");
     });
     onKeyPress("escape", () => {
       isVersusMode = false; sfxMenuSelect(); go("title");
@@ -4251,6 +4270,9 @@ scene("versus", () => {
   onKeyPress("escape", () => {
     if (phase === "select") { isVersusMode = false; go("title"); }
   });
+
+  // Auto-start si ambos jugadores ya lockearon (rematch directo)
+  if (p1Locked && p2Locked) startCountdown();
 });
 
 // ============================================================
