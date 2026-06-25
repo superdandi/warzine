@@ -4701,8 +4701,8 @@ scene("versus", (args = {}) => {
 
     if (humanWon) {
       const winText = add([
-        text("YOU WIN!", { size: 30, font: "sans-serif" }),
-        pos(W / 2, H / 2), anchor("center"), color(INK), fixed(), z(100),
+        text("YOU WIN!", { size: 44, font: "sans-serif" }),
+        pos(W / 2, H / 2), anchor("center"), color(WHITE), fixed(), z(100),
       ]);
       wait(1.5, () => {
         destroy(winText);
