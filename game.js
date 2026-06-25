@@ -4796,20 +4796,20 @@ scene("versus", (args = {}) => {
       goObjs.push(pt);
 
       goObjs.push(add([
-        text("REACHED FIGHT " + (ladderData.currentIdx + 1) + "/" + ladderData.opponents.length, { size: 20, font: "sans-serif" }),
-        pos(W / 2, H / 2 - 40), anchor("center"), color(WHITE), fixed(), z(52),
+        text("REACHED FIGHT " + (ladderData.currentIdx + 1) + "/" + ladderData.opponents.length, { size: 22, font: "sans-serif" }),
+        pos(W / 2, H / 2 - 20), anchor("center"), color(WHITE), fixed(), z(52),
       ]));
 
-      // Selection
+      // Selection — side by side
       let selected = 0;
       const optTexts = [
         add([
-          text("> REINTENTAR", { size: 18, font: "sans-serif" }),
-          pos(W / 2, H / 2 + 10), anchor("center"), color(WHITE), fixed(), z(52),
+          text("> REINTENTAR", { size: 22, font: "sans-serif" }),
+          pos(W * 0.25, H / 2 + 70), anchor("center"), color(WHITE), fixed(), z(52),
         ]),
         add([
-          text("  MENÚ PRINCIPAL", { size: 18, font: "sans-serif" }),
-          pos(W / 2, H / 2 + 40), anchor("center"), color(WHITE), fixed(), z(52), opacity(0.5),
+          text("  MENÚ PRINCIPAL", { size: 22, font: "sans-serif" }),
+          pos(W * 0.75, H / 2 + 70), anchor("center"), color(WHITE), fixed(), z(52), opacity(0.5),
         ]),
       ];
       goObjs.push(...optTexts);
@@ -4833,7 +4833,7 @@ scene("versus", (args = {}) => {
           choiceMade = true;
           timeoutMsg.add([
             text("VOLVIENDO AL MENÚ PRINCIPAL...", { size: 14, font: "sans-serif" }),
-            pos(W / 2, H / 2 + 80), anchor("center"), color(WHITE),
+            pos(W / 2, H / 2 + 110), anchor("center"), color(WHITE),
           ]);
           timeoutMsg.opacity = 1;
           wait(3, () => {
