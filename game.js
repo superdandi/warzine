@@ -1467,7 +1467,7 @@ function spawnInkSplat(x, y) {
       circle(rand(5, 15)),
       scale(rand(1.5, 2.5), rand(0.3, 0.6)),
       color(WHITE),
-      pos(x + rand(-35, 35), y + rand(2, 8)),
+      pos(x + rand(-35, 35), y + rand(50, 70)),
       opacity(rand(0.3, 0.6)),
       lifespan(rand(1.5, 3.0)),
       anchor("center"),
@@ -4719,7 +4719,7 @@ scene("versus", (args = {}) => {
 
       // Phase 1: continue timer on the fight scene
       const timerText = add([
-        text("CONTINUE? 10", { size: 24, font: "sans-serif" }),
+        text("CONTINUE? 10", { size: 32, font: "sans-serif" }),
         pos(W / 2, H / 2), anchor("center"), color(WHITE), fixed(), z(100),
       ]);
 
@@ -4741,12 +4741,8 @@ scene("versus", (args = {}) => {
             pt.baseOpacity = 0.15;
             goObjs.push(pt);
             goObjs.push(add([
-              text("GAME OVER", { size: 48, font: "sans-serif" }),
-              pos(W / 2, H / 2 - 30), anchor("center"), color(WHITE), fixed(), z(52),
-            ]));
-            goObjs.push(add([
               text("REACHED FIGHT " + (ladderData.currentIdx + 1) + "/" + ladderData.opponents.length, { size: 20, font: "sans-serif" }),
-              pos(W / 2, H / 2 + 10), anchor("center"), color(WHITE), fixed(), z(52),
+              pos(W / 2, H / 2), anchor("center"), color(WHITE), fixed(), z(52),
             ]));
 
             wait(3, () => {
