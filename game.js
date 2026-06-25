@@ -8,7 +8,7 @@ const H = 480;
 kaplay({
   width: W,
   height: H,
-  background: [230, 222, 210],
+  background: [55, 55, 62],
   letterbox: true,
   stretch: true,
 });
@@ -4588,19 +4588,18 @@ scene("versus", (args = {}) => {
     selectObjs.length = 0;
 
     const intro = add([fixed(), z(100)]);
-    intro.add([rect(W, H), color(PAPER), opacity(0.9)]);
     intro.add([
-      text("LADDER MODE", { size: 32, font: "sans-serif" }),
-      pos(W / 2, H / 2 - 30), anchor("center"), color(INK), z(101),
+      text("LADDER MODE", { size: 44, font: "sans-serif" }),
+      pos(W / 2, H / 2 - 35), anchor("center"), color(WHITE), z(101),
     ]);
     intro.add([
-      text("8 OPPONENTS AWAIT", { size: 14, font: "sans-serif" }),
-      pos(W / 2, H / 2 + 5), anchor("center"), color(INK), z(101),
+      text("8 OPPONENTS AWAIT", { size: 20, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 10), anchor("center"), color(WHITE), z(101),
     ]);
     const c = pid === 1 ? "J" : "1";
     intro.add([
-      text("PRESS " + c + " TO START", { size: 12, font: "sans-serif" }),
-      pos(W / 2, H / 2 + 30), anchor("center"), color(INK), z(101), opacity(0.7),
+      text("PRESS " + c + " TO START", { size: 16, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 40), anchor("center"), color(WHITE), z(101), opacity(0.7),
     ]);
 
     const key = pid === 1 ? "j" : "1";
