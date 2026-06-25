@@ -298,6 +298,8 @@ loadSprite("bossQuimica", "big boss 2 sprite.png");
 loadSprite("bossColoso", "big boss 3 sprite.png");
 loadSprite("versusBg", "versus scene.png");
 loadSprite("titleBg", "title-screen-640.png");
+loadSprite("selectBg", "character-selection-scene.png");
+loadSprite("gameOverBg", "game-over-scene.png");
 
 // ============================================================
 // PARALLAX BACKGROUND GENERATORS
@@ -1924,8 +1926,8 @@ scene("select", (opts) => {
   let p2Active = opts.p2 === true;
   if (isTouchDevice) p2Active = false;
 
+  add([sprite("selectBg"), fixed(), z(0)]);
   add([sprite("paperTex"), opacity(0.15), z(100), fixed(), "paperTex"]).baseOpacity = 0.15;
-  add([rect(W, H), color(PAPER), fixed()]);
 
   add([
     text("SELECT YOUR CHARACTER", { size: 18, font: "sans-serif" }),
@@ -3739,6 +3741,7 @@ scene("versus", (args = {}) => {
 
   const vsState = { players: [], hitPause: 0, gameOver: false, victory: false, paused: false };
   curState = vsState;
+  add([sprite("selectBg"), fixed(), z(0)]);
 
   // Ladder mode state
   let ladderData = null;
@@ -4711,7 +4714,7 @@ scene("versus", (args = {}) => {
       });
     } else {
       const goObjs = [];
-      goObjs.push(add([rect(W, H), color(PAPER), fixed(), z(50)]));
+      goObjs.push(add([sprite("gameOverBg"), fixed(), z(50)]));
       const pt = add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]);
       pt.baseOpacity = 0.15;
       goObjs.push(pt);
