@@ -1449,15 +1449,26 @@ function spawnAttackArc(x, y, dir) {
 }
 
 function spawnInkSplat(x, y) {
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 12; i++) {
     add([
-      circle(rand(3, 8)),
+      circle(rand(4, 12)),
       color(WHITE),
-      pos(x + rand(-12, 12), y + rand(-12, 12)),
-      opacity(0.6),
-      lifespan(rand(0.3, 0.7)),
+      pos(x + rand(-20, 20), y + rand(-20, 20)),
+      opacity(rand(0.4, 0.8)),
+      lifespan(rand(0.2, 0.6)),
       anchor("center"),
       z(15),
+    ]);
+  }
+  for (let i = 0; i < 6; i++) {
+    add([
+      circle(rand(5, 15)),
+      color(WHITE),
+      pos(x + rand(-25, 25), y + rand(5, 20)),
+      opacity(rand(0.3, 0.6)),
+      lifespan(rand(1.5, 3.0)),
+      anchor("center"),
+      z(14),
     ]);
   }
 }
@@ -3778,6 +3789,9 @@ scene("versus", (args = {}) => {
     if (isLadderSelect) {
       showP1 = initiatorPid === 1;
       showP2 = initiatorPid === 2;
+    } else if (otherJoined) {
+      showP1 = true;
+      showP2 = true;
     } else {
       showP1 = !p2Locked || p1Locked;
       showP2 = !p1Locked || p2Locked;
@@ -3870,6 +3884,9 @@ scene("versus", (args = {}) => {
       return;
     }
     p1Locked = true;
+    if (!p2Locked && p2Choice === p1Choice) {
+      p2Choice = nextAvail(p2Choice, 1, CHAR_OPTIONS[p1Choice]);
+    }
     if (p2Locked) { sfxMenuSelect(); startCountdown(); }
     else { sfxMenuSelect(); renderSelect(); }
   });
@@ -3912,6 +3929,9 @@ scene("versus", (args = {}) => {
         return;
       }
       p2Locked = true;
+      if (!p1Locked && p1Choice === p2Choice) {
+        p1Choice = nextAvail(p1Choice, 1, CHAR_OPTIONS[p2Choice]);
+      }
       if (p1Locked) { sfxMenuSelect(); startCountdown(); }
       else { sfxMenuSelect(); renderSelect(); }
     });
@@ -4111,7 +4131,7 @@ scene("versus", (args = {}) => {
       count--;
       if (count > 0) countText.text = String(count);
       else if (count === 0) countText.text = "FIGHT!";
-      else { clearInterval(ci); destroy(overlay); phase = "fight"; }
+      else { clearInterval(ci); destroy(overlay); if (p1) p1.hp = p1.maxHp; if (p2) p2.hp = p2.maxHp; if (cpuOpponent) cpuOpponent.hp = cpuOpponent.maxHp; phase = "fight"; }
     }, 800);
   }
 
@@ -4139,7 +4159,7 @@ scene("versus", (args = {}) => {
       count--;
       if (count > 0) countText.text = String(count);
       else if (count === 0) countText.text = "FIGHT!";
-      else { clearInterval(ci); destroy(overlay); phase = "fight"; }
+      else { clearInterval(ci); destroy(overlay); if (p1) p1.hp = p1.maxHp; if (p2) p2.hp = p2.maxHp; phase = "fight"; }
     }, 800);
   }
 
@@ -4154,20 +4174,20 @@ scene("versus", (args = {}) => {
       text("P" + winner + " WINS THE ROUND!", { size: 32, font: "sans-serif" }),
       pos(W / 2, H / 2 - 20), anchor("center"), color(WHITE), fixed(), z(101),
     ]);
-    add([
+    const scoreText = add([
       text("P1 " + p1Wins + " - " + p2Wins + " P2", { size: 24, font: "sans-serif" }),
       pos(W / 2, H / 2 + 20), anchor("center"), color(WHITE), fixed(), z(101),
     ]);
 
     if (p1Wins >= 2 || p2Wins >= 2) {
       wait(2, () => {
-        destroy(overlay); destroy(winText);
+        destroy(overlay); destroy(winText); destroy(scoreText);
         endMatch(p1Wins >= 2 ? 1 : 2);
       });
     } else {
       round++;
       wait(2, () => {
-        destroy(overlay); destroy(winText);
+        destroy(overlay); destroy(winText); destroy(scoreText);
         startRound();
       });
     }
@@ -4648,7 +4668,7 @@ scene("versus", (args = {}) => {
       count--;
       if (count > 0) countText.text = String(count);
       else if (count === 0) countText.text = "FIGHT!";
-      else { clearInterval(ci); destroy(overlay); phase = "fight"; }
+      else { clearInterval(ci); destroy(overlay); if (p1) p1.hp = p1.maxHp; if (cpuOpponent) cpuOpponent.hp = cpuOpponent.maxHp; phase = "fight"; }
     }, 800);
   }
 
