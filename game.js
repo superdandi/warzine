@@ -1791,7 +1791,7 @@ scene("title", () => {
     if (touchKeys['j'] && !_lastTouchJ && !started) {
       started = true; sfxMenuSelect();
       gameFriendlyFire = friendlyFireOn;
-      if (cursorP1 === 0) go("versus");
+      if (cursorP1 === 0) go("versus", { initiatorPid: 1 });
       else if (cursorP1 === 1) go("select", { p1: true, p2: false });
       else if (cursorP1 === 4) go("tutorial");
       else started = false;
@@ -1831,7 +1831,7 @@ scene("title", () => {
     if (started) return;
     started = true; sfxMenuSelect();
     gameFriendlyFire = friendlyFireOn;
-    if (cursorP1 === 0) go("versus");
+    if (cursorP1 === 0) go("versus", { initiatorPid: 1 });
     else if (cursorP1 === 1) go("select", { p1: true, p2: false });
     else if (cursorP1 === 4) go("tutorial");
     else started = false;
@@ -1855,7 +1855,7 @@ scene("title", () => {
       if (started) return;
       started = true; sfxMenuSelect();
       gameFriendlyFire = friendlyFireOn;
-      if (cursorP2 === 0) go("versus");
+      if (cursorP2 === 0) go("versus", { initiatorPid: 2 });
       else if (cursorP2 === 1) go("select", { p1: false, p2: true });
       else if (cursorP2 === 4) go("tutorial");
       else started = false;
@@ -3703,7 +3703,7 @@ scene("credits", () => {
 // VERSUS SCENE
 // ============================================================
 
-scene("versus", () => {
+scene("versus", (args = {}) => {
   stopMusic();
   changeMusic("versusSelect");
   isVersusMode = true;
@@ -3720,6 +3720,10 @@ scene("versus", () => {
   let round = 1;
   let vsTime = 0;
   let selectObjs = [];
+
+  const initiatorPid = args.initiatorPid || null;
+  let otherJoined = false;
+  let newChallengerActive = false;
 
   const vsState = { players: [], hitPause: 0, gameOver: false, victory: false, paused: false };
   curState = vsState;
@@ -3762,16 +3766,27 @@ scene("versus", () => {
     for (const o of selectObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
     selectObjs.length = 0;
 
-    const title = add([text("VERSUS - SELECT YOUR FIGHTER", { size: 16, font: "sans-serif" }),
+    const isLadderSelect = initiatorPid && !otherJoined;
+
+    let titleTxt = "VERSUS - SELECT YOUR FIGHTER";
+    if (isLadderSelect) titleTxt = "LADDER — 8 OPPONENTS AWAIT";
+    const title = add([text(titleTxt, { size: 16, font: "sans-serif" }),
       pos(W / 2, 30), anchor("center"), color(INK), fixed(), z(10)]);
     selectObjs.push(title);
 
-    const showP1 = !p2Locked || p1Locked;
-    const showP2 = !p1Locked || p2Locked;
+    let showP1, showP2;
+    if (isLadderSelect) {
+      showP1 = initiatorPid === 1;
+      showP2 = initiatorPid === 2;
+    } else {
+      showP1 = !p2Locked || p1Locked;
+      showP2 = !p1Locked || p2Locked;
+    }
 
     if (showP1) {
       const p1Taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
-      const p1Label = add([text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"),
+      const p1LabelTxt = "P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)");
+      const p1Label = add([text(p1LabelTxt,
         { size: 12, font: "sans-serif" }), pos(W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
       selectObjs.push(p1Label);
       const p1Char = createCharacter(W / 4, 230, CHAR_OPTIONS[p1Choice], "preview");
@@ -3798,7 +3813,10 @@ scene("versus", () => {
     }
 
     let msg = "";
-    if (p1Locked && p2Locked) msg = "FIGHT!";
+    if (isLadderSelect) {
+      if (initiatorPid === 1) msg = "A/D to choose, J to lock  |  SPACE for single player  |  1 for 2 players";
+      else msg = "< > to choose, 1 to lock  |  SPACE for single player  |  J for 2 players";
+    } else if (p1Locked && p2Locked) msg = "FIGHT!";
     else if (p1Locked && !showP2) msg = "SPACE for single player";
     else if (p2Locked && !showP1) msg = "SPACE for single player";
     else if (p1Locked) msg = "P1 LOCKED — P2: < > to choose, 1 to lock  |  SPACE for single player";
@@ -3810,23 +3828,45 @@ scene("versus", () => {
 
   renderSelect();
 
+  function canP1Act() { return phase === "select" && !p1Locked && (!initiatorPid || initiatorPid === 1 || otherJoined); }
+  function canP2Act() { return phase === "select" && !p2Locked && (!initiatorPid || initiatorPid === 2 || otherJoined); }
+
   onKeyPress("a", () => {
-    if (phase !== "select" || p1Locked) return;
+    if (!canP1Act()) return;
     const taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
     p1Choice = nextAvail(p1Choice, -1, taken);
     sfxMenuSelect(); renderSelect();
   });
   onKeyPress("d", () => {
-    if (phase !== "select" || p1Locked) return;
+    if (!canP1Act()) return;
     const taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
     p1Choice = nextAvail(p1Choice, 1, taken);
     sfxMenuSelect(); renderSelect();
   });
+  function showNewChallenger(callback) {
+    const ncObjs = [];
+    ncObjs.push(add([rect(W, H), color(PAPER), opacity(0.7), fixed(), z(60)]));
+    ncObjs.push(add([
+      text("HERE COMES A NEW CHALLENGER!", { size: 24, font: "sans-serif" }),
+      pos(W / 2, H / 2), anchor("center"), color(INK), fixed(), z(61),
+    ]));
+    wait(2, () => {
+      for (const o of ncObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+      if (callback) callback();
+    });
+  }
+
   onKeyPress("j", () => {
     if (phase !== "select" || p1Locked) {
       if (phase === "fight" && isLadderFight && ladderData && ladderData.pid === 2 && !isChallengePick && !isChallengeFight) {
         startChallenge(1);
       }
+      return;
+    }
+    if (initiatorPid === 2 && !otherJoined) {
+      otherJoined = true;
+      sfxMenuSelect();
+      showNewChallenger(() => renderSelect());
       return;
     }
     p1Locked = true;
@@ -3836,19 +3876,24 @@ scene("versus", () => {
 
   onKeyPress("space", () => {
     if (phase !== "select") return;
+    if (initiatorPid && !otherJoined) {
+      sfxMenuSelect();
+      startLadder(initiatorPid, initiatorPid === 1 ? CHAR_OPTIONS[p1Choice] : CHAR_OPTIONS[p2Choice]);
+      return;
+    }
     if (p1Locked && !p2Locked) { sfxMenuSelect(); startLadder(1, CHAR_OPTIONS[p1Choice]); }
     else if (p2Locked && !p1Locked) { sfxMenuSelect(); startLadder(2, CHAR_OPTIONS[p2Choice]); }
   });
 
   if (!isTouchDevice) {
     onKeyPress("left", () => {
-      if (phase !== "select" || p2Locked) return;
+      if (!canP2Act()) return;
       const taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
       p2Choice = nextAvail(p2Choice, -1, taken);
       sfxMenuSelect(); renderSelect();
     });
     onKeyPress("right", () => {
-      if (phase !== "select" || p2Locked) return;
+      if (!canP2Act()) return;
       const taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
       p2Choice = nextAvail(p2Choice, 1, taken);
       sfxMenuSelect(); renderSelect();
@@ -3858,6 +3903,12 @@ scene("versus", () => {
         if (phase === "fight" && isLadderFight && ladderData && ladderData.pid === 1 && !isChallengePick && !isChallengeFight) {
           startChallenge(2);
         }
+        return;
+      }
+      if (initiatorPid === 1 && !otherJoined) {
+        otherJoined = true;
+        sfxMenuSelect();
+        showNewChallenger(() => renderSelect());
         return;
       }
       p2Locked = true;
@@ -4100,12 +4151,12 @@ scene("versus", () => {
     const overlay = add([fixed(), z(100)]);
     overlay.add([rect(W, H), color(PAPER), opacity(0.5)]);
     const winText = add([
-      text("P" + winner + " WINS THE ROUND!", { size: 24, font: "sans-serif" }),
-      pos(W / 2, H / 2 - 20), anchor("center"), color(INK), fixed(), z(101),
+      text("P" + winner + " WINS THE ROUND!", { size: 32, font: "sans-serif" }),
+      pos(W / 2, H / 2 - 20), anchor("center"), color(WHITE), fixed(), z(101),
     ]);
     add([
-      text("P1 " + p1Wins + " - " + p2Wins + " P2", { size: 16, font: "sans-serif" }),
-      pos(W / 2, H / 2 + 20), anchor("center"), color(INK), fixed(), z(101),
+      text("P1 " + p1Wins + " - " + p2Wins + " P2", { size: 24, font: "sans-serif" }),
+      pos(W / 2, H / 2 + 20), anchor("center"), color(WHITE), fixed(), z(101),
     ]);
 
     if (p1Wins >= 2 || p2Wins >= 2) {
@@ -4154,12 +4205,12 @@ scene("versus", () => {
       if (defenderWon) {
         add([
           text("CHAMPION RETAINS!", { size: 24, font: "sans-serif" }),
-          pos(W / 2, H / 3), anchor("center"), color(INK), fixed(), z(52),
+          pos(W / 2, H / 3), anchor("center"), color(WHITE), fixed(), z(52),
         ]);
       } else {
         add([
           text("NEW CHALLENGER WINS!", { size: 24, font: "sans-serif" }),
-          pos(W / 2, H / 3), anchor("center"), color(INK), fixed(), z(52),
+          pos(W / 2, H / 3), anchor("center"), color(WHITE), fixed(), z(52),
         ]);
         ladderData.pid = challengerPid;
         ladderData.charType = CHAR_OPTIONS[challengeCharChoice];
@@ -4167,7 +4218,7 @@ scene("versus", () => {
 
       add([
         text("P" + winner + " WINS " + p1Wins + "-" + p2Wins, { size: 14, font: "sans-serif" }),
-        pos(W / 2, H / 2 + 10), anchor("center"), color(INK), fixed(), z(52),
+        pos(W / 2, H / 2 + 10), anchor("center"), color(WHITE), fixed(), z(52),
       ]);
 
       isChallengeFight = false;
@@ -4184,11 +4235,11 @@ scene("versus", () => {
     add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]).baseOpacity = 0.15;
     add([
       text("P" + winner + " WINS!", { size: 40, font: "sans-serif" }),
-      pos(W / 2, H / 3), anchor("center"), color(INK), fixed(), z(52),
+      pos(W / 2, H / 3), anchor("center"), color(WHITE), fixed(), z(52),
     ]);
     add([
-      text("FINAL: P1 " + p1Wins + " - " + p2Wins + " P2", { size: 16, font: "sans-serif" }),
-      pos(W / 2, H / 2), anchor("center"), color(INK), fixed(), z(52),
+      text("FINAL: P1 " + p1Wins + " - " + p2Wins + " P2", { size: 20, font: "sans-serif" }),
+      pos(W / 2, H / 2), anchor("center"), color(WHITE), fixed(), z(52),
     ]);
 
     let blink = 0;
