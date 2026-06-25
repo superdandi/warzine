@@ -3704,12 +3704,92 @@ scene("victory", (wave) => {
 // ============================================================
 
 scene("credits", () => {
-  stopMusic();
-
+  changeMusic("title");
   add([sprite("paperTex"), opacity(0.2), fixed(), "paperTex"]).baseOpacity = 0.2;
-  add([rect(W, H), color(PAPER), fixed()]);
 
-  // Paper texture toggle
+  const lines = [
+    "WARZINE",
+    "UN BEAT 'EM UP DE TINTA NEGRA",
+    "",
+    "CONCEPTO ORIGINAL",
+    "SUPERDANDI",
+    "",
+    "DIRECCION",
+    "SUPERDANDI",
+    "",
+    "DISEÑO DE JUEGO",
+    "SUPERDANDI",
+    "",
+    "PROGRAMACION",
+    "SUPERDANDI + OPENCODE",
+    "",
+    "DISEÑO DE PERSONAJES",
+    "SUPERDANDI",
+    "",
+    "DISEÑO DE NIVELES",
+    "SUPERDANDI",
+    "",
+    "SISTEMA DE COMBATE",
+    "SUPERDANDI",
+    "",
+    "INTELIGENCIA ARTIFICIAL",
+    "SUPERDANDI + OPENCODE",
+    "",
+    "DISEÑO DE JEFES",
+    "SUPERDANDI",
+    "",
+    "MUSICA Y FX",
+    "SINTETIZADORES VIA WEBAUDIO",
+    "",
+    "MOTOR DE JUEGO",
+    "KAPLAY 3001",
+    "",
+    "HERRAMIENTAS",
+    "VS CODE / GIT + GITHUB / OPENCODE",
+    "GOOGLE FONTS (SPECIAL ELITE)",
+    "",
+    "TESTING Y QA",
+    "SUPERDANDI",
+    "",
+    "GRACIAS ESPECIALES",
+    "A TI POR JUGAR",
+    "",
+    "PRESIONA C O ESC PARA VOLVER",
+  ];
+
+  const SCROLL_SPEED = 35;
+  const lineGap = 28;
+  const objs = [];
+  for (let i = 0; i < lines.length; i++) {
+    const isTitle = lines[i] === "WARZINE";
+    const sz = isTitle ? 28 : lines[i] === "" ? 8 : 16;
+    const obj = add([
+      text(lines[i], { size: sz, font: "sans-serif" }),
+      pos(W / 2, H + i * lineGap),
+      anchor("center"),
+      color(WHITE),
+      fixed(),
+      z(10),
+    ]);
+    objs.push(obj);
+  }
+
+  let ended = false;
+  onUpdate(() => {
+    if (ended) return;
+    let allOffscreen = true;
+    for (const obj of objs) {
+      obj.pos.y -= SCROLL_SPEED * dt();
+      if (obj.pos.y > -60) allOffscreen = false;
+    }
+    if (allOffscreen) {
+      ended = true;
+      wait(2, () => go("title"));
+    }
+  });
+
+  onKeyPress("c", () => { sfxMenuSelect(); go("title"); });
+  onKeyPress("escape", () => { sfxMenuSelect(); go("title"); });
   onKeyPress("p", togglePaperTex);
 });
 
