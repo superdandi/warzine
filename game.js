@@ -3766,22 +3766,29 @@ scene("versus", () => {
       pos(W / 2, 30), anchor("center"), color(INK), fixed(), z(10)]);
     selectObjs.push(title);
 
-    const p1Taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
-    const p1Label = add([text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"),
-      { size: 12, font: "sans-serif" }), pos(W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
-    selectObjs.push(p1Label);
-    const p1Char = createCharacter(W / 4, 230, CHAR_OPTIONS[p1Choice], "preview");
-    selectObjs.push(p1Char);
+    const showP1 = !p2Locked || p1Locked;
+    const showP2 = !p1Locked || p2Locked;
 
-    const p2Taken = p1Locked && CHAR_OPTIONS[p1Choice] === CHAR_OPTIONS[p2Choice];
-    const p2LabelTxt = "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? (p2Taken ? " (TAKEN)" : " (LOCKED)") : " (< >)");
-    const p2Label = add([text(p2LabelTxt, { size: 12, font: "sans-serif" }),
-      pos(3 * W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
-    selectObjs.push(p2Label);
-    const p2Char = createCharacter(3 * W / 4, 230, CHAR_OPTIONS[p2Choice], "preview");
-    p2Char.scale.x = -1;
-    if (p2Locked && p2Taken) p2Char.opacity = 0.3;
-    selectObjs.push(p2Char);
+    if (showP1) {
+      const p1Taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
+      const p1Label = add([text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"),
+        { size: 12, font: "sans-serif" }), pos(W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
+      selectObjs.push(p1Label);
+      const p1Char = createCharacter(W / 4, 230, CHAR_OPTIONS[p1Choice], "preview");
+      selectObjs.push(p1Char);
+    }
+
+    if (showP2) {
+      const p2Taken = p1Locked && CHAR_OPTIONS[p1Choice] === CHAR_OPTIONS[p2Choice];
+      const p2LabelTxt = "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? (p2Taken ? " (TAKEN)" : " (LOCKED)") : " (< >)");
+      const p2Label = add([text(p2LabelTxt, { size: 12, font: "sans-serif" }),
+        pos(3 * W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
+      selectObjs.push(p2Label);
+      const p2Char = createCharacter(3 * W / 4, 230, CHAR_OPTIONS[p2Choice], "preview");
+      p2Char.scale.x = -1;
+      if (p2Locked && p2Taken) p2Char.opacity = 0.3;
+      selectObjs.push(p2Char);
+    }
 
     for (let i = 0; i < CHAR_OPTIONS.length; i++) {
       const bx = W / 2 - (CHAR_OPTIONS.length - 1) * 45 + i * 90;
@@ -3792,8 +3799,10 @@ scene("versus", () => {
 
     let msg = "";
     if (p1Locked && p2Locked) msg = "FIGHT!";
-    else if (p1Locked && !p2Locked) msg = "P1 LOCKED — P2: < > to choose, 1 to lock  |  SPACE for single player";
-    else if (p2Locked && !p1Locked) msg = "P2 LOCKED — P1: A/D to choose, J to lock  |  SPACE for single player";
+    else if (p1Locked && !showP2) msg = "SPACE for single player";
+    else if (p2Locked && !showP1) msg = "SPACE for single player";
+    else if (p1Locked) msg = "P1 LOCKED — P2: < > to choose, 1 to lock  |  SPACE for single player";
+    else if (p2Locked) msg = "P2 LOCKED — P1: A/D to choose, J to lock  |  SPACE for single player";
     else msg = "P1: A/D choose, J lock  |  P2: < > choose, 1 lock";
     selectObjs.push(add([text(msg, { size: 12, font: "sans-serif" }),
       pos(W / 2, 360), anchor("center"), color(INK), fixed(), z(10)]));
