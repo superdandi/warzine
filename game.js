@@ -4606,12 +4606,13 @@ scene("versus", () => {
     ladderHudObjs.length = 0;
 
     if (humanWon) {
-      if (cpuOpponent && cpuOpponent.exists) {
-        cpuOpponent.dead = true;
-        cpuOpponent.downed = true;
-        cpuOpponent.invincible = 999;
-        tween(0, 80, 0.3, (v) => { if (!cpuOpponent.exists) return; cpuOpponent.angle = v; cpuOpponent.pos.y += 0.3; });
-        wait(1.2, () => { try { if (cpuOpponent && cpuOpponent.exists) destroy(cpuOpponent); } catch(e) {} });
+      const oldCPU = cpuOpponent;
+      if (oldCPU && oldCPU.exists) {
+        oldCPU.dead = true;
+        oldCPU.downed = true;
+        oldCPU.invincible = 999;
+        tween(0, 80, 0.3, (v) => { if (!oldCPU.exists) return; oldCPU.angle = v; oldCPU.pos.y += 0.3; });
+        wait(1.2, () => { try { if (oldCPU && oldCPU.exists) destroy(oldCPU); } catch(e) {} });
       }
       if (p1 && p1.exists) { p1.paused = true; p1.invincible = 999; }
       cpuOpponent = null;
