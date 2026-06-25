@@ -4459,6 +4459,7 @@ scene("versus", () => {
 
   // Scene-level ladder fight monitoring
   onUpdate(() => {
+    if (vsState.hitPause > 0) vsState.hitPause -= dt();
     if (!isLadderFight || isChallengeFight || isChallengePick || phase === "ladderEnd" || phase === "matchEnd" || phase === "champion") return;
     if (phase === "fight" && !ladderFightResolved) {
       if (cpuOpponent && cpuOpponent.exists && cpuOpponent.hp <= 0 && !cpuOpponent.dead) {
