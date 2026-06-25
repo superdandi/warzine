@@ -1467,7 +1467,7 @@ function spawnInkSplat(x, y) {
       circle(rand(5, 15)),
       scale(rand(1.5, 2.5), rand(0.3, 0.6)),
       color(WHITE),
-      pos(x + rand(-35, 35), y + rand(50, 70)),
+      pos(x + rand(-35, 35), y + rand(55, 80)),
       opacity(rand(0.3, 0.6)),
       lifespan(rand(1.5, 3.0)),
       anchor("center"),
@@ -3633,33 +3633,21 @@ scene("gameover", (wave) => {
   add([sprite("gameOverBg"), fixed(), z(0)]);
 
   add([
-    text("X", { size: 120, font: "sans-serif" }),
-    pos(W / 2, H / 3 - 20),
-    anchor("center"), color(WHITE), fixed(), z(10),
-  ]);
-
-  add([
-    text("GAME OVER", { size: 48, font: "sans-serif" }),
-    pos(W / 2, H / 2 + 10),
-    anchor("center"), color(WHITE), fixed(), z(10),
-  ]);
-
-  add([
     text("WAVE " + wave, { size: 20, font: "sans-serif" }),
-    pos(W / 2, H * 0.58),
+    pos(W / 2, H * 0.65),
     anchor("center"), color(WHITE), fixed(), z(10),
   ]);
 
   add([
     text("BEST: WAVE " + high, { size: 16, font: "sans-serif" }),
-    pos(W / 2, H * 0.63),
+    pos(W / 2, H * 0.72),
     anchor("center"), color(WHITE), fixed(), z(10), opacity(0.8),
   ]);
 
   let blink = 0;
   const retry = add([
     text("PRESS SPACE TO RETRY", { size: 20, font: "sans-serif" }),
-    pos(W / 2, H * 0.75),
+    pos(W / 2, H * 0.85),
     anchor("center"),
     color(WHITE),
     fixed(),
