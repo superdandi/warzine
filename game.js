@@ -4800,7 +4800,7 @@ scene("versus", (args = {}) => {
     challengeCharChoice = 0;
     challengeObjs = [];
     const overlay = add([fixed(), z(100)]);
-    overlay.add([rect(W, H), color(PAPER), opacity(0.85)]);
+    overlay.add([sprite("selectBg"), fixed()]);
     challengeObjs.push(overlay);
 
     const title = add([
