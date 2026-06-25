@@ -3725,7 +3725,6 @@ scene("versus", () => {
   curState = vsState;
 
   // Ladder mode state
-  let p1Entered = false, p2Entered = false;
   let ladderData = null;
   let isLadderFight = false;
   let cpuOpponent = null;
@@ -3767,29 +3766,22 @@ scene("versus", () => {
       pos(W / 2, 30), anchor("center"), color(INK), fixed(), z(10)]);
     selectObjs.push(title);
 
-    const showP1 = !p2Entered || p1Entered;
-    const showP2 = p2Entered;
+    const p1Taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
+    const p1Label = add([text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"),
+      { size: 12, font: "sans-serif" }), pos(W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
+    selectObjs.push(p1Label);
+    const p1Char = createCharacter(W / 4, 230, CHAR_OPTIONS[p1Choice], "preview");
+    selectObjs.push(p1Char);
 
-    if (showP1) {
-      const p1Taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
-      const p1Label = add([text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"),
-        { size: 12, font: "sans-serif" }), pos(W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
-      selectObjs.push(p1Label);
-      const p1Char = createCharacter(W / 4, 230, CHAR_OPTIONS[p1Choice], "preview");
-      selectObjs.push(p1Char);
-    }
-
-    if (showP2) {
-      const p2Taken = p1Locked && CHAR_OPTIONS[p1Choice] === CHAR_OPTIONS[p2Choice];
-      const p2LabelTxt = "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? (p2Taken ? " (TAKEN)" : " (LOCKED)") : " (< >)");
-      const p2Label = add([text(p2LabelTxt, { size: 12, font: "sans-serif" }),
-        pos(3 * W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
-      selectObjs.push(p2Label);
-      const p2Char = createCharacter(3 * W / 4, 230, CHAR_OPTIONS[p2Choice], "preview");
-      p2Char.scale.x = -1;
-      if (p2Locked && p2Taken) p2Char.opacity = 0.3;
-      selectObjs.push(p2Char);
-    }
+    const p2Taken = p1Locked && CHAR_OPTIONS[p1Choice] === CHAR_OPTIONS[p2Choice];
+    const p2LabelTxt = "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? (p2Taken ? " (TAKEN)" : " (LOCKED)") : " (< >)");
+    const p2Label = add([text(p2LabelTxt, { size: 12, font: "sans-serif" }),
+      pos(3 * W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
+    selectObjs.push(p2Label);
+    const p2Char = createCharacter(3 * W / 4, 230, CHAR_OPTIONS[p2Choice], "preview");
+    p2Char.scale.x = -1;
+    if (p2Locked && p2Taken) p2Char.opacity = 0.3;
+    selectObjs.push(p2Char);
 
     for (let i = 0; i < CHAR_OPTIONS.length; i++) {
       const bx = W / 2 - (CHAR_OPTIONS.length - 1) * 45 + i * 90;
@@ -3800,11 +3792,9 @@ scene("versus", () => {
 
     let msg = "";
     if (p1Locked && p2Locked) msg = "FIGHT!";
-    else if (p1Locked) msg = "P2: 1 to lock";
-    else if (p2Locked) msg = "P1: J to lock";
-    else if (p2Entered && !p1Entered) msg = "P2: < > to choose | 1 to lock";
-    else if (p2Entered) msg = "P1: J to lock | P2: 1 to lock";
-    else msg = "P1: J to lock";
+    else if (p1Locked && !p2Locked) msg = "P1 LOCKED — P2: < > to choose, 1 to lock  |  SPACE for single player";
+    else if (p2Locked && !p1Locked) msg = "P2 LOCKED — P1: A/D to choose, J to lock  |  SPACE for single player";
+    else msg = "P1: A/D choose, J lock  |  P2: < > choose, 1 lock";
     selectObjs.push(add([text(msg, { size: 12, font: "sans-serif" }),
       pos(W / 2, 360), anchor("center"), color(INK), fixed(), z(10)]));
   }
@@ -3815,14 +3805,12 @@ scene("versus", () => {
     if (phase !== "select" || p1Locked) return;
     const taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
     p1Choice = nextAvail(p1Choice, -1, taken);
-    if (p2Entered && !p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, -1, null);
     sfxMenuSelect(); renderSelect();
   });
   onKeyPress("d", () => {
     if (phase !== "select" || p1Locked) return;
     const taken = p2Locked ? CHAR_OPTIONS[p2Choice] : null;
     p1Choice = nextAvail(p1Choice, 1, taken);
-    if (p2Entered && !p2Locked && p1Choice === p2Choice) p1Choice = nextAvail(p1Choice, 1, null);
     sfxMenuSelect(); renderSelect();
   });
   onKeyPress("j", () => {
@@ -3832,28 +3820,28 @@ scene("versus", () => {
       }
       return;
     }
-    p1Entered = true;
     p1Locked = true;
-    if (p2Entered && p2Locked) { sfxMenuSelect(); startCountdown(); }
-    else if (p2Entered) { sfxMenuSelect(); renderSelect(); }
-    else { sfxMenuSelect(); startLadder(1, CHAR_OPTIONS[p1Choice]); }
+    if (p2Locked) { sfxMenuSelect(); startCountdown(); }
+    else { sfxMenuSelect(); renderSelect(); }
+  });
+
+  onKeyPress("space", () => {
+    if (phase !== "select") return;
+    if (p1Locked && !p2Locked) { sfxMenuSelect(); startLadder(1, CHAR_OPTIONS[p1Choice]); }
+    else if (p2Locked && !p1Locked) { sfxMenuSelect(); startLadder(2, CHAR_OPTIONS[p2Choice]); }
   });
 
   if (!isTouchDevice) {
     onKeyPress("left", () => {
       if (phase !== "select" || p2Locked) return;
-      if (!p2Entered) p2Entered = true;
       const taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
       p2Choice = nextAvail(p2Choice, -1, taken);
-      if (p1Entered && !p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, -1, null);
       sfxMenuSelect(); renderSelect();
     });
     onKeyPress("right", () => {
       if (phase !== "select" || p2Locked) return;
-      if (!p2Entered) p2Entered = true;
       const taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
       p2Choice = nextAvail(p2Choice, 1, taken);
-      if (p1Entered && !p1Locked && p2Choice === p1Choice) p2Choice = nextAvail(p2Choice, 1, null);
       sfxMenuSelect(); renderSelect();
     });
     onKeyPress("1", () => {
@@ -3863,11 +3851,9 @@ scene("versus", () => {
         }
         return;
       }
-      p2Entered = true;
       p2Locked = true;
-      if (p1Entered && p1Locked) { sfxMenuSelect(); startCountdown(); }
-      else if (p1Entered) { sfxMenuSelect(); renderSelect(); }
-      else { sfxMenuSelect(); startLadder(2, CHAR_OPTIONS[p2Choice]); }
+      if (p1Locked) { sfxMenuSelect(); startCountdown(); }
+      else { sfxMenuSelect(); renderSelect(); }
     });
   }
 
