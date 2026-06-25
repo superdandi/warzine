@@ -1462,12 +1462,13 @@ function spawnInkSplat(x, y) {
       z(15),
     ]);
   }
+  const groundOffY = isVersusMode ? rand(55, 80) : rand(50, 70);
   for (let i = 0; i < 6; i++) {
     add([
       circle(rand(5, 15)),
       scale(rand(1.5, 2.5), rand(0.3, 0.6)),
       color(WHITE),
-      pos(x + rand(-35, 35), y + rand(55, 80)),
+      pos(x + rand(-35, 35), y + groundOffY),
       opacity(rand(0.3, 0.6)),
       lifespan(rand(1.5, 3.0)),
       anchor("center"),
@@ -4383,7 +4384,7 @@ scene("versus", (args = {}) => {
   function spawnCPUOpponent(opp, x, y) {
     let char;
     if (opp.isBoss) {
-      char = createCharacter(x, y - 72, "boss", "boss", opp.spriteKey);
+      char = createCharacter(x, y, opp.type, "enemy", opp.spriteKey);
       char.hp = 250;
       char.maxHp = 250;
       char.speed = 130;
