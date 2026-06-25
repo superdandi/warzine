@@ -1452,7 +1452,7 @@ function spawnInkSplat(x, y) {
   for (let i = 0; i < 5; i++) {
     add([
       circle(rand(3, 8)),
-      color(INK),
+      color(WHITE),
       pos(x + rand(-12, 12), y + rand(-12, 12)),
       opacity(0.6),
       lifespan(rand(0.3, 0.7)),
@@ -3731,6 +3731,7 @@ scene("versus", () => {
   let cpuOpponent = null;
   let ladderHudObjs = [];
   let ladderFightResolved = false;
+  let ladderHudUpdater = null;
   let isChallengePick = false;
   let isChallengeFight = false;
   let challengeState = null;
@@ -4012,16 +4013,16 @@ scene("versus", () => {
     }
 
     // HUD
-    const p1BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(20, 20), fixed(), z(19)]);
-    const p1Bar = add([rect(200, 16), color(INK), pos(20, 20), fixed(), z(20)]);
-    add([text("P1", { size: 10, font: "sans-serif" }), pos(20, 40), fixed(), color(INK), z(20)]);
+    const p1BarBg = add([rect(200, 16), outline(2), color(INK), pos(20, 20), fixed(), z(19)]);
+    const p1Bar = add([rect(200, 16), color(WHITE), pos(20, 20), fixed(), z(20)]);
+    add([text("P1", { size: 10, font: "sans-serif" }), pos(20, 40), fixed(), color(WHITE), z(20)]);
 
-    const p2BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(W - 220, 20), fixed(), z(19)]);
-    const p2Bar = add([rect(200, 16), color(INK), pos(W - 220, 20), fixed(), z(20)]);
-    add([text("P2", { size: 10, font: "sans-serif" }), pos(W - 220, 40), fixed(), color(INK), z(20)]);
+    const p2BarBg = add([rect(200, 16), outline(2), color(INK), pos(W - 220, 20), fixed(), z(19)]);
+    const p2Bar = add([rect(200, 16), color(WHITE), pos(W - 220, 20), fixed(), z(20)]);
+    add([text("P2", { size: 10, font: "sans-serif" }), pos(W - 220, 40), fixed(), color(WHITE), z(20)]);
 
     const scoreDisp = add([text("", { size: 12, font: "sans-serif" }),
-      pos(W / 2, 20), anchor("center"), fixed(), color(INK), z(20)]);
+      pos(W / 2, 20), anchor("center"), fixed(), color(WHITE), z(20)]);
 
     // Time tracker
     // HUD update
@@ -4117,8 +4118,23 @@ scene("versus", () => {
 
   function endMatch(winner) {
     phase = "matchEnd";
-    for (const o of vsState.players) { try { if (o && o.exists) destroy(o); } catch(e) {} }
-    vsState.players.length = 0;
+    for (const o of vsState.players) {
+      if (o.playerId === winner) {
+        o.paused = true;
+        o.invincible = 999;
+      } else {
+        o.dead = true;
+        o.downed = true;
+        o.invincible = 999;
+        tween(0, 80, 0.3, (v) => {
+          if (!o.exists) return;
+          o.angle = v;
+          o.pos.y += 0.3;
+        });
+        wait(1.2, () => { try { if (o && o.exists) destroy(o); } catch(e) {} });
+      }
+    }
+    vsState.players = vsState.players.filter(o => o.playerId === winner);
 
     // Challenge match ladder resolution
     if (isChallengeFight) {
@@ -4219,7 +4235,7 @@ scene("versus", () => {
   function spawnCPUOpponent(opp, x, y) {
     let char;
     if (opp.isBoss) {
-      char = createCharacter(x, y, "boss", "boss", opp.spriteKey);
+      char = createCharacter(x, y - 72, "boss", "boss", opp.spriteKey);
       char.hp = 250;
       char.maxHp = 250;
       char.speed = 130;
@@ -4442,18 +4458,18 @@ scene("versus", () => {
 
   function createLadderHUD(oppName, fightNum, totalFights) {
     const objs = [];
-    const p1BarBg = add([rect(200, 16), outline(2), color(WHITE), pos(20, 20), fixed(), z(19)]);
-    const p1Bar = add([rect(200, 16), color(INK), pos(20, 20), fixed(), z(20)]);
+    const p1BarBg = add([rect(200, 16), outline(2), color(INK), pos(20, 20), fixed(), z(19)]);
+    const p1Bar = add([rect(200, 16), color(WHITE), pos(20, 20), fixed(), z(20)]);
     objs.push(p1BarBg, p1Bar);
-    add([text("P1", { size: 10, font: "sans-serif" }), pos(20, 40), fixed(), color(INK), z(20)]);
+    add([text("P1", { size: 10, font: "sans-serif" }), pos(20, 40), fixed(), color(WHITE), z(20)]);
 
-    const oppBarBg = add([rect(200, 16), outline(2), color(WHITE), pos(W - 220, 20), fixed(), z(19)]);
-    const oppBar = add([rect(200, 16), color(INK), pos(W - 220, 20), fixed(), z(20)]);
+    const oppBarBg = add([rect(200, 16), outline(2), color(INK), pos(W - 220, 20), fixed(), z(19)]);
+    const oppBar = add([rect(200, 16), color(WHITE), pos(W - 220, 20), fixed(), z(20)]);
     objs.push(oppBarBg, oppBar);
-    add([text(oppName, { size: 10, font: "sans-serif" }), pos(W - 220, 40), fixed(), color(INK), z(20)]);
+    add([text(oppName, { size: 10, font: "sans-serif" }), pos(W - 220, 40), fixed(), color(WHITE), z(20)]);
 
     const fightLabel = add([text("FIGHT " + fightNum + "/" + totalFights, { size: 12, font: "sans-serif" }),
-      pos(W / 2, 20), anchor("center"), fixed(), color(INK), z(20)]);
+      pos(W / 2, 20), anchor("center"), fixed(), color(WHITE), z(20)]);
     objs.push(fightLabel);
 
     return { objs, p1Bar, oppBar };
@@ -4527,6 +4543,12 @@ scene("versus", () => {
     const h = createLadderHUD(opp.name, fightNum, totalFights);
     ladderHudObjs = h.objs;
 
+    if (ladderHudUpdater) ladderHudUpdater.cancel();
+    ladderHudUpdater = onUpdate(() => {
+      if (p1 && p1.exists) h.p1Bar.width = 200 * Math.max(0, p1.hp / p1.maxHp);
+      if (cpuOpponent && cpuOpponent.exists) h.oppBar.width = 200 * Math.max(0, cpuOpponent.hp / cpuOpponent.maxHp);
+    });
+
     const humanPid = ladderData.pid;
     const humanX = humanPid === 1 ? 150 : W - 150;
     const humanControls = humanPid === 1
@@ -4565,6 +4587,7 @@ scene("versus", () => {
   function endLadderFight(humanWon) {
     phase = "ladderEnd";
 
+    if (ladderHudUpdater) { ladderHudUpdater.cancel(); ladderHudUpdater = null; }
     for (const o of ladderHudObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
     ladderHudObjs.length = 0;
 
