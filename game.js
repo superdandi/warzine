@@ -1702,6 +1702,7 @@ function checkItemPickups() {
 // ============================================================
 
 scene("title", () => {
+  document.addEventListener("keydown", () => initAudio(), { once: true });
   stopMusic();
   changeMusic("title");
   add([sprite("titleBg"), fixed(), z(0)]);
@@ -4121,10 +4122,9 @@ scene("versus", (args = {}) => {
 
     // Countdown overlay
     const overlay = add([fixed(), z(100)]);
-    overlay.add([rect(W, H), color(PAPER), opacity(0.6)]);
     const countText = overlay.add([
-      text("3", { size: 60, font: "sans-serif" }),
-      pos(W / 2, H / 2), anchor("center"), color(INK), z(101),
+      text("3", { size: 80, font: "sans-serif" }),
+      pos(W / 2, H / 2), anchor("center"), color(WHITE), z(101),
     ]);
     let count = 3;
     const ci = setInterval(() => {
@@ -4149,10 +4149,9 @@ scene("versus", (args = {}) => {
 
     phase = "countdown";
     const overlay = add([fixed(), z(100)]);
-    overlay.add([rect(W, H), color(PAPER), opacity(0.6)]);
     const countText = overlay.add([
-      text("3", { size: 60, font: "sans-serif" }),
-      pos(W / 2, H / 2), anchor("center"), color(INK), z(101),
+      text("3", { size: 80, font: "sans-serif" }),
+      pos(W / 2, H / 2), anchor("center"), color(WHITE), z(101),
     ]);
     let count = 3;
     const ci = setInterval(() => {
@@ -4171,7 +4170,7 @@ scene("versus", (args = {}) => {
     const overlay = add([fixed(), z(100)]);
     overlay.add([rect(W, H), color(PAPER), opacity(0.5)]);
     const winText = add([
-      text("P" + winner + " WINS THE ROUND!", { size: 32, font: "sans-serif" }),
+      text("P" + winner + " WINS THE ROUND!", { size: 44, font: "sans-serif" }),
       pos(W / 2, H / 2 - 20), anchor("center"), color(WHITE), fixed(), z(101),
     ]);
     const scoreText = add([
@@ -4657,10 +4656,9 @@ scene("versus", (args = {}) => {
     phase = "countdown";
 
     const overlay = add([fixed(), z(100)]);
-    overlay.add([rect(W, H), color(PAPER), opacity(0.6)]);
     const countText = overlay.add([
-      text("3", { size: 60, font: "sans-serif" }),
-      pos(W / 2, H / 2), anchor("center"), color(INK), z(101),
+      text("3", { size: 80, font: "sans-serif" }),
+      pos(W / 2, H / 2), anchor("center"), color(WHITE), z(101),
     ]);
     let count = 3;
     const ci = setInterval(() => {
