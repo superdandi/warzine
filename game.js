@@ -1465,12 +1465,13 @@ function spawnInkSplat(x, y) {
   for (let i = 0; i < 6; i++) {
     add([
       circle(rand(5, 15)),
+      scale(rand(1.5, 2.5), rand(0.3, 0.6)),
       color(WHITE),
-      pos(x + rand(-25, 25), y + rand(5, 20)),
+      pos(x + rand(-35, 35), y + rand(2, 8)),
       opacity(rand(0.3, 0.6)),
       lifespan(rand(1.5, 3.0)),
       anchor("center"),
-      z(14),
+      z(5),
     ]);
   }
 }
@@ -3629,38 +3630,38 @@ scene("gameover", (wave) => {
   const high = Math.max(prev, score);
 
   add([sprite("paperTex"), opacity(0.15), z(100), fixed(), "paperTex"]).baseOpacity = 0.15;
-  add([rect(W, H), color(PAPER), fixed()]);
+  add([sprite("gameOverBg"), fixed(), z(0)]);
 
   add([
     text("X", { size: 120, font: "sans-serif" }),
     pos(W / 2, H / 3 - 20),
-    anchor("center"), color(INK), fixed(), z(10),
+    anchor("center"), color(WHITE), fixed(), z(10),
   ]);
 
   add([
-    text("GAME OVER", { size: 36, font: "sans-serif" }),
+    text("GAME OVER", { size: 48, font: "sans-serif" }),
     pos(W / 2, H / 2 + 10),
-    anchor("center"), color(INK), fixed(), z(10),
+    anchor("center"), color(WHITE), fixed(), z(10),
   ]);
 
   add([
-    text("WAVE " + wave, { size: 14, font: "sans-serif" }),
+    text("WAVE " + wave, { size: 20, font: "sans-serif" }),
     pos(W / 2, H * 0.58),
-    anchor("center"), color(INK), fixed(), z(10),
+    anchor("center"), color(WHITE), fixed(), z(10),
   ]);
 
   add([
-    text("BEST: WAVE " + high, { size: 12, font: "sans-serif" }),
+    text("BEST: WAVE " + high, { size: 16, font: "sans-serif" }),
     pos(W / 2, H * 0.63),
-    anchor("center"), color(INK), fixed(), z(10), opacity(0.6),
+    anchor("center"), color(WHITE), fixed(), z(10), opacity(0.8),
   ]);
 
   let blink = 0;
   const retry = add([
-    text("PRESS SPACE TO RETRY", { size: 16, font: "sans-serif" }),
+    text("PRESS SPACE TO RETRY", { size: 20, font: "sans-serif" }),
     pos(W / 2, H * 0.75),
     anchor("center"),
-    color(INK),
+    color(WHITE),
     fixed(),
     z(10),
   ]);
@@ -3766,7 +3767,6 @@ scene("versus", (args = {}) => {
   }
 
   // Background
-  add([sprite("versusBg"), fixed(), z(0)]);
 
   function nextAvail(current, dir, taken) {
     let c = current;
@@ -4076,6 +4076,7 @@ scene("versus", (args = {}) => {
 
   function startCountdown(skipCreate) {
     changeMusic("versusFight");
+    add([sprite("versusBg"), fixed(), z(0)]);
     phase = "countdown";
     for (const o of selectObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
     selectObjs.length = 0;
@@ -4588,6 +4589,7 @@ scene("versus", (args = {}) => {
     phase = "ladderIntro";
     for (const o of selectObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
     selectObjs.length = 0;
+    add([sprite("versusBg"), fixed(), z(0)]);
 
     const intro = add([fixed(), z(100)]);
     intro.add([
