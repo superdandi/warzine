@@ -4715,26 +4715,13 @@ scene("versus", (args = {}) => {
         spawnLadderFight();
       });
     } else {
-      const goObjs = [];
-      goObjs.push(add([sprite("gameOverBg"), fixed(), z(50)]));
-      const pt = add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]);
-      pt.baseOpacity = 0.15;
-      goObjs.push(pt);
-      goObjs.push(add([
-        text("GAME OVER", { size: 40, font: "sans-serif" }),
-        pos(W / 2, H / 2 - 30), anchor("center"), color(INK), fixed(), z(52),
-      ]));
-      goObjs.push(add([
-        text("REACHED FIGHT " + (ladderData.currentIdx + 1) + "/" + ladderData.opponents.length, { size: 14, font: "sans-serif" }),
-        pos(W / 2, H / 2 + 5), anchor("center"), color(INK), fixed(), z(52),
-      ]));
-      const timerText = add([
-        text("CONTINUE? 10", { size: 16, font: "sans-serif" }),
-        pos(W / 2, H / 2 + 40), anchor("center"), color(INK), fixed(), z(52),
-      ]);
-      goObjs.push(timerText);
-
       sfxGameOver();
+
+      // Phase 1: continue timer on the fight scene
+      const timerText = add([
+        text("CONTINUE? 10", { size: 24, font: "sans-serif" }),
+        pos(W / 2, H / 2), anchor("center"), color(WHITE), fixed(), z(100),
+      ]);
 
       let continueTimer = 10;
       let continueUsed = false;
@@ -4745,8 +4732,28 @@ scene("versus", (args = {}) => {
         } else {
           clearInterval(ci);
           if (!continueUsed) {
-            isVersusMode = false;
-            go("title");
+            destroy(timerText);
+
+            // Phase 2: game over screen for 3s then title
+            const goObjs = [];
+            goObjs.push(add([sprite("gameOverBg"), fixed(), z(50)]));
+            const pt = add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]);
+            pt.baseOpacity = 0.15;
+            goObjs.push(pt);
+            goObjs.push(add([
+              text("GAME OVER", { size: 48, font: "sans-serif" }),
+              pos(W / 2, H / 2 - 30), anchor("center"), color(WHITE), fixed(), z(52),
+            ]));
+            goObjs.push(add([
+              text("REACHED FIGHT " + (ladderData.currentIdx + 1) + "/" + ladderData.opponents.length, { size: 20, font: "sans-serif" }),
+              pos(W / 2, H / 2 + 10), anchor("center"), color(WHITE), fixed(), z(52),
+            ]));
+
+            wait(3, () => {
+              for (const o of goObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+              isVersusMode = false;
+              go("title");
+            });
           }
         }
       }, 1000);
@@ -4755,7 +4762,7 @@ scene("versus", (args = {}) => {
         if (continueUsed) return;
         continueUsed = true;
         clearInterval(ci);
-        for (const o of goObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+        destroy(timerText);
         sfxMenuSelect();
         spawnLadderFight();
       };
