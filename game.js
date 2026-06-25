@@ -1405,11 +1405,13 @@ function hitEnemy(enemy, damage, knockback, dir, attacker) {
   spawnDamagePopup(enemy.pos.x, enemy.pos.y - 15, damage, dir);
 
   if (enemy.hp <= 0) {
-    enemy.dead = true;
-    if (!enemy.is("player")) sfxKill();
-    if (attacker && attacker.kills !== undefined) attacker.kills++;
-    events.emit("enemy-killed", enemy);
-    destroy(enemy);
+    if (!isVersusMode) {
+      enemy.dead = true;
+      if (!enemy.is("player")) sfxKill();
+      if (attacker && attacker.kills !== undefined) attacker.kills++;
+      events.emit("enemy-killed", enemy);
+      destroy(enemy);
+    }
   }
 }
 
@@ -4580,21 +4582,53 @@ scene("versus", () => {
         spawnLadderFight();
       });
     } else {
-      add([rect(W, H), color(PAPER), fixed(), z(50)]);
-      add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]).baseOpacity = 0.15;
-      add([
+      const goObjs = [];
+      goObjs.push(add([rect(W, H), color(PAPER), fixed(), z(50)]));
+      const pt = add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]);
+      pt.baseOpacity = 0.15;
+      goObjs.push(pt);
+      goObjs.push(add([
         text("GAME OVER", { size: 40, font: "sans-serif" }),
-        pos(W / 2, H / 2 - 20), anchor("center"), color(INK), fixed(), z(52),
-      ]);
-      add([
+        pos(W / 2, H / 2 - 30), anchor("center"), color(INK), fixed(), z(52),
+      ]));
+      goObjs.push(add([
         text("REACHED FIGHT " + (ladderData.currentIdx + 1) + "/" + ladderData.opponents.length, { size: 14, font: "sans-serif" }),
-        pos(W / 2, H / 2 + 15), anchor("center"), color(INK), fixed(), z(52),
+        pos(W / 2, H / 2 + 5), anchor("center"), color(INK), fixed(), z(52),
+      ]));
+      const timerText = add([
+        text("CONTINUE? 10", { size: 16, font: "sans-serif" }),
+        pos(W / 2, H / 2 + 40), anchor("center"), color(INK), fixed(), z(52),
       ]);
+      goObjs.push(timerText);
+
       sfxGameOver();
-      wait(3, () => {
-        isVersusMode = false;
-        go("title");
-      });
+
+      let continueTimer = 10;
+      let continueUsed = false;
+      const ci = setInterval(() => {
+        continueTimer--;
+        if (continueTimer > 0) {
+          timerText.text = "CONTINUE? " + continueTimer;
+        } else {
+          clearInterval(ci);
+          if (!continueUsed) {
+            isVersusMode = false;
+            go("title");
+          }
+        }
+      }, 1000);
+
+      const doContinue = () => {
+        if (continueUsed) return;
+        continueUsed = true;
+        clearInterval(ci);
+        for (const o of goObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+        sfxMenuSelect();
+        spawnLadderFight();
+      };
+
+      onKeyPress("space", doContinue);
+      onKeyPress(ladderData.pid === 1 ? "j" : "1", doContinue);
     }
   }
 
