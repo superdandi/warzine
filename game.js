@@ -3774,15 +3774,17 @@ scene("versus", () => {
     const p1Char = createCharacter(W / 4, 230, CHAR_OPTIONS[p1Choice], "preview");
     selectObjs.push(p1Char);
 
-    const p2Taken = p1Locked && CHAR_OPTIONS[p1Choice] === CHAR_OPTIONS[p2Choice];
-    const p2LabelTxt = "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? (p2Taken ? " (TAKEN)" : " (LOCKED)") : " (< >)");
-    const p2Label = add([text(p2LabelTxt, { size: 12, font: "sans-serif" }),
-      pos(3 * W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
-    selectObjs.push(p2Label);
-    const p2Char = createCharacter(3 * W / 4, 230, CHAR_OPTIONS[p2Choice], "preview");
-    p2Char.scale.x = -1;
-    if (p2Locked && p2Taken) p2Char.opacity = 0.3;
-    selectObjs.push(p2Char);
+    if (p2Entered) {
+      const p2Taken = p1Locked && CHAR_OPTIONS[p1Choice] === CHAR_OPTIONS[p2Choice];
+      const p2LabelTxt = "P2: " + CHAR_NAMES[CHAR_OPTIONS[p2Choice]] + (p2Locked ? (p2Taken ? " (TAKEN)" : " (LOCKED)") : " (< >)");
+      const p2Label = add([text(p2LabelTxt, { size: 12, font: "sans-serif" }),
+        pos(3 * W / 4, 70), anchor("center"), color(INK), fixed(), z(10)]);
+      selectObjs.push(p2Label);
+      const p2Char = createCharacter(3 * W / 4, 230, CHAR_OPTIONS[p2Choice], "preview");
+      p2Char.scale.x = -1;
+      if (p2Locked && p2Taken) p2Char.opacity = 0.3;
+      selectObjs.push(p2Char);
+    }
 
     for (let i = 0; i < CHAR_OPTIONS.length; i++) {
       const bx = W / 2 - (CHAR_OPTIONS.length - 1) * 45 + i * 90;
@@ -3795,7 +3797,8 @@ scene("versus", () => {
     if (p1Locked && p2Locked) msg = "FIGHT!";
     else if (p1Locked) msg = "P2: 1 to lock";
     else if (p2Locked) msg = "P1: J to lock";
-    else msg = "P1: J to lock | P2: 1 to lock";
+    else if (p2Entered) msg = "P1: J to lock | P2: 1 to lock";
+    else msg = "P1: J to lock";
     selectObjs.push(add([text(msg, { size: 12, font: "sans-serif" }),
       pos(W / 2, 360), anchor("center"), color(INK), fixed(), z(10)]));
   }
@@ -4456,17 +4459,25 @@ scene("versus", () => {
     });
   }
 
-  function createLadderHUD(oppName, fightNum, totalFights) {
+  function createLadderHUD(oppName, fightNum, totalFights, humanPid) {
     const objs = [];
-    const p1BarBg = add([rect(200, 16), outline(2), color(INK), pos(20, 20), fixed(), z(19)]);
-    const p1Bar = add([rect(200, 16), color(WHITE), pos(20, 20), fixed(), z(20)]);
-    objs.push(p1BarBg, p1Bar);
-    add([text("P1", { size: 10, font: "sans-serif" }), pos(20, 40), fixed(), color(WHITE), z(20)]);
+    const leftX = 20;
+    const rightX = W - 220;
+    const humanSide = humanPid === 1 ? leftX : rightX;
+    const cpuSide = humanPid === 1 ? rightX : leftX;
+    const humanLabel = humanPid === 1 ? "P1" : "P2";
 
-    const oppBarBg = add([rect(200, 16), outline(2), color(INK), pos(W - 220, 20), fixed(), z(19)]);
-    const oppBar = add([rect(200, 16), color(WHITE), pos(W - 220, 20), fixed(), z(20)]);
+    const p1BarBg = add([rect(200, 16), outline(2), color(INK), pos(humanSide, 20), fixed(), z(19)]);
+    const p1Bar = add([rect(200, 16), color(WHITE), pos(humanSide, 20), fixed(), z(20)]);
+    objs.push(p1BarBg, p1Bar);
+    const p1Label = add([text(humanLabel, { size: 10, font: "sans-serif" }), pos(humanSide, 40), fixed(), color(WHITE), z(20)]);
+    objs.push(p1Label);
+
+    const oppBarBg = add([rect(200, 16), outline(2), color(INK), pos(cpuSide, 20), fixed(), z(19)]);
+    const oppBar = add([rect(200, 16), color(WHITE), pos(cpuSide, 20), fixed(), z(20)]);
     objs.push(oppBarBg, oppBar);
-    add([text(oppName, { size: 10, font: "sans-serif" }), pos(W - 220, 40), fixed(), color(WHITE), z(20)]);
+    const oppLabel = add([text(oppName, { size: 10, font: "sans-serif" }), pos(cpuSide, 40), fixed(), color(WHITE), z(20)]);
+    objs.push(oppLabel);
 
     const fightLabel = add([text("FIGHT " + fightNum + "/" + totalFights, { size: 12, font: "sans-serif" }),
       pos(W / 2, 20), anchor("center"), fixed(), color(WHITE), z(20)]);
@@ -4535,12 +4546,15 @@ scene("versus", () => {
       return;
     }
 
+    if (p1 && p1.exists) { vsState.players = vsState.players.filter(p => p !== p1); destroy(p1); p1 = null; }
+    if (cpuOpponent && cpuOpponent.exists) { destroy(cpuOpponent); cpuOpponent = null; }
+
     ladderFightResolved = false;
     const opp = ladderData.opponents[ladderData.currentIdx];
     const fightNum = ladderData.currentIdx + 1;
     const totalFights = ladderData.opponents.length;
 
-    const h = createLadderHUD(opp.name, fightNum, totalFights);
+    const h = createLadderHUD(opp.name, fightNum, totalFights, ladderData.pid);
     ladderHudObjs = h.objs;
 
     if (ladderHudUpdater) ladderHudUpdater.cancel();
@@ -4591,8 +4605,27 @@ scene("versus", () => {
     for (const o of ladderHudObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
     ladderHudObjs.length = 0;
 
-    if (p1 && p1.exists) { p1.dead = true; vsState.players = vsState.players.filter(p => p !== p1); destroy(p1); p1 = null; }
-    if (cpuOpponent && cpuOpponent.exists) { cpuOpponent.dead = true; destroy(cpuOpponent); cpuOpponent = null; }
+    if (humanWon) {
+      if (cpuOpponent && cpuOpponent.exists) {
+        cpuOpponent.dead = true;
+        cpuOpponent.downed = true;
+        cpuOpponent.invincible = 999;
+        tween(0, 80, 0.3, (v) => { if (!cpuOpponent.exists) return; cpuOpponent.angle = v; cpuOpponent.pos.y += 0.3; });
+        wait(1.2, () => { try { if (cpuOpponent && cpuOpponent.exists) destroy(cpuOpponent); } catch(e) {} });
+      }
+      if (p1 && p1.exists) { p1.paused = true; p1.invincible = 999; }
+      cpuOpponent = null;
+    } else {
+      if (p1 && p1.exists) {
+        p1.dead = true;
+        p1.downed = true;
+        p1.invincible = 999;
+        vsState.players = vsState.players.filter(p => p !== p1);
+        tween(0, 80, 0.3, (v) => { if (!p1.exists) return; p1.angle = v; p1.pos.y += 0.3; });
+        wait(1.2, () => { try { if (p1 && p1.exists) { destroy(p1); p1 = null; } } catch(e) {} });
+      }
+      if (cpuOpponent && cpuOpponent.exists) { cpuOpponent.dead = true; cpuOpponent.paused = true; cpuOpponent.invincible = 999; }
+    }
 
     if (humanWon) {
       const winText = add([
