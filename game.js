@@ -4788,10 +4788,6 @@ scene("versus", (args = {}) => {
       sfxGameOver();
       changeMusic("gameOver");
 
-      // Clean up characters
-      if (p1 && p1.exists) { try { destroy(p1); } catch(e) {} p1 = null; }
-      if (cpuOpponent && cpuOpponent.exists) { try { destroy(cpuOpponent); } catch(e) {} cpuOpponent = null; }
-
       // Game over background
       const goObjs = [];
       goObjs.push(add([sprite("gameOverBg"), fixed(), z(50)]));
