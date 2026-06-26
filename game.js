@@ -2179,34 +2179,35 @@ scene("game", (p1Type, p2Type) => {
   // ---- LEYENDA SYSTEM ----
   function showLeyenda(lines, subtitle, onComplete, tagline) {
     changeMusic("leyenda");
-    const overlay = add([fixed(), z(200)]);
-    overlay.add([rect(W, H), color(BLACK), opacity(1), z(200)]);
-    overlay.add([sprite("leyendaBg"), pos(0, 0), z(201)]);
+    const parts = [];
+
+    parts.push(add([rect(W, H), color(BLACK), opacity(1), fixed(), z(200)]));
+    parts.push(add([sprite("leyendaBg"), pos(0, 0), fixed(), z(201)]));
 
     if (tagline) {
-      overlay.add([
+      parts.push(add([
         text(tagline, { size: 16, font: "sans-serif" }),
-        pos(W / 2, H * 0.25), anchor("center"), color(WHITE), opacity(0.5), z(201),
-      ]);
+        pos(W / 2, H * 0.25), anchor("center"), color(WHITE), opacity(0.5), fixed(), z(202),
+      ]));
     }
 
     const startY = H * 0.42;
     lines.forEach((line, i) => {
-      overlay.add([
+      parts.push(add([
         text(line, { size: 28, font: "sans-serif" }),
-        pos(W / 2, startY + i * 38), anchor("center"), color(WHITE), z(201),
-      ]);
+        pos(W / 2, startY + i * 38), anchor("center"), color(WHITE), fixed(), z(202),
+      ]));
     });
 
     if (subtitle) {
-      overlay.add([
+      parts.push(add([
         text(subtitle, { size: 16, font: "sans-serif" }),
-        pos(W / 2, H * 0.78), anchor("center"), color(WHITE), opacity(0.7), z(201),
-      ]);
+        pos(W / 2, H * 0.78), anchor("center"), color(WHITE), opacity(0.7), fixed(), z(202),
+      ]));
     }
 
     wait(4, () => {
-      destroy(overlay);
+      parts.forEach(destroy);
       if (onComplete) onComplete();
     });
   }
