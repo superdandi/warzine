@@ -2180,6 +2180,7 @@ scene("game", (p1Type, p2Type) => {
   function showLeyenda(lines, subtitle, onComplete, tagline) {
     changeMusic("leyenda");
     const overlay = add([fixed(), z(200)]);
+    overlay.add([rect(W, H), color(BLACK), opacity(1), fixed(), z(200)]);
     overlay.add([sprite("leyendaBg"), pos(0, 0), fixed(), z(200)]);
 
     if (tagline) {
@@ -3570,7 +3571,9 @@ scene("game", (p1Type, p2Type) => {
   state.currentLevel = 0;
   const firstLevel = LEVELS[0];
   state.waveConfigIdx = firstLevel.preMidStart;
+  state.victory = true;
   showLeyenda(CHAR_LORE[charType].intro, "", () => {
+    state.victory = false;
     changeMusic("");
     startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
   }, CHAR_LORE[charType].tagline);
