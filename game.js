@@ -2185,20 +2185,20 @@ scene("game", (p1Type, p2Type) => {
 
     if (tagline) {
       parts.push(add([
-        text(tagline, { size: 16, font: "sans-serif", width: 420, align: "center", lineSpacing: 16 }),
+        text(tagline, { size: 16, font: "sans-serif", width: 420, align: "center", lineSpacing: 8 }),
         pos(W / 2, 158), anchor("center"), color(WHITE), opacity(0.5), fixed(), z(202),
       ]));
     }
 
     const startY = 250;
     parts.push(add([
-      text(lines.join("\n"), { size: 28, font: "sans-serif", width: 420, align: "center", lineSpacing: 28 }),
+      text(lines.join("\n"), { size: 28, font: "sans-serif", width: 420, align: "center", lineSpacing: 14 }),
       pos(W / 2, startY), anchor("center"), color(WHITE), fixed(), z(202),
     ]));
 
     if (subtitle) {
       parts.push(add([
-        text(subtitle, { size: 16, font: "sans-serif", width: 420, align: "center", lineSpacing: 16 }),
+        text(subtitle, { size: 16, font: "sans-serif", width: 420, align: "center", lineSpacing: 8 }),
         pos(W / 2, 345), anchor("center"), color(WHITE), opacity(0.7), fixed(), z(202),
       ]));
     }
