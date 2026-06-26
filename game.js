@@ -302,7 +302,7 @@ loadSprite("versusBg", "versus scene.png");
 loadSprite("titleBg", "title-screen-640.png");
 loadSprite("selectBg", "character-selection-scene.png");
 loadSprite("gameOverBg", "game-over-scene.png");
-loadSprite("leyendaBg", "leyenda scene.png");
+loadSprite("leyendaBg", "leyenda-scene.png");
 
 // ============================================================
 // PARALLAX BACKGROUND GENERATORS
@@ -2185,23 +2185,23 @@ scene("game", (p1Type, p2Type) => {
 
     if (tagline) {
       overlay.add([
-        text(tagline, { size: 12, font: "sans-serif" }),
-        pos(W / 2, H * 0.22), anchor("center"), color(WHITE), opacity(0.5), z(201),
+        text(tagline, { size: 16, font: "sans-serif" }),
+        pos(W / 2, H * 0.25), anchor("center"), color(WHITE), opacity(0.5), z(201),
       ]);
     }
 
-    const startY = H * 0.35;
+    const startY = H * 0.42;
     lines.forEach((line, i) => {
       overlay.add([
-        text(line, { size: 22, font: "sans-serif" }),
-        pos(W / 2, startY + i * 32), anchor("center"), color(WHITE), z(201),
+        text(line, { size: 28, font: "sans-serif" }),
+        pos(W / 2, startY + i * 38), anchor("center"), color(WHITE), z(201),
       ]);
     });
 
     if (subtitle) {
       overlay.add([
-        text(subtitle, { size: 14, font: "sans-serif" }),
-        pos(W / 2, H * 0.72), anchor("center"), color(WHITE), opacity(0.7), z(201),
+        text(subtitle, { size: 16, font: "sans-serif" }),
+        pos(W / 2, H * 0.78), anchor("center"), color(WHITE), opacity(0.7), z(201),
       ]);
     }
 
