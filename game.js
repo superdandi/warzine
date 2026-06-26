@@ -2181,8 +2181,7 @@ scene("game", (p1Type, p2Type) => {
     changeMusic("leyenda");
     const parts = [];
 
-    parts.push(add([rect(W, H), color(BLACK), opacity(1), fixed(), z(200)]));
-    parts.push(add([sprite("leyendaBg"), pos(0, 0), fixed(), z(201)]));
+    parts.push(add([sprite("leyendaBg"), pos(0, 0), fixed(), z(200)]));
 
     if (tagline) {
       parts.push(add([
