@@ -187,6 +187,7 @@ const MUSIC_THEMES = {
   rooftopRevive:{bpm:55,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,65,0.5,0.3],[8,65,0.5,0.3]] },
   factoryRevive:{bpm:50,  kicks:[0,8],             snares:[],                    hihats:[3,7,11,15],          bass:[[0,50,0.6,0.3],[8,50,0.6,0.3]] },
   gameOver: { bpm:40,  kicks:[0,8],             snares:[],                    hihats:[4,12],               bass:[[0,30,0.8,0.5],[8,25,0.8,0.5]] },
+  leyenda: { bpm:70,  kicks:[0,4,8,12],         snares:[],                    hihats:[2,6,10,14],          bass:[[0,65,0.4,0.2],[8,65,0.4,0.2]] },
 };
 
 function currentLevelTheme() {
@@ -301,6 +302,7 @@ loadSprite("versusBg", "versus scene.png");
 loadSprite("titleBg", "title-screen-640.png");
 loadSprite("selectBg", "character-selection-scene.png");
 loadSprite("gameOverBg", "game-over-scene.png");
+loadSprite("leyendaBg", "leyenda scene.png");
 
 // ============================================================
 // PARALLAX BACKGROUND GENERATORS
@@ -1893,35 +1895,57 @@ scene("title", () => {
 const CHAR_OPTIONS = ["punkette", "antagonic", "xero"];
 const CHAR_NAMES = { punkette: "PUNKETTE", antagonic: "ANTAGONIC", xero: "X-ERO" };
 
+const CHAR_LORE = {
+  punkette: {
+    tagline: "La rebelión nació mucho antes de que alguien la llamara revolución.",
+    intro: ["No vine a salvar la ciudad.", "Solo vine a recuperar lo que nos quitaron."],
+    levels: [
+      ["Cada muro tiene un nombre.", "Hoy van a recordar el mío."],
+      ["La corporación compra silencio.", "Yo prefiero hacer ruido."],
+      ["Antes pintaba murales.", "Ahora dejo cicatrices."],
+      ["Cuanto más se acercan al centro,", "más miedo tienen de la verdad."],
+      ["No estoy sola.", "Solo voy adelante."],
+      ["Los drones vigilan el cielo.", "Nunca aprendieron a mirar abajo."],
+      ["Las calles todavía recuerdan.", "Aunque ellos intenten borrarlas."],
+      ["Si hoy caigo,", "que sea haciendo suficiente ruido."],
+    ],
+    final: ["Una ciudad no cambia por una pelea.", "Pero toda revolución empieza con la primera."],
+  },
+  xero: {
+    tagline: "Un arma que decidió pensar por sí misma.",
+    intro: ["Fui construido para obedecer.", "Hoy comienzo a decidir."],
+    levels: [
+      ["Cada golpe altera mis registros.", "No encuentro errores."],
+      ["Empiezo a comprender el miedo.", "No me gusta."],
+      ["Los humanos llaman esperanza...", "a seguir avanzando."],
+      ["Mi programación insiste en detenerme.", "Mi voluntad dice otra cosa."],
+      ["No quiero ser perfecto.", "Quiero ser libre."],
+      ["He dejado de calcular probabilidades.", "Ahora simplemente lucho."],
+      ["Cada decisión me hace menos máquina.", "Y más yo."],
+      ["No puedo reescribir mi pasado.", "Pero sí mi siguiente movimiento."],
+    ],
+    final: ["Hoy dejaron de llamarme unidad.", "Mi nombre es X-ERO."],
+  },
+  antagonic: {
+    tagline: "El mejor soldado de la corporación... hasta que descubrió la verdad.",
+    intro: ["Juré proteger el orden.", "Nunca pregunté a quién protegía."],
+    levels: [
+      ["Las órdenes eran simples.", "La realidad no."],
+      ["He perseguido rebeldes.", "Ahora entiendo por qué corrían."],
+      ["El uniforme pesa más,", "desde que abrí los ojos."],
+      ["Los viejos compañeros...", "disparan sin hacer preguntas."],
+      ["Nunca imaginé que la traición", "se sintiera tan correcta."],
+      ["Cada puerta que cruzo", "es una puerta que ellos cerraron."],
+      ["Ya no peleo por la corporación.", "Peleo contra ella."],
+      ["No busco perdón.", "Solo terminar lo que empecé."],
+    ],
+    final: ["El último soldado cayó.", "El primer hombre siguió caminando."],
+  },
+};
+
 const DIFFICULTIES = ["EASY", "NORMAL", "HARD"];
 let gameDifficulty = 1; // 0=easy, 1=normal, 2=hard
 let gameFriendlyFire = false;
-
-const VIGNETTES = [
-  [
-    "THE CITY IS A CANCER.",
-    "THE STREETS BELONG TO NO ONE.",
-    "BUT TONIGHT, TWO FIGHTERS",
-    "WILL WRITE THEIR OWN LAW.",
-    "",
-    "NO MERCY. NO SURRENDER.",
-    "JUST BLOOD AND INK.",
-  ],
-  [
-    "THE GROUND IS NOT ENOUGH.",
-    "THE ROOFTOPS CALL.",
-    "UP THERE, THE RULES CHANGE.",
-    "GRAVITY IS THE ONLY JUDGE.",
-  ],
-  [
-    "THE FACTORY BREATHES FIRE.",
-    "SMOKE AND STEEL.",
-    "IN THE BELLY OF THE BEAST,",
-    "THE FINAL BATTLE AWAITS.",
-    "",
-    "NO TURNING BACK NOW.",
-  ],
-];
 
 scene("select", (opts) => {
   if (!opts) opts = {};
@@ -2115,6 +2139,7 @@ scene("select", (opts) => {
 scene("game", (p1Type, p2Type) => {
   if (!p2Type) p2Type = null;
   events.clear();
+  const charType = p1Type || p2Type;
 
   // ---- STATE ----
   const state = {
@@ -2151,85 +2176,38 @@ scene("game", (p1Type, p2Type) => {
   })();
   const diffMul = state.diffMul;
 
-  // ---- VIGNETTE SYSTEM ----
-  let vignetteActive = false;
-  let vignetteCallback = null;
-  let dismissVignette = null;
-
-  // Persistent handlers (solo se registran una vez)
-  onKeyPress("space", () => { if (vignetteActive && dismissVignette) { sfxMenuSelect(); dismissVignette(); } });
-  onKeyPress("enter", () => { if (vignetteActive && dismissVignette) { sfxMenuSelect(); dismissVignette(); } });
-
-  function showVignette(lines, onComplete) {
-    vignetteActive = true;
-    vignetteCallback = onComplete;
+  // ---- LEYENDA SYSTEM ----
+  function showLeyenda(lines, subtitle, onComplete, tagline) {
+    changeMusic("leyenda");
     const overlay = add([fixed(), z(200)]);
-    overlay.add([rect(W, H), color(PAPER), opacity(1)]);
-    // Comic border
-    overlay.add([rect(W - 20, H - 20), outline(4, INK), pos(10, 10), color(PAPER)]);
-    // Inner border
-    overlay.add([rect(W - 34, H - 34), outline(2, INK), pos(17, 17), color(PAPER)]);
-    // Decorative corners
-    for (const [cx, cy] of [[17, 17], [W - 17, 17], [17, H - 17], [W - 17, H - 17]]) {
-      overlay.add([rect(10, 10), color(INK), pos(cx - 5, cy - 5)]);
-    }
+    overlay.add([sprite("leyendaBg"), pos(0, 0), fixed(), z(200)]);
 
-    // Ink splatters
-    for (let i = 0; i < 3; i++) {
-      const sx = rand(40, W - 40);
-      const sy = rand(40, H - 40);
-      for (let j = 0; j < 4; j++) {
-        overlay.add([circle(rand(2, 6)), color(INK), pos(sx + rand(-15, 15), sy + rand(-15, 15)), opacity(rand(0.1, 0.3))]);
-      }
-    }
-
-    // Story title
-    overlay.add([
-      text("WARZINE", { size: 14, font: "sans-serif" }),
-      pos(W / 2, 50), anchor("center"), color(INK), opacity(0.4), z(201),
-    ]);
-
-    // Horizontal dividers
-    overlay.add([rect(W - 80, 1), color(INK), pos(40, 68), opacity(0.5)]);
-    overlay.add([rect(W - 80, 1), color(INK), pos(40, H - 90), opacity(0.5)]);
-
-    // Text lines
-    const startY = H / 2 - (lines.length * 14) / 2;
-    const textObjs = [];
-    lines.forEach((line, i) => {
-      const t = overlay.add([
-        text(line, { size: line === "" ? 8 : 14, font: "sans-serif" }),
-        pos(W / 2, startY + i * 18),
-        anchor("center"), color(INK), z(201), opacity(0),
+    if (tagline) {
+      overlay.add([
+        text(tagline, { size: 12, font: "sans-serif" }),
+        pos(W / 2, H * 0.22), anchor("center"), color(WHITE), opacity(0.5), z(201),
       ]);
-      textObjs.push(t);
+    }
+
+    const startY = H * 0.35;
+    lines.forEach((line, i) => {
+      overlay.add([
+        text(line, { size: 22, font: "sans-serif" }),
+        pos(W / 2, startY + i * 32), anchor("center"), color(WHITE), z(201),
+      ]);
     });
 
-    // Animate text appearing
-    textObjs.forEach((t, i) => {
-      wait(0.15 + i * 0.12, () => { if (t.exists()) t.opacity = 1; });
-    });
+    if (subtitle) {
+      overlay.add([
+        text(subtitle, { size: 14, font: "sans-serif" }),
+        pos(W / 2, H * 0.72), anchor("center"), color(WHITE), opacity(0.7), z(201),
+      ]);
+    }
 
-    // Continue prompt
-    const prompt = overlay.add([
-      text("\[ SPACE / ENTER \]", { size: 12, font: "sans-serif" }),
-      pos(W / 2, H - 55),
-      anchor("center"), color(INK), z(201), opacity(0),
-    ]);
-    let promptBlink = 0;
-
-    const updateFn = onUpdate(() => {
-      promptBlink += dt();
-      prompt.opacity = promptBlink % 1 < 0.6 ? 0.7 : 0.2;
-    });
-
-    const onDone = () => {
-      updateFn.cancel();
+    wait(4, () => {
       destroy(overlay);
-      vignetteActive = false;
-      if (vignetteCallback) vignetteCallback();
-    };
-    dismissVignette = onDone;
+      if (onComplete) onComplete();
+    });
   }
 
   // ---- BACKGROUND (parallax layers) ----
@@ -2496,7 +2474,7 @@ scene("game", (p1Type, p2Type) => {
         spawnInkSplat(char.pos.x, char.pos.y - 10);
       }
       if (char.downed) {
-        if (state.paused || state.victory || vignetteActive) return;
+        if (state.paused || state.victory) return;
         char.reviveTimer -= dt();
         if (char.reviveTimer <= 0) {
           char.downed = false;
@@ -2875,15 +2853,11 @@ scene("game", (p1Type, p2Type) => {
       }
     }
 
-    const vignetteIdx = lvl; // VIGNETTES[1] for level 1→2, VIGNETTES[2] for level 2→3
-    showVignette(VIGNETTES[vignetteIdx], () => {
-      if (state.gameOver) return;
-      const level = LEVELS[lvl];
-      state.waveConfigIdx = level.preMidStart;
-      switchBg(level.bgType);
-      changeMusic("");
-      startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
-    });
+    const level = LEVELS[lvl];
+    state.waveConfigIdx = level.preMidStart;
+    switchBg(level.bgType);
+    changeMusic("");
+    startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
   }
 
   // ---- WAVE COMPLETION CHECK ----
@@ -3252,42 +3226,31 @@ scene("game", (p1Type, p2Type) => {
       if (score > prev) localStorage.setItem("warzine_high", String(score));
 
       if (state.currentLevel < LEVELS.length - 1) {
-        // Not the last level — transition to next
-        const nextLevel = LEVELS[state.currentLevel + 1];
-        const vic1 = add([
-          text("NIVEL " + (state.currentLevel + 1) + " COMPLETE", { size: 28, font: "sans-serif" }),
-          pos(W / 2, H / 2 - 30),
-          anchor("center"), color(INK), z(60), fixed(),
-        ]);
-        const vic2 = add([
-          text("PROCEEDING TO " + nextLevel.bgLabel + "...", { size: 14, font: "sans-serif" }),
-          pos(W / 2, H / 2 + 15),
-          anchor("center"), color(INK), z(60), fixed(),
-        ]);
-        wait(3.0, () => {
-          destroy(vic1);
-          destroy(vic2);
-          if (state.gameOver) return;
-          state.victory = false;
-          startNextLevel();
-        });
+        // Not the last level — show leyenda then transition
+        showLeyenda(
+          CHAR_LORE[charType].levels[state.currentLevel],
+          "- NIVEL " + (state.currentLevel + 1) + " COMPLETE -",
+          () => {
+            if (state.gameOver) return;
+            state.victory = false;
+            startNextLevel();
+          }
+        );
       } else {
-        // Last level — victory!
-        const vic1 = add([
-          text("VICTORY!", { size: 48, font: "sans-serif" }),
-          pos(W / 2, H / 2 - 30),
-          anchor("center"), color(INK), z(60), fixed(),
-        ]);
-        const vic2 = add([
-          text("ALL LEVELS CLEARED", { size: 14, font: "sans-serif" }),
-          pos(W / 2, H / 2 + 15),
-          anchor("center"), color(INK), z(60), fixed(),
-        ]);
-        wait(3.0, () => {
-          destroy(vic1);
-          destroy(vic2);
-          go("victory", state.wave);
-        });
+        // Last level — show level leyenda, then final leyenda, then victory
+        showLeyenda(
+          CHAR_LORE[charType].levels[state.currentLevel],
+          "- NIVEL " + (state.currentLevel + 1) + " COMPLETE -",
+          () => {
+            showLeyenda(
+              CHAR_LORE[charType].final,
+              "- VICTORY -",
+              () => {
+                go("victory", state.wave);
+              }
+            );
+          }
+        );
       }
     }
   });
@@ -3490,7 +3453,7 @@ scene("game", (p1Type, p2Type) => {
 
   // ---- GAME OVER CHECK ----
   function checkGameOver() {
-    if (state.victory || state.gameOver || vignetteActive) return;
+    if (state.victory || state.gameOver) return;
     const allDead = state.players.every((p) => p.dead);
     if (allDead && !state.gameOver) {
       state.gameOver = true;
@@ -3607,10 +3570,10 @@ scene("game", (p1Type, p2Type) => {
   state.currentLevel = 0;
   const firstLevel = LEVELS[0];
   state.waveConfigIdx = firstLevel.preMidStart;
-  showVignette(VIGNETTES[0], () => {
+  showLeyenda(CHAR_LORE[charType].intro, "", () => {
     changeMusic("");
     startWave(WAVE_CONFIGS[state.waveConfigIdx], WAVE_CONFIGS[state.waveConfigIdx].title);
-  });
+  }, CHAR_LORE[charType].tagline);
 
   // Paper texture toggle
   onKeyPress("p", togglePaperTex);
