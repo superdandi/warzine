@@ -2180,8 +2180,8 @@ scene("game", (p1Type, p2Type) => {
   function showLeyenda(lines, subtitle, onComplete, tagline) {
     changeMusic("leyenda");
     const overlay = add([fixed(), z(200)]);
-    overlay.add([rect(W, H), color(BLACK), opacity(1), fixed(), z(200)]);
-    overlay.add([sprite("leyendaBg"), pos(0, 0), fixed(), z(200)]);
+    overlay.add([rect(W, H), color(BLACK), opacity(1), z(200)]);
+    overlay.add([sprite("leyendaBg"), pos(0, 0), z(201)]);
 
     if (tagline) {
       overlay.add([
