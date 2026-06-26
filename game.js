@@ -2185,7 +2185,7 @@ scene("game", (p1Type, p2Type) => {
 
     if (tagline) {
       parts.push(add([
-        text(tagline, { size: 16, font: "sans-serif" }),
+        text(tagline, { size: 16, font: "sans-serif", width: 420, align: "center" }),
         pos(W / 2, 158), anchor("center"), color(WHITE), opacity(0.5), fixed(), z(202),
       ]));
     }
@@ -2193,14 +2193,14 @@ scene("game", (p1Type, p2Type) => {
     const startY = 250;
     lines.forEach((line, i) => {
       parts.push(add([
-        text(line, { size: 28, font: "sans-serif" }),
+        text(line, { size: 28, font: "sans-serif", width: 420, align: "center" }),
         pos(W / 2, startY + i * 38), anchor("center"), color(WHITE), fixed(), z(202),
       ]));
     });
 
     if (subtitle) {
       parts.push(add([
-        text(subtitle, { size: 16, font: "sans-serif" }),
+        text(subtitle, { size: 16, font: "sans-serif", width: 420, align: "center" }),
         pos(W / 2, 345), anchor("center"), color(WHITE), opacity(0.7), fixed(), z(202),
       ]));
     }
