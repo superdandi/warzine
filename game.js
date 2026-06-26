@@ -2191,12 +2191,10 @@ scene("game", (p1Type, p2Type) => {
     }
 
     const startY = 250;
-    lines.forEach((line, i) => {
-      parts.push(add([
-        text(line, { size: 28, font: "sans-serif", width: 420, align: "center", lineSpacing: 28 }),
-        pos(W / 2, startY + i * 38), anchor("center"), color(WHITE), fixed(), z(202),
-      ]));
-    });
+    parts.push(add([
+      text(lines.join("\n"), { size: 28, font: "sans-serif", width: 420, align: "center", lineSpacing: 28 }),
+      pos(W / 2, startY), anchor("center"), color(WHITE), fixed(), z(202),
+    ]));
 
     if (subtitle) {
       parts.push(add([
