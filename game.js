@@ -1815,7 +1815,10 @@ scene("title", () => {
       started = true; sfxMenuSelect();
       gameFriendlyFire = friendlyFireOn;
       if (cursorP1 === 0) go("versus", { initiatorPid: 1 });
-      else if (cursorP1 === 1) go("select", { p1: true, p2: false });
+      else if (cursorP1 === 1) {
+        const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+        go("select", { p1: true, p2: false, locked: cleared, storyMode: true });
+      }
       else if (cursorP1 === 4) go("tutorial");
       else started = false;
     }
@@ -1855,7 +1858,10 @@ scene("title", () => {
     started = true; sfxMenuSelect();
     gameFriendlyFire = friendlyFireOn;
     if (cursorP1 === 0) go("versus", { initiatorPid: 1 });
-    else if (cursorP1 === 1) go("select", { p1: true, p2: false });
+    else if (cursorP1 === 1) {
+      const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+      go("select", { p1: true, p2: false, locked: cleared, storyMode: true });
+    }
     else if (cursorP1 === 4) go("tutorial");
     else started = false;
   });
@@ -1879,7 +1885,10 @@ scene("title", () => {
       started = true; sfxMenuSelect();
       gameFriendlyFire = friendlyFireOn;
       if (cursorP2 === 0) go("versus", { initiatorPid: 2 });
-      else if (cursorP2 === 1) go("select", { p1: false, p2: true });
+      else if (cursorP2 === 1) {
+        const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+        go("select", { p1: false, p2: true, locked: cleared, storyMode: true });
+      }
       else if (cursorP2 === 4) go("tutorial");
       else started = false;
     });
@@ -3248,30 +3257,34 @@ scene("game", (p1Type, p2Type) => {
 
       if (state.currentLevel < LEVELS.length - 1) {
         // Not the last level — show leyenda then transition
-        showLeyenda(
-          CHAR_LORE[charType].levels[state.currentLevel],
-          "- NIVEL " + (state.currentLevel + 1) + " COMPLETE -",
-          () => {
-            if (state.gameOver) return;
-            state.victory = false;
-            startNextLevel();
-          }
-        );
+        wait(3, () => {
+          showLeyenda(
+            CHAR_LORE[charType].levels[state.currentLevel],
+            "- NIVEL " + (state.currentLevel + 1) + " COMPLETE -",
+            () => {
+              if (state.gameOver) return;
+              state.victory = false;
+              startNextLevel();
+            }
+          );
+        });
       } else {
         // Last level — show level leyenda, then final leyenda, then victory
-        showLeyenda(
-          CHAR_LORE[charType].levels[state.currentLevel],
-          "- NIVEL " + (state.currentLevel + 1) + " COMPLETE -",
-          () => {
-            showLeyenda(
-              CHAR_LORE[charType].final,
-              "- VICTORY -",
-              () => {
-                go("victory", charType);
-              }
-            );
-          }
-        );
+        wait(3, () => {
+          showLeyenda(
+            CHAR_LORE[charType].levels[state.currentLevel],
+            "- NIVEL " + (state.currentLevel + 1) + " COMPLETE -",
+            () => {
+              showLeyenda(
+                CHAR_LORE[charType].final,
+                "- VICTORY -",
+                () => {
+                  go("victory", charType);
+                }
+              );
+            }
+          );
+        });
       }
     }
   });
