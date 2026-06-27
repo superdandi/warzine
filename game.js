@@ -2244,8 +2244,8 @@ scene("game", (p1Type, p2Type) => {
   const diffMul = state.diffMul;
 
   // ---- LEYENDA SYSTEM ----
-  function showLeyenda(lines, subtitle, onComplete, tagline, waitForKey) {
-    changeMusic(waitForKey ? "title" : "leyenda");
+  function showLeyenda(lines, subtitle, onComplete, tagline) {
+    changeMusic("title");
     const parts = [];
 
     parts.push(add([sprite("leyendaBg"), pos(0, 0), fixed(), z(200)]));
@@ -2270,18 +2270,11 @@ scene("game", (p1Type, p2Type) => {
       ]));
     }
 
-    if (waitForKey) {
-      const kp = onKeyPress(() => {
-        kp.cancel();
-        parts.forEach(destroy);
-        if (onComplete) onComplete();
-      });
-    } else {
-      wait(4, () => {
-        parts.forEach(destroy);
-        if (onComplete) onComplete();
-      });
-    }
+    const kp = onKeyPress(() => {
+      kp.cancel();
+      parts.forEach(destroy);
+      if (onComplete) onComplete();
+    });
   }
 
   // ---- BACKGROUND (parallax layers) ----
@@ -3317,9 +3310,7 @@ scene("game", (p1Type, p2Type) => {
               if (state.gameOver) return;
               state.victory = false;
               startNextLevel();
-            },
-            null,
-            true
+            }
           );
         });
       } else {
@@ -3336,13 +3327,9 @@ scene("game", (p1Type, p2Type) => {
                 "- VICTORY -",
                 () => {
                   go("victory", charType, p2Type ? true : false);
-                },
-                null,
-                true
+                }
               );
-            },
-            null,
-            true
+            }
           );
         });
       }
