@@ -303,6 +303,10 @@ loadSprite("titleBg", "title-screen-640.png");
 loadSprite("selectBg", "character-selection-scene.png");
 loadSprite("gameOverBg", "game-over-scene.png");
 loadSprite("leyendaBg", "leyenda-scene.png");
+loadSprite("victoryBgPunkette", "victory-the-end-punkette-bg.png");
+loadSprite("victoryBgXero", "victory-the-end-x-ero-bg.png");
+loadSprite("victoryBgAntagonic", "victory-the-end-antagonic-bg.png");
+loadSprite("victoryBgAll", "victory-the-end-scene-bg.png");
 
 // ============================================================
 // PARALLAX BACKGROUND GENERATORS
@@ -1949,8 +1953,11 @@ let gameFriendlyFire = false;
 
 scene("select", (opts) => {
   if (!opts) opts = {};
+  const locked = opts.locked || [];
+  const storyMode = opts.storyMode || false;
+  const isLocked = (t) => storyMode && locked.includes(t);
   let p1Active = opts.p1 !== false;
-  let p2Active = opts.p2 === true;
+  let p2Active = storyMode ? false : (opts.p2 === true);
   if (isTouchDevice) p2Active = false;
 
   add([sprite("selectBg"), fixed(), z(0)]);
@@ -1969,12 +1976,16 @@ scene("select", (opts) => {
     let c = current;
     for (let tries = 0; tries < CHAR_OPTIONS.length; tries++) {
       c = (c + dir + CHAR_OPTIONS.length) % CHAR_OPTIONS.length;
-      if (CHAR_OPTIONS[c] !== taken) return c;
+      if (CHAR_OPTIONS[c] !== taken && !isLocked(CHAR_OPTIONS[c])) return c;
     }
     return current;
   }
 
   const previews = [];
+  // Skip to first unlocked char if current is locked
+  if (storyMode && isLocked(CHAR_OPTIONS[p1Choice])) {
+    p1Choice = nextAvail(p1Choice, 1, null);
+  }
   function renderSelect() {
     for (const p of previews) destroy(p);
     previews.length = 0;
@@ -1983,14 +1994,16 @@ scene("select", (opts) => {
     const p2Taken = p1Locked ? CHAR_OPTIONS[p1Choice] : null;
 
     if (p1Active) {
+      const locked = isLocked(CHAR_OPTIONS[p1Choice]);
       const p1Label = add([
-        text("P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"), { size: 12, font: "sans-serif" }),
-        pos(W / 4, 80), anchor("center"), color(INK), fixed(), z(10),
+        text(locked ? "COMPLETADO" : "P1: " + CHAR_NAMES[CHAR_OPTIONS[p1Choice]] + (p1Locked ? " (LOCKED)" : " (A/D)"), { size: 12, font: "sans-serif" }),
+        pos(W / 4, 80), anchor("center"), color(locked ? GRAY : INK), fixed(), z(10),
       ]);
       previews.push(p1Label);
 
       const p1Char = createCharacter(W / 4, 250, CHAR_OPTIONS[p1Choice], "preview");
       p1Char.scale.x = 1;
+      if (locked) p1Char.opacity = 0.3;
       previews.push(p1Char);
     }
 
@@ -2014,14 +2027,15 @@ scene("select", (opts) => {
     const barY = 340;
     add([text("--- CHARACTERS ---", { size: 10, font: "sans-serif" }), pos(W / 2, barY - 15), anchor("center"), color(INK), fixed(), z(10)]);
     for (let i = 0; i < CHAR_OPTIONS.length; i++) {
+      const locked = isLocked(CHAR_OPTIONS[i]);
       const taken = (p1Active && p1Locked && CHAR_OPTIONS[i] === CHAR_OPTIONS[p1Choice]) ||
                     (p2Active && p2Locked && CHAR_OPTIONS[i] === CHAR_OPTIONS[p2Choice]);
       const bx = W / 2 - (CHAR_OPTIONS.length - 1) * 45 + i * 90;
-      const bg = add([rect(70, 20), outline(2), color(taken ? GRAY : WHITE), pos(bx, barY), anchor("center"), fixed(), z(10)]);
+      const bg = add([rect(70, 20), outline(2), color(taken || locked ? GRAY : WHITE), pos(bx, barY), anchor("center"), fixed(), z(10)]);
       previews.push(bg);
       const tx = add([
         text(CHAR_NAMES[CHAR_OPTIONS[i]], { size: 7, font: "sans-serif" }),
-        pos(bx, barY), anchor("center"), color(taken ? GRAY : INK), fixed(), z(11),
+        pos(bx, barY), anchor("center"), color(taken || locked ? GRAY : INK), fixed(), z(11),
       ]);
       previews.push(tx);
       if (taken) {
@@ -2030,6 +2044,13 @@ scene("select", (opts) => {
           pos(bx + 25, barY - 8), anchor("center"), color(INK), fixed(), z(11),
         ]);
         previews.push(xMark);
+      }
+      if (locked && !taken) {
+        const done = add([
+          text("COMPLETADO", { size: 6, font: "sans-serif" }),
+          pos(bx, barY + 8), anchor("center"), color(GRAY), fixed(), z(11),
+        ]);
+        previews.push(done);
       }
     }
 
@@ -2077,6 +2098,7 @@ scene("select", (opts) => {
     // Late join for P1
     if (!p1Active) { p1Active = true; p1Choice = nextAvail(p1Choice, 0, p2Locked ? CHAR_OPTIONS[p2Choice] : null); sfxMenuSelect(); renderSelect(); return; }
     if (p1Locked) return;
+    if (storyMode && isLocked(CHAR_OPTIONS[p1Choice])) return;
     p1Locked = true;
     sfxMenuSelect();
     renderSelect();
@@ -3245,7 +3267,7 @@ scene("game", (p1Type, p2Type) => {
               CHAR_LORE[charType].final,
               "- VICTORY -",
               () => {
-                go("victory", state.wave);
+                go("victory", charType);
               }
             );
           }
@@ -3635,21 +3657,32 @@ scene("gameover", (wave) => {
 // VICTORY SCENE
 // ============================================================
 
-scene("victory", (wave) => {
-  wave = wave || 3;
+scene("victory", (charType) => {
   stopMusic();
 
-  // High score
-  const prev = parseInt(localStorage.getItem("warzine_high") || "0");
-  const score = wave;
-  if (score > prev) localStorage.setItem("warzine_high", String(score));
-  const high = Math.max(prev, score);
+  const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+  if (!cleared.includes(charType)) {
+    cleared.push(charType);
+    localStorage.setItem("warzine_cleared", JSON.stringify(cleared));
+  }
 
-  add([sprite("paperTex"), opacity(0.15), z(100), fixed(), "paperTex"]).baseOpacity = 0.15;
-  add([rect(W, H), color(PAPER), fixed()]);
+  const bgMap = {
+    punkette: "victoryBgPunkette",
+    xero: "victoryBgXero",
+    antagonic: "victoryBgAntagonic",
+  };
+  add([sprite(bgMap[charType] || "victoryBgPunkette"), pos(0, 0), fixed(), z(0)]);
 
-  // Paper texture toggle
-  onKeyPress("p", togglePaperTex);
+  onKeyPress(() => {
+    if (cleared.length >= 3) go("secretEnding");
+    else go("credits");
+  });
+});
+
+scene("secretEnding", () => {
+  stopMusic();
+  add([sprite("victoryBgAll"), pos(0, 0), fixed(), z(0)]);
+  onKeyPress(() => go("credits"));
 });
 
 
@@ -3659,7 +3692,8 @@ scene("victory", (wave) => {
 
 scene("credits", () => {
   changeMusic("title");
-  add([sprite("paperTex"), opacity(0.2), fixed(), "paperTex"]).baseOpacity = 0.2;
+  add([rect(W, H), color(55, 55, 62), fixed(), z(0)]);
+  add([sprite("paperTex"), opacity(0.15), fixed(), "paperTex"]).baseOpacity = 0.15;
 
   const lines = [
     "WARZINE",
@@ -3708,7 +3742,6 @@ scene("credits", () => {
     "GRACIAS ESPECIALES",
     "A TI POR JUGAR",
     "",
-    "PRESIONA C O ESC PARA VOLVER",
   ];
 
   const SCROLL_SPEED = 35;
@@ -3728,7 +3761,80 @@ scene("credits", () => {
     objs.push(obj);
   }
 
+  // ---- END-OF-CREDITS OPTIONS ----
   let ended = false;
+  let optionsShown = false;
+  let selected = 0;
+  let optionObjs = [];
+
+  function showOptions() {
+    if (optionsShown) return;
+    optionsShown = true;
+    ended = true;
+
+    const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+    const allCleared = cleared.length >= 3;
+
+    const labels = ["JUGAR OTRA VEZ", "MENÚ PRINCIPAL"];
+
+    optionObjs = labels.map((label, i) => {
+      const x = W * (i === 0 ? 0.25 : 0.75);
+      const txt = add([
+        text(label, { size: 22, font: "sans-serif" }),
+        pos(x, H / 2 + 70),
+        anchor("center"),
+        color(WHITE),
+        opacity(i === selected ? 1 : 0.5),
+        fixed(),
+        z(20),
+      ]);
+      return txt;
+    });
+
+    let cursor = add([
+      text("▶", { size: 16, font: "sans-serif" }),
+      pos(W * 0.25 - 30, H / 2 + 70),
+      anchor("center"),
+      color(WHITE),
+      fixed(),
+      z(20),
+    ]);
+    optionObjs.push(cursor);
+
+    onKeyPress("a", () => {
+      selected = 0;
+      cursor.pos.x = W * 0.25 - 30;
+      optionObjs.forEach((o, i) => {
+        if (i < 2) o.opacity = i === selected ? 1 : 0.5;
+      });
+    });
+    onKeyPress("d", () => {
+      selected = 1;
+      cursor.pos.x = W * 0.75 - 30;
+      optionObjs.forEach((o, i) => {
+        if (i < 2) o.opacity = i === selected ? 1 : 0.5;
+      });
+    });
+    onKeyPress("j", () => { confirmOption(); });
+    onKeyPress("enter", () => { confirmOption(); });
+    onKeyPress("space", () => { confirmOption(); });
+
+    function confirmOption() {
+      if (selected === 0) {
+        if (allCleared) {
+          localStorage.removeItem("warzine_cleared");
+          go("select");
+        } else {
+          const remaining = CHAR_OPTIONS.filter(c => !cleared.includes(c));
+          go("select", { locked: cleared, storyMode: true });
+        }
+      } else {
+        go("title");
+      }
+    }
+  }
+
+  let scrollDone = false;
   onUpdate(() => {
     if (ended) return;
     let allOffscreen = true;
@@ -3736,14 +3842,14 @@ scene("credits", () => {
       obj.pos.y -= SCROLL_SPEED * dt();
       if (obj.pos.y > -60) allOffscreen = false;
     }
-    if (allOffscreen) {
-      ended = true;
-      wait(2, () => go("title"));
+    if (allOffscreen && !scrollDone) {
+      scrollDone = true;
+      showOptions();
     }
   });
 
-  onKeyPress("c", () => { sfxMenuSelect(); go("title"); });
-  onKeyPress("escape", () => { sfxMenuSelect(); go("title"); });
+  onKeyPress("c", () => { sfxMenuSelect(); showOptions(); });
+  onKeyPress("escape", () => { sfxMenuSelect(); showOptions(); });
   onKeyPress("p", togglePaperTex);
 });
 
