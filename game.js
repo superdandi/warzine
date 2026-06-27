@@ -134,7 +134,6 @@ function sfxBossWarning() {
   playNoise(0.6, 0.3, 300, "lowpass");
 }
 
-function sfxBossDeath() { playTone(300, 0.3, 0.4, "square", 900); setTimeout(() => sfxVictory(), 200); }
 
 function wilhelmScream() {
   const ctx = new AudioContext();
@@ -2245,8 +2244,8 @@ scene("game", (p1Type, p2Type) => {
   const diffMul = state.diffMul;
 
   // ---- LEYENDA SYSTEM ----
-  function showLeyenda(lines, subtitle, onComplete, tagline) {
-    changeMusic("leyenda");
+  function showLeyenda(lines, subtitle, onComplete, tagline, waitForKey) {
+    changeMusic(waitForKey ? "title" : "leyenda");
     const parts = [];
 
     parts.push(add([sprite("leyendaBg"), pos(0, 0), fixed(), z(200)]));
@@ -2271,10 +2270,18 @@ scene("game", (p1Type, p2Type) => {
       ]));
     }
 
-    wait(4, () => {
-      parts.forEach(destroy);
-      if (onComplete) onComplete();
-    });
+    if (waitForKey) {
+      const kp = onKeyPress(() => {
+        kp.cancel();
+        parts.forEach(destroy);
+        if (onComplete) onComplete();
+      });
+    } else {
+      wait(4, () => {
+        parts.forEach(destroy);
+        if (onComplete) onComplete();
+      });
+    }
   }
 
   // ---- BACKGROUND (parallax layers) ----
@@ -3286,7 +3293,6 @@ scene("game", (p1Type, p2Type) => {
       state.boss = null;
       state.victory = true;
       changeMusic("");
-      sfxBossDeath();
       tween(0, 90, 0.3, (v) => {
         enemy.angle = v;
         enemy.pos.y += 1;
@@ -3302,6 +3308,7 @@ scene("game", (p1Type, p2Type) => {
       if (state.currentLevel < LEVELS.length - 1) {
         // Not the last level — show leyenda then transition
         wait(3, () => {
+          sfxVictory();
           destroy(enemy);
           showLeyenda(
             CHAR_LORE[charType].levels[state.currentLevel],
@@ -3310,12 +3317,15 @@ scene("game", (p1Type, p2Type) => {
               if (state.gameOver) return;
               state.victory = false;
               startNextLevel();
-            }
+            },
+            null,
+            true
           );
         });
       } else {
         // Last level — show level leyenda, then final leyenda, then victory
         wait(3, () => {
+          sfxVictory();
           destroy(enemy);
           showLeyenda(
             CHAR_LORE[charType].levels[state.currentLevel],
@@ -3326,9 +3336,13 @@ scene("game", (p1Type, p2Type) => {
                 "- VICTORY -",
                 () => {
                   go("victory", charType, p2Type ? true : false);
-                }
+                },
+                null,
+                true
               );
-            }
+            },
+            null,
+            true
           );
         });
       }
