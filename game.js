@@ -2524,7 +2524,7 @@ scene("game", (p1Type, p2Type) => {
     onKeyPress(char.reviveKey, () => {
       if (!char.downed || char.dead || state.gameOver || state.victory) return;
       char.downed = false;
-      char.hp = Math.floor(char.maxHp * 0.5);
+      char.hp = Math.floor(char.maxHp * 1.0);
       char.invincible = 1.5;
       char.reviveTimer = 0;
       char.pos.x = char.facing > 0 ? W / 2 - 40 : W / 2 + 40;
