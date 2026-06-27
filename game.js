@@ -1419,7 +1419,7 @@ function hitEnemy(enemy, damage, knockback, dir, attacker) {
       if (!enemy.is("player")) sfxKill();
       if (attacker && attacker.kills !== undefined) attacker.kills++;
       events.emit("enemy-killed", enemy);
-      destroy(enemy);
+      if (!enemy.isBoss) destroy(enemy);
     }
   }
 }
@@ -3116,6 +3116,7 @@ scene("game", (p1Type, p2Type) => {
 
     wait(1.5, () => {
       const boss = createCharacter(W / 2, H - 100, "boss", "boss", BOSS_SPRITE_KEYS[state.bgType]);
+      boss.isBoss = true;
       state.boss = boss;
       state.enemies.push(boss);
 
@@ -3261,6 +3262,7 @@ scene("game", (p1Type, p2Type) => {
       if (state.currentLevel < LEVELS.length - 1) {
         // Not the last level — show leyenda then transition
         wait(3, () => {
+          destroy(enemy);
           showLeyenda(
             CHAR_LORE[charType].levels[state.currentLevel],
             "- NIVEL " + (state.currentLevel + 1) + " COMPLETE -",
@@ -3274,6 +3276,7 @@ scene("game", (p1Type, p2Type) => {
       } else {
         // Last level — show level leyenda, then final leyenda, then victory
         wait(3, () => {
+          destroy(enemy);
           showLeyenda(
             CHAR_LORE[charType].levels[state.currentLevel],
             "- NIVEL " + (state.currentLevel + 1) + " COMPLETE -",
