@@ -1965,7 +1965,7 @@ let gameFriendlyFire = false;
 
 scene("select", (opts) => {
   if (!opts) opts = {};
-  const locked = opts.locked || [];
+  let locked = opts.locked || [];
   const storyMode = opts.storyMode || false;
   const isLocked = (t) => storyMode && locked.includes(t);
   let p1Active = opts.p1 !== false;
@@ -2137,7 +2137,10 @@ scene("select", (opts) => {
   onKeyPress("1", () => {
     if (started) return;
     // Late join for P2
-    if (!p2Active) { p2Active = true; p2Choice = nextAvail(p2Choice, 0, p1Locked ? CHAR_OPTIONS[p1Choice] : null); sfxMenuSelect(); renderSelect(); return; }
+    if (!p2Active) {
+      if (storyMode) locked = [];
+      p2Active = true; p2Choice = nextAvail(p2Choice, 0, p1Locked ? CHAR_OPTIONS[p1Choice] : null); sfxMenuSelect(); renderSelect(); return;
+    }
     if (p2Locked) return;
     p2Locked = true;
     sfxMenuSelect();
@@ -3290,7 +3293,7 @@ scene("game", (p1Type, p2Type) => {
                 CHAR_LORE[charType].final,
                 "- VICTORY -",
                 () => {
-                  go("victory", charType);
+                  go("victory", charType, p2Type ? true : false);
                 }
               );
             }
@@ -3681,10 +3684,16 @@ scene("gameover", (wave) => {
 // VICTORY SCENE
 // ============================================================
 
-scene("victory", (charType) => {
+scene("victory", (charType, isCoop) => {
   stopMusic();
-
   const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+
+  if (isCoop) {
+    add([sprite("victoryBgAll"), pos(0, 0), fixed(), z(0)]);
+    onKeyPress(() => go("credits", true));
+    return;
+  }
+
   if (!cleared.includes(charType)) {
     cleared.push(charType);
     localStorage.setItem("warzine_cleared", JSON.stringify(cleared));
@@ -3714,7 +3723,7 @@ scene("secretEnding", () => {
 // CREDITS SCENE
 // ============================================================
 
-scene("credits", () => {
+scene("credits", (isCoop) => {
   changeMusic("title");
   add([rect(W, H), color(55, 55, 62), fixed(), z(0)]);
   add([sprite("paperTex"), opacity(0.15), fixed(), "paperTex"]).baseOpacity = 0.15;
@@ -3845,8 +3854,8 @@ scene("credits", () => {
 
     function confirmOption() {
       if (selected === 0) {
-        if (allCleared) {
-          localStorage.removeItem("warzine_cleared");
+        if (isCoop || allCleared) {
+          if (allCleared) localStorage.removeItem("warzine_cleared");
           go("select");
         } else {
           const remaining = CHAR_OPTIONS.filter(c => !cleared.includes(c));
