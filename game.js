@@ -3253,6 +3253,11 @@ scene("game", (p1Type, p2Type) => {
       state.victory = true;
       changeMusic("");
       sfxBossDeath();
+      tween(0, 90, 0.3, (v) => {
+        enemy.angle = v;
+        enemy.pos.y += 1;
+      });
+      spawnInkSplat(enemy.pos.x, enemy.pos.y - 10);
 
       // High score
       const prev = parseInt(localStorage.getItem("warzine_high") || "0");
