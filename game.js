@@ -136,6 +136,37 @@ function sfxBossWarning() {
 
 function sfxBossDeath() { playTone(300, 0.3, 0.4, "square", 900); setTimeout(() => sfxVictory(), 200); }
 
+function wilhelmScream() {
+  const ctx = new AudioContext();
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0.4, ctx.currentTime);
+  master.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
+  master.connect(ctx.destination);
+
+  const osc = ctx.createOscillator();
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(350, ctx.currentTime);
+  osc.frequency.linearRampToValueAtTime(850, ctx.currentTime + 0.12);
+  osc.frequency.linearRampToValueAtTime(450, ctx.currentTime + 0.35);
+  osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.9);
+  osc.connect(master);
+  osc.start();
+  osc.stop(ctx.currentTime + 1.0);
+
+  const osc2 = ctx.createOscillator();
+  osc2.type = "sine";
+  osc2.frequency.setValueAtTime(175, ctx.currentTime);
+  osc2.frequency.linearRampToValueAtTime(425, ctx.currentTime + 0.12);
+  osc2.frequency.linearRampToValueAtTime(225, ctx.currentTime + 0.35);
+  osc2.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 0.9);
+  const g2 = ctx.createGain();
+  g2.gain.setValueAtTime(0.2, ctx.currentTime);
+  osc2.connect(g2);
+  g2.connect(master);
+  osc2.start();
+  osc2.stop(ctx.currentTime + 1.0);
+}
+
 function sfxVictory() {
   [400, 500, 600, 800].forEach((f, i) => {
     setTimeout(() => playTone(f, 0.3, 0.3, "square"), i * 120);
@@ -3260,6 +3291,7 @@ scene("game", (p1Type, p2Type) => {
         enemy.angle = v;
         enemy.pos.y += 1;
       });
+      wilhelmScream();
       spawnInkSplat(enemy.pos.x, enemy.pos.y - 10);
 
       // High score
