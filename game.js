@@ -1816,7 +1816,8 @@ scene("title", () => {
       gameFriendlyFire = friendlyFireOn;
       if (cursorP1 === 0) go("versus", { initiatorPid: 1 });
       else if (cursorP1 === 1) {
-        const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+        let cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+        if (cleared.length >= 3) { localStorage.removeItem("warzine_cleared"); cleared = []; }
         go("select", { p1: true, p2: false, locked: cleared, storyMode: true });
       }
       else if (cursorP1 === 4) go("tutorial");
@@ -1859,7 +1860,8 @@ scene("title", () => {
     gameFriendlyFire = friendlyFireOn;
     if (cursorP1 === 0) go("versus", { initiatorPid: 1 });
     else if (cursorP1 === 1) {
-      const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+      let cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+      if (cleared.length >= 3) { localStorage.removeItem("warzine_cleared"); cleared = []; }
       go("select", { p1: true, p2: false, locked: cleared, storyMode: true });
     }
     else if (cursorP1 === 4) go("tutorial");
@@ -1886,7 +1888,8 @@ scene("title", () => {
       gameFriendlyFire = friendlyFireOn;
       if (cursorP2 === 0) go("versus", { initiatorPid: 2 });
       else if (cursorP2 === 1) {
-        const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+        let cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
+        if (cleared.length >= 3) { localStorage.removeItem("warzine_cleared"); cleared = []; }
         go("select", { p1: false, p2: true, locked: cleared, storyMode: true });
       }
       else if (cursorP2 === 4) go("tutorial");
