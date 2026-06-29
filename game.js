@@ -331,7 +331,8 @@ loadSprite("bossQuimica", "big boss 2 sprite.png");
 loadSprite("bossColoso", "big boss 3 sprite.png");
 loadSprite("versusBg", "versus scene.png");
 loadSprite("titleBg", "title-screen-640.png");
-loadSprite("selectBg", "gauntlet-seleccion-bg.png");
+loadSprite("selectBg", "character-selection-scene.png");
+loadSprite("gauntletSelectBg", "gauntlet-seleccion-bg.png");
 loadSprite("gameOverBg", "game-over-scene.png");
 loadSprite("leyendaBg", "leyenda-scene.png");
 loadSprite("victoryBgPunkette", "victory-the-end-punkette-bg.png");
@@ -4057,7 +4058,7 @@ scene("versus", (args = {}) => {
 
   const vsState = { players: [], hitPause: 0, gameOver: false, victory: false, paused: false };
   curState = vsState;
-  add([sprite("selectBg"), fixed(), z(0)]);
+  add([sprite("gauntletSelectBg"), fixed(), z(0)]);
 
   // Ladder mode state
   let ladderData = null;
@@ -5198,7 +5199,7 @@ scene("versus", (args = {}) => {
     challengeCharChoice = 0;
     challengeObjs = [];
     const overlay = add([fixed(), z(100)]);
-    overlay.add([sprite("selectBg"), fixed()]);
+    overlay.add([sprite("gauntletSelectBg"), fixed()]);
     challengeObjs.push(overlay);
 
     const title = add([
