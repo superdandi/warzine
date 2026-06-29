@@ -5065,11 +5065,11 @@ scene("versus", (args = {}) => {
     add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]).baseOpacity = 0.15;
     add([
       text("LADDER CHAMPION!", { size: 36, font: "sans-serif" }),
-      pos(W / 2, H / 2 - 20), anchor("center"), color(INK), fixed(), z(52),
+      pos(W / 2, H / 2 - 20), anchor("center"), color(WHITE), fixed(), z(52),
     ]);
     const blink = add([
       text("SPACE: MENU", { size: 14, font: "sans-serif" }),
-      pos(W / 2, H / 2 + 20), anchor("center"), color(INK), fixed(), z(52),
+      pos(W / 2, H / 2 + 20), anchor("center"), color(WHITE), fixed(), z(52),
     ]);
     let b = 0;
     onUpdate(() => { b += dt(); blink.opacity = b % 1 < 0.6 ? 1 : 0.3; });
