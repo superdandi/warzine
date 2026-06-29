@@ -5386,7 +5386,7 @@ scene("tutorial", () => {
   ]);
   let spriteChild = null;
   if (spriteCfg) {
-    const s = (48 * TF) / spriteCfg.h * 1.5;
+    const s = (48 * TF) / spriteCfg.h * 3.0;
     spriteChild = playerObj.add([
       sprite(spriteCfg.name),
       scale(s),
