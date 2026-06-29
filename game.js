@@ -1749,7 +1749,6 @@ function checkItemPickups() {
 scene("title", () => {
   document.addEventListener("keydown", () => {
     initAudio();
-    if (!soundCtx || soundCtx.state !== "running") return;
     stopMusic();
     changeMusic("title");
   }, { once: true });
