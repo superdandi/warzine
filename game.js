@@ -1760,7 +1760,7 @@ scene("title", () => {
   let blink = 0;
 
   // Menu items
-  const MENU_LABELS = ["VERSUS MODE", "STORY MODE", "FF: CO-OP", "DIFFICULTY: NORMAL", "TUTORIAL"];
+  const MENU_LABELS = ["THE GAUNTLET", "THE WARZINE", "FF: CO-OP", "DIFFICULTY: NORMAL", "TUTORIAL"];
   const ITEM_COUNT = 5;
   const ITEM_YS = [230, 265, 310, 340, 370];
   let menuItems = [];
