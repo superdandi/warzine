@@ -1761,13 +1761,13 @@ scene("title", () => {
   let blink = 0;
 
   // Menu items
-  const MENU_LABELS = ["THE WARZINE", "THE GAUNTLET", "TUTORIAL", "OPCIONES"];
+  const MENU_LABELS = ["THE WARZINE", "THE GAUNTLET", "TUTORIAL", "OPTIONS"];
   const ITEM_COUNT = 4;
   const ITEM_YS = [240, 280, 320, 360];
   let menuItems = [];
   for (let i = 0; i < ITEM_COUNT; i++) {
     menuItems.push(add([
-      text(MENU_LABELS[i], { size: i >= 2 ? 14 : 16, font: "sans-serif" }),
+      text(MENU_LABELS[i], { size: 22, font: "sans-serif" }),
       pos(W / 2, ITEM_YS[i]),
       anchor("center"),
       color(INK),
@@ -1779,8 +1779,8 @@ scene("title", () => {
   // Cursors
   let cursorP1 = 1, cursorP2 = 1;
   const p1Arrow = add([
-    text(">", { size: 18, font: "sans-serif" }),
-    pos(W / 2 - 160, ITEM_YS[1]),
+    text(">", { size: 24, font: "sans-serif" }),
+    pos(W / 2 - 170, ITEM_YS[1]),
     anchor("center"),
     color(WHITE),
     outline(3),
@@ -1788,8 +1788,8 @@ scene("title", () => {
     z(10),
   ]);
   const p2Arrow = add([
-    text("<", { size: 18, font: "sans-serif" }),
-    pos(W / 2 + 160, ITEM_YS[1]),
+    text("<", { size: 24, font: "sans-serif" }),
+    pos(W / 2 + 170, ITEM_YS[1]),
     anchor("center"),
     color(WHITE),
     outline(3),
@@ -1809,16 +1809,8 @@ scene("title", () => {
 
   // Version & dev toggles
   add([
-    text("v1.5", { size: 10, font: "sans-serif" }),
-    pos(W - 30, H - 15), anchor("center"), color(WHITE), fixed(), z(10),
-  ]);
-  const paperTexLabel = add([
     text("[ P ]", { size: 10, font: "sans-serif" }),
     pos(W - 55, H - 15), anchor("center"), color(WHITE), fixed(), z(10),
-  ]);
-  add([
-    text("C - CREDITS", { size: 10, font: "sans-serif" }),
-    pos(50, H - 15), anchor("center"), color(WHITE), fixed(), z(10),
   ]);
 
   let _lastTouchJ = false;
