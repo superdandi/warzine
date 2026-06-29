@@ -5779,7 +5779,7 @@ scene("tutorial", () => {
       p.punchTimer -= dt();
       if (p.punchHitbox && p.punchHitbox.exists()) {
         const dir = p.punchDir;
-        p.punchHitbox.pos = vec2(p.pos.x + dir * 20 * TO_SCALE, p.pos.y - 72 * TF);
+        p.punchHitbox.pos = vec2(p.pos.x + dir * 30 * TO_SCALE, p.pos.y);
         // Check crates
         let hitSomething = false;
         get("crate").forEach(c => {
