@@ -2275,6 +2275,9 @@ scene("select", (opts) => {
     else if (p2Active && !p1Active && p2Locked) startGame();
   });
 
+  // Back to title
+  onKeyPress("escape", () => { sfxMenuSelect(); go("title"); });
+
   // Paper texture toggle
   onKeyPress("p", togglePaperTex);
 });
@@ -5506,6 +5509,9 @@ scene("tutorial", () => {
     stepObjs.push(proj);
     return proj;
   }
+
+  // Back to title
+  onKeyPress("escape", () => { sfxMenuSelect(); go("title"); });
 
   // Step definitions
   const STEPS = [
