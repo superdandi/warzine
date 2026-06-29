@@ -234,6 +234,7 @@ function changeMusic(suffix) {
   if (!cfg) return;
   stopMusic();
   if (!soundEnabled) return;
+  if (!soundCtx) return;
   initAudio();
   let beat = 0;
   const BPM = cfg.bpm;
@@ -1743,9 +1744,13 @@ function checkItemPickups() {
 // ============================================================
 
 scene("title", () => {
-  document.addEventListener("keydown", () => initAudio(), { once: true });
+  document.addEventListener("keydown", () => {
+    initAudio();
+    if (!soundCtx || soundCtx.state !== "running") return;
+    stopMusic();
+    changeMusic("title");
+  }, { once: true });
   stopMusic();
-  changeMusic("title");
   add([sprite("titleBg"), fixed(), z(0)]);
   // paperTex over background for ink texture
   add([sprite("paperTex"), opacity(0.12), z(100), fixed(), "paperTex"]).baseOpacity = 0.12;
