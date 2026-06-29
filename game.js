@@ -5553,8 +5553,8 @@ scene("tutorial", () => {
         });
         textObjs.forEach((t, i) => wait(0.15 + i * 0.12, () => { if (t.exists()) t.opacity = 1; }));
         const prompt = overlay.add([
-          text("\[ SPACE / ENTER \]", { size: 12, font: "sans-serif" }),
-          pos(W / 2, H - 55), anchor("center"), color(INK), z(201), opacity(0),
+          text("\[ SPACE / ENTER \]", { size: 14, font: "sans-serif" }),
+          pos(W / 2, H - 55), anchor("center"), color(WHITE), z(201), opacity(0),
         ]);
         let blink = 0;
         const upd = onUpdate(() => { blink += dt(); prompt.opacity = blink % 1 < 0.6 ? 0.7 : 0.2; });
