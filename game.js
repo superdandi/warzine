@@ -4152,9 +4152,9 @@ scene("versus", (args = {}) => {
 
     for (let i = 0; i < CHAR_OPTIONS.length; i++) {
       const bx = W / 2 - (CHAR_OPTIONS.length - 1) * 45 + i * 90;
-      selectObjs.push(add([rect(70, 20), outline(2), color(WHITE), pos(bx, 402), anchor("center"), fixed(), z(10)]));
+      selectObjs.push(add([rect(70, 20), outline(2), color(WHITE), pos(bx, 320), anchor("center"), fixed(), z(10)]));
       selectObjs.push(add([text(CHAR_NAMES[CHAR_OPTIONS[i]], { size: 7, font: "sans-serif" }),
-        pos(bx, 402), anchor("center"), color(WHITE), fixed(), z(11)]));
+        pos(bx, 320), anchor("center"), color(INK), fixed(), z(11)]));
     }
 
     let msg = "";
@@ -4168,7 +4168,7 @@ scene("versus", (args = {}) => {
     else if (p2Locked) msg = "P2 LOCKED — P1: A/D to choose, J to lock  |  SPACE for single player";
     else msg = "P1: A/D choose, J lock  |  P2: < > choose, 1 lock";
     selectObjs.push(add([text(msg, { size: 12, font: "sans-serif" }),
-      pos(W / 2, 360), anchor("center"), color(INK), fixed(), z(10)]));
+      pos(W / 2, 402), anchor("center"), color(WHITE), fixed(), z(10)]));
   }
 
   renderSelect();
