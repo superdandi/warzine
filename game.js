@@ -5534,7 +5534,7 @@ scene("tutorial", () => {
         const sy = H / 2 - (lines.length * 14) / 2;
         lines.forEach((line, i) => {
           const t = overlay.add([
-            text(line, { size: line === "" ? 8 : 14, font: "sans-serif" }),
+            text(line, { size: line === "" ? 8 : 15, font: "sans-serif" }),
             pos(W / 2, sy + i * 18),
             anchor("center"), color(INK), z(201), opacity(0),
           ]);
