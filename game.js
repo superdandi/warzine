@@ -5520,9 +5520,7 @@ scene("tutorial", () => {
       name: "INTRO",
       run: () => {
         const overlay = add([fixed(), z(200)]);
-        overlay.add([rect(W, H), color(PAPER), opacity(1)]);
-        overlay.add([rect(W - 20, H - 20), outline(4, INK), pos(10, 10), color(PAPER)]);
-        overlay.add([rect(W - 34, H - 34), outline(2, INK), pos(17, 17), color(PAPER)]);
+        overlay.add([sprite("leyendaBg"), pos(0, 0)]);
         const lines = [
           "THE CITY IS A BATTLEFIELD.",
           "EVERY STREET, EVERY ROOFTOP,",
