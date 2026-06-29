@@ -4968,12 +4968,18 @@ scene("versus", (args = {}) => {
       let choiceMade = false;
       let idleTimer = 60;
       const timeoutMsg = add([fixed(), z(53), opacity(0)]);
+      const timerText = add([
+        text(String(idleTimer), { size: 16, font: "sans-serif" }),
+        pos(W / 2, H / 2 + 110), anchor("center"), color(WHITE), opacity(0.5), fixed(), z(53),
+      ]);
       const ti = setInterval(() => {
         if (choiceMade) return;
         idleTimer--;
+        timerText.text = String(idleTimer);
         if (idleTimer <= 0) {
           clearInterval(ti);
           choiceMade = true;
+          destroy(timerText);
           timeoutMsg.add([
             text("VOLVIENDO AL MENÚ PRINCIPAL...", { size: 14, font: "sans-serif" }),
             pos(W / 2, H / 2 + 110), anchor("center"), color(WHITE),
@@ -4995,8 +5001,8 @@ scene("versus", (args = {}) => {
         for (const o of goObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
         sfxMenuSelect();
         if (selected === 0) {
-          isVersusMode = false;
-          go("versus");
+          destroy(timerText);
+          spawnLadderFight();
         } else {
           isVersusMode = false;
           go("title");
