@@ -5577,7 +5577,7 @@ scene("tutorial", () => {
         moveStartPos = p.pos.clone();
         stepDone = false;
       },
-      check: () => p.pos.dist(moveStartPos) > 70,
+      check: () => p.pos.dist(moveStartPos) > 70 * TO_SCALE,
     },
     {
       name: "JUMP",
