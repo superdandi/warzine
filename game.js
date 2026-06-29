@@ -5352,6 +5352,7 @@ scene("tutorial", () => {
   stopMusic();
   changeMusic("tutorial");
   const TF = 2;
+  const TO_SCALE = 2;
   const T_GRAVITY = 800;
   const T_JUMP_FORCE = -300;
   const T_GROUND_Y = H - 70;
@@ -5390,6 +5391,7 @@ scene("tutorial", () => {
     spriteChild = playerObj.add([
       sprite(spriteCfg.name),
       scale(s),
+      pos(0, -72 * TF),
       anchor("center"),
     ]);
     spriteChild.flipX = false;
@@ -5489,7 +5491,7 @@ scene("tutorial", () => {
 
   function spawnHealthItem(x, y) {
     const item = add([
-      rect(16, 16),
+      rect(16 * TO_SCALE, 16 * TO_SCALE),
       color(WHITE),
       outline(3, INK),
       pos(x, y),
@@ -5499,15 +5501,15 @@ scene("tutorial", () => {
       "healthItem",
       { bob: rand(0, Math.PI * 2) },
     ]);
-    item.add([rect(10, 3), color(INK), pos(-5, -1.5), anchor("center")]);
-    item.add([rect(3, 10), color(INK), pos(-1.5, -5), anchor("center")]);
+    item.add([rect(10 * TO_SCALE, 3 * TO_SCALE), color(INK), pos(-5 * TO_SCALE, -1.5 * TO_SCALE), anchor("center")]);
+    item.add([rect(3 * TO_SCALE, 10 * TO_SCALE), color(INK), pos(-1.5 * TO_SCALE, -5 * TO_SCALE), anchor("center")]);
     stepObjs.push(item);
     return item;
   }
 
   function createProjectile(x, y, dir) {
     const proj = add([
-      rect(10, 6),
+      rect(10 * TO_SCALE, 6 * TO_SCALE),
       color(INK),
       area(),
       pos(x, y),
@@ -5595,8 +5597,8 @@ scene("tutorial", () => {
       run: () => {
         showInstruction("PRESS J TO PUNCH", "Destroy both training crates");
         showStepCounter(3, 7);
-        createCrate(W / 2 - 50, T_GROUND_Y - 22, 15, { w: 40, h: 40 });
-        createCrate(W / 2 + 50, T_GROUND_Y - 22, 15, { w: 40, h: 40 });
+        createCrate(W / 2 - 50 * TO_SCALE, T_GROUND_Y - 20 * TO_SCALE, 15, { w: 40 * TO_SCALE, h: 40 * TO_SCALE });
+        createCrate(W / 2 + 50 * TO_SCALE, T_GROUND_Y - 20 * TO_SCALE, 15, { w: 40 * TO_SCALE, h: 40 * TO_SCALE });
         stepDone = false;
       },
       check: () => {
@@ -5609,7 +5611,7 @@ scene("tutorial", () => {
       run: () => {
         showInstruction("PRESS J+K FOR SUPER ATTACK", "Destroy the reinforced crate");
         showStepCounter(4, 7);
-        createCrate(W / 2, T_GROUND_Y - 22, 75, { w: 40, h: 40, superOnly: true });
+        createCrate(W / 2, T_GROUND_Y - 20 * TO_SCALE, 75, { w: 40 * TO_SCALE, h: 40 * TO_SCALE, superOnly: true });
         stepDone = false;
       },
       check: () => {
@@ -5643,7 +5645,7 @@ scene("tutorial", () => {
       run: () => {
         showInstruction("WALK OVER ITEMS", "Collect the health pickup");
         showStepCounter(6, 7);
-        spawnHealthItem(W / 2 + 120, T_GROUND_Y - 12);
+        spawnHealthItem(W / 2 + 120 * TO_SCALE, T_GROUND_Y - 8 * TO_SCALE);
         hasCollected = false;
         stepDone = false;
       },
@@ -5656,8 +5658,8 @@ scene("tutorial", () => {
         showStepCounter(7, 7);
         stepDone = false;
 
-        const e1 = createTutorialEnemy(100, T_GROUND_Y, "grunt");
-        const e2 = createTutorialEnemy(W - 100, T_GROUND_Y, "punk");
+        const e1 = createTutorialEnemy(100, T_GROUND_Y - 24 * TF * TO_SCALE, "grunt");
+        const e2 = createTutorialEnemy(W - 100, T_GROUND_Y - 24 * TF * TO_SCALE, "punk");
         fightEnemies = [e1, e2];
       },
       check: () => {
@@ -5669,18 +5671,18 @@ scene("tutorial", () => {
   function createTutorialEnemy(x, y, type) {
     const cfg = CHAR_CONFIG[type];
     const enemy = add([
-      rect(28 * TF, 48 * TF),
+      rect(28 * TF * TO_SCALE, 48 * TF * TO_SCALE),
       color(WHITE),
       outline(3, INK),
-      area({ shape: new Rect(vec2(-14 * TF, -24 * TF), 28 * TF, 48 * TF) }),
+      area({ shape: new Rect(vec2(-14 * TF * TO_SCALE, -24 * TF * TO_SCALE), 28 * TF * TO_SCALE, 48 * TF * TO_SCALE) }),
       pos(x, y),
       anchor("center"),
       z(10),
       "tutorialEnemy",
       { hp: type === "grunt" ? 30 : 40, invincible: 0, facing: -1, speed: 40, hitTimer: 0 },
     ]);
-    enemy.add([rect(cfg.bodyW * TF, cfg.bodyH * TF), outline(3), color(WHITE), anchor("center")]);
-    enemy.add([rect(cfg.headW * TF, cfg.headH * TF), outline(3), color(WHITE), pos(0, -cfg.bodyH * TF / 2 - cfg.headH * TF + 2), anchor("center")]);
+    enemy.add([rect(cfg.bodyW * TF * TO_SCALE, cfg.bodyH * TF * TO_SCALE), outline(3), color(WHITE), anchor("center")]);
+    enemy.add([rect(cfg.headW * TF * TO_SCALE, cfg.headH * TF * TO_SCALE), outline(3), color(WHITE), pos(0, -cfg.bodyH * TF * TO_SCALE / 2 - cfg.headH * TF * TO_SCALE + 2), anchor("center")]);
     stepObjs.push(enemy);
     return enemy;
   }
@@ -5777,7 +5779,7 @@ scene("tutorial", () => {
       p.punchTimer -= dt();
       if (p.punchHitbox && p.punchHitbox.exists()) {
         const dir = p.punchDir;
-        p.punchHitbox.pos = vec2(p.pos.x + dir * 20, p.pos.y);
+        p.punchHitbox.pos = vec2(p.pos.x + dir * 20 * TO_SCALE, p.pos.y - 72 * TF);
         // Check crates
         let hitSomething = false;
         get("crate").forEach(c => {
@@ -5874,7 +5876,7 @@ scene("tutorial", () => {
   onUpdate(() => {
     if (stepIdx === 5) {
       get("projectile").forEach(proj => {
-        if (proj.exists() && p.pos.dist(proj.pos) < 25) {
+        if (proj.exists() && p.pos.dist(proj.pos) < 25 * TO_SCALE) {
           if (p.invincible <= 0) {
             // Hit! This means they didn't dodge
             p.invincible = 0.5;
@@ -5890,7 +5892,7 @@ scene("tutorial", () => {
   onUpdate(() => {
     if (stepIdx === 6) {
       get("healthItem").forEach(item => {
-        if (item.exists() && p.pos.dist(item.pos) < 25) {
+        if (item.exists() && p.pos.dist(item.pos) < 25 * TO_SCALE) {
           hasCollected = true;
           spawnInkSplat(item.pos.x, item.pos.y);
           destroy(item);
@@ -5909,12 +5911,12 @@ scene("tutorial", () => {
     if (p.punchIsSuper) {
       playNoise(0.15, 0.3, 500, "bandpass");
       playTone(150, 0.2, 0.3, "sawtooth", 80);
-      p.punchHitbox = add([pos(0, 0), rect(50, 40), area(), anchor("center"), z(15), opacity(0)]);
+      p.punchHitbox = add([pos(0, 0), rect(50 * TO_SCALE, 40 * TO_SCALE), area(), anchor("center"), z(15), opacity(0)]);
       p.punchTimer = 0.15;
     } else {
       playNoise(0.08, 0.4, 3000, "lowpass");
       playTone(80, 0.06, 0.3, "square");
-      p.punchHitbox = add([pos(0, 0), rect(26, 22), area(), anchor("center"), z(15), opacity(0)]);
+      p.punchHitbox = add([pos(0, 0), rect(26 * TO_SCALE, 22 * TO_SCALE), area(), anchor("center"), z(15), opacity(0)]);
       p.punchTimer = 0.12;
     }
   }
@@ -5935,7 +5937,7 @@ scene("tutorial", () => {
       e.pos.x = Math.max(30, Math.min(W - 30, e.pos.x));
 
       // Push player slightly on contact
-      if (p.pos.dist(e.pos) < 30) {
+      if (p.pos.dist(e.pos) < 30 * TO_SCALE) {
         if (p.invincible <= 0) {
           p.invincible = 0.3;
         }
