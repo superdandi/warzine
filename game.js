@@ -4931,92 +4931,131 @@ scene("versus", (args = {}) => {
       sfxGameOver();
       changeMusic("gameOver");
 
-      // Game over background
-      const goObjs = [];
-      goObjs.push(add([sprite("gameOverBg"), fixed(), z(50)]));
-      const pt = add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]);
-      pt.baseOpacity = 0.15;
-      goObjs.push(pt);
-
-      goObjs.push(add([
-        text("REACHED FIGHT " + (ladderData.currentIdx + 1) + "/" + ladderData.opponents.length, { size: 22, font: "sans-serif" }),
-        pos(W / 2, H / 2 - 20), anchor("center"), color(WHITE), fixed(), z(52),
+      // Phase 1: Continue countdown (10s)
+      const contObjs = [];
+      let contTimer = 10;
+      contObjs.push(add([
+        text("CONTINUE?", { size: 36, font: "sans-serif" }),
+        pos(W / 2, H / 2 - 30), anchor("center"), color(WHITE), fixed(), z(53),
       ]));
-
-      // Selection — side by side
-      let selected = 0;
-      const optTexts = [
-        add([
-          text("> REINTENTAR", { size: 22, font: "sans-serif" }),
-          pos(W * 0.25, H / 2 + 70), anchor("center"), color(WHITE), fixed(), z(52),
-        ]),
-        add([
-          text("  MENÚ PRINCIPAL", { size: 22, font: "sans-serif" }),
-          pos(W * 0.75, H / 2 + 70), anchor("center"), color(WHITE), fixed(), z(52), opacity(0.5),
-        ]),
-      ];
-      goObjs.push(...optTexts);
-
-      function updateSelection() {
-        optTexts[0].text = selected === 0 ? "> REINTENTAR" : "  REINTENTAR";
-        optTexts[1].text = selected === 1 ? "> MENÚ PRINCIPAL" : "  MENÚ PRINCIPAL";
-        optTexts[0].opacity = selected === 0 ? 1 : 0.5;
-        optTexts[1].opacity = selected === 1 ? 1 : 0.5;
-      }
-
-      // Timeout: 60s → show message → title
-      let choiceMade = false;
-      let idleTimer = 60;
-      const timeoutMsg = add([fixed(), z(53), opacity(0)]);
-      const timerText = add([
-        text(String(idleTimer), { size: 16, font: "sans-serif" }),
-        pos(W / 2, H / 2 + 110), anchor("center"), color(WHITE), opacity(0.5), fixed(), z(53),
+      const contText = add([
+        text(String(contTimer), { size: 48, font: "sans-serif" }),
+        pos(W / 2, H / 2 + 20), anchor("center"), color(WHITE), fixed(), z(53),
       ]);
-      const ti = setInterval(() => {
-        if (choiceMade) return;
-        idleTimer--;
-        timerText.text = String(idleTimer);
-        if (idleTimer <= 0) {
-          clearInterval(ti);
-          choiceMade = true;
-          destroy(timerText);
-          timeoutMsg.add([
-            text("VOLVIENDO AL MENÚ PRINCIPAL...", { size: 14, font: "sans-serif" }),
-            pos(W / 2, H / 2 + 110), anchor("center"), color(WHITE),
+      contObjs.push(contText);
+      const contHint = add([
+        text("PRESIONA " + (ladderData.pid === 1 ? "J" : "1") + " PARA CONTINUAR", { size: 14, font: "sans-serif" }),
+        pos(W / 2, H / 2 + 60), anchor("center"), color(WHITE), opacity(0.6), fixed(), z(53),
+      ]);
+      contObjs.push(contHint);
+
+      let phaseDone = false;
+      const actionKey = ladderData.pid === 1 ? "j" : "1";
+      const contKey = onKeyPress(actionKey, () => {
+        if (phaseDone) return;
+        phaseDone = true;
+        clearInterval(contInterval);
+        contKey.cancel();
+        for (const o of contObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+        sfxMenuSelect();
+        spawnLadderFight();
+      });
+
+      const contInterval = setInterval(() => {
+        contTimer--;
+        contText.text = String(contTimer);
+        if (contTimer <= 0) {
+          clearInterval(contInterval);
+          if (phaseDone) return;
+          phaseDone = true;
+          contKey.cancel();
+          for (const o of contObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+
+          // Phase 2: Game over screen
+          const goObjs = [];
+          goObjs.push(add([sprite("gameOverBg"), fixed(), z(50)]));
+          const pt = add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]);
+          pt.baseOpacity = 0.15;
+          goObjs.push(pt);
+
+          goObjs.push(add([
+            text("REACHED FIGHT " + (ladderData.currentIdx + 1) + "/" + ladderData.opponents.length, { size: 22, font: "sans-serif" }),
+            pos(W / 2, H / 2 - 20), anchor("center"), color(WHITE), fixed(), z(52),
+          ]));
+
+          let selected = 0;
+          const optTexts = [
+            add([
+              text("> REINTENTAR", { size: 22, font: "sans-serif" }),
+              pos(W * 0.25, H / 2 + 70), anchor("center"), color(WHITE), fixed(), z(52),
+            ]),
+            add([
+              text("  MENÚ PRINCIPAL", { size: 22, font: "sans-serif" }),
+              pos(W * 0.75, H / 2 + 70), anchor("center"), color(WHITE), fixed(), z(52), opacity(0.5),
+            ]),
+          ];
+          goObjs.push(...optTexts);
+
+          function updateSelection() {
+            optTexts[0].text = selected === 0 ? "> REINTENTAR" : "  REINTENTAR";
+            optTexts[1].text = selected === 1 ? "> MENÚ PRINCIPAL" : "  MENÚ PRINCIPAL";
+            optTexts[0].opacity = selected === 0 ? 1 : 0.5;
+            optTexts[1].opacity = selected === 1 ? 1 : 0.5;
+          }
+
+          let choiceMade = false;
+          let idleTimer = 60;
+          const timeoutMsg = add([fixed(), z(53), opacity(0)]);
+          const timerText = add([
+            text(String(idleTimer), { size: 16, font: "sans-serif" }),
+            pos(W / 2, H / 2 + 110), anchor("center"), color(WHITE), opacity(0.5), fixed(), z(53),
           ]);
-          timeoutMsg.opacity = 1;
-          wait(3, () => {
+          const ti = setInterval(() => {
+            if (choiceMade) return;
+            idleTimer--;
+            timerText.text = String(idleTimer);
+            if (idleTimer <= 0) {
+              clearInterval(ti);
+              choiceMade = true;
+              destroy(timerText);
+              timeoutMsg.add([
+                text("VOLVIENDO AL MENÚ PRINCIPAL...", { size: 14, font: "sans-serif" }),
+                pos(W / 2, H / 2 + 110), anchor("center"), color(WHITE),
+              ]);
+              timeoutMsg.opacity = 1;
+              wait(3, () => {
+                for (const o of goObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
+                isVersusMode = false;
+                go("title");
+              });
+            }
+          }, 1000);
+
+          const doAction = () => {
+            if (choiceMade) return;
+            choiceMade = true;
+            clearInterval(ti);
             for (const o of goObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
-            isVersusMode = false;
-            go("title");
-          });
+            sfxMenuSelect();
+            if (selected === 0) {
+              destroy(timerText);
+              spawnLadderFight();
+            } else {
+              isVersusMode = false;
+              go("title");
+            }
+          };
+
+          const doPrev = () => { if (choiceMade) return; selected = selected === 0 ? 1 : 0; updateSelection(); };
+          const doNext = () => { if (choiceMade) return; selected = selected === 0 ? 1 : 0; updateSelection(); };
+
+          onKeyPress("a", doPrev);
+          onKeyPress("d", doNext);
+          onKeyPress("left", doPrev);
+          onKeyPress("right", doNext);
+          onKeyPress(actionKey, doAction);
         }
       }, 1000);
-
-      const actionKey = ladderData.pid === 1 ? "j" : "1";
-      const doAction = () => {
-        if (choiceMade) return;
-        choiceMade = true;
-        clearInterval(ti);
-        for (const o of goObjs) { try { if (o && o.exists) destroy(o); } catch(e) {} }
-        sfxMenuSelect();
-        if (selected === 0) {
-          destroy(timerText);
-          spawnLadderFight();
-        } else {
-          isVersusMode = false;
-          go("title");
-        }
-      };
-
-      const doPrev = () => { if (choiceMade) return; selected = selected === 0 ? 1 : 0; updateSelection(); };
-      const doNext = () => { if (choiceMade) return; selected = selected === 1 ? 0 : 1; updateSelection(); };
-
-      onKeyPress("a", doPrev);
-      onKeyPress("d", doNext);
-      onKeyPress("left", doPrev);
-      onKeyPress("right", doNext);
-      onKeyPress(actionKey, doAction);
     }
   }
 
