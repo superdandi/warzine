@@ -331,7 +331,7 @@ loadSprite("bossQuimica", "big boss 2 sprite.png");
 loadSprite("bossColoso", "big boss 3 sprite.png");
 loadSprite("versusBg", "versus scene.png");
 loadSprite("titleBg", "title-screen-640.png");
-loadSprite("selectBg", "character-selection-scene.png");
+loadSprite("selectBg", "gauntlet-seleccion-bg.png");
 loadSprite("gameOverBg", "game-over-scene.png");
 loadSprite("leyendaBg", "leyenda-scene.png");
 loadSprite("victoryBgPunkette", "victory-the-end-punkette-bg.png");
