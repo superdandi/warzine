@@ -1808,7 +1808,7 @@ scene("title", () => {
   ]);
 
   // Version & dev toggles
-  add([
+  const paperTexLabel = add([
     text("[ P ]", { size: 10, font: "sans-serif" }),
     pos(W - 55, H - 15), anchor("center"), color(WHITE), fixed(), z(10),
   ]);
