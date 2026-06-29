@@ -4113,7 +4113,7 @@ scene("versus", (args = {}) => {
     let titleTxt = "VERSUS - SELECT YOUR FIGHTER";
     if (isLadderSelect) titleTxt = "LADDER — 8 OPPONENTS AWAIT";
     const title = add([text(titleTxt, { size: 16, font: "sans-serif" }),
-      pos(W / 2, 30), anchor("center"), color(INK), fixed(), z(10)]);
+      pos(W / 2, 30), anchor("center"), color(WHITE), fixed(), z(10)]);
     selectObjs.push(title);
 
     let showP1, showP2;
@@ -4152,9 +4152,9 @@ scene("versus", (args = {}) => {
 
     for (let i = 0; i < CHAR_OPTIONS.length; i++) {
       const bx = W / 2 - (CHAR_OPTIONS.length - 1) * 45 + i * 90;
-      selectObjs.push(add([rect(70, 20), outline(2), color(WHITE), pos(bx, 320), anchor("center"), fixed(), z(10)]));
+      selectObjs.push(add([rect(70, 20), outline(2), color(WHITE), pos(bx, 402), anchor("center"), fixed(), z(10)]));
       selectObjs.push(add([text(CHAR_NAMES[CHAR_OPTIONS[i]], { size: 7, font: "sans-serif" }),
-        pos(bx, 320), anchor("center"), color(INK), fixed(), z(11)]));
+        pos(bx, 402), anchor("center"), color(WHITE), fixed(), z(11)]));
     }
 
     let msg = "";
