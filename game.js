@@ -338,6 +338,9 @@ loadSprite("victoryBgPunkette", "victory-the-end-punkette-bg.png");
 loadSprite("victoryBgXero", "victory-the-end-x-ero-bg.png");
 loadSprite("victoryBgAntagonic", "victory-the-end-antagonic-bg.png");
 loadSprite("victoryBgAll", "victory-the-end-scene-bg.png");
+loadSprite("victoryBgCoop", "historia-co-op-ending-bg.png");
+loadSprite("victoryBgFriendlyFire", "historia-friendly-fire-ending-bg.png");
+loadSprite("victoryBgChampion", "versus-scene-champion-ending-bg.png");
 
 // ============================================================
 // PARALLAX BACKGROUND GENERATORS
@@ -3331,7 +3334,7 @@ scene("game", (p1Type, p2Type) => {
                 CHAR_LORE[charType].final,
                 "- VICTORY -",
                 () => {
-                  go("victory", charType, p2Type ? true : false);
+                  go("victory", charType, p2Type ? true : false, gameFriendlyFire);
                 }
               );
             }
@@ -3722,12 +3725,12 @@ scene("gameover", (wave) => {
 // VICTORY SCENE
 // ============================================================
 
-scene("victory", (charType, isCoop) => {
+scene("victory", (charType, isCoop, friendlyFire) => {
   stopMusic();
   const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
 
   if (isCoop) {
-    add([sprite("victoryBgAll"), pos(0, 0), fixed(), z(0)]);
+    add([sprite(friendlyFire ? "victoryBgFriendlyFire" : "victoryBgCoop"), pos(0, 0), fixed(), z(0)]);
     onKeyPress(() => go("credits", true));
     return;
   }
@@ -5014,7 +5017,7 @@ scene("versus", (args = {}) => {
 
   function showLadderChampion() {
     sfxVictory();
-    add([rect(W, H), color(PAPER), fixed(), z(50)]);
+    add([sprite("victoryBgChampion"), pos(0, 0), fixed(), z(50)]);
     add([sprite("paperTex"), opacity(0.15), fixed(), z(51), "paperTex"]).baseOpacity = 0.15;
     add([
       text("LADDER CHAMPION!", { size: 36, font: "sans-serif" }),
