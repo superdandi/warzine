@@ -341,6 +341,7 @@ loadSprite("victoryBgAll", "victory-the-end-scene-bg.png");
 loadSprite("victoryBgCoop", "historia-co-op-ending-bg.png");
 loadSprite("victoryBgFriendlyFire", "historia-friendly-fire-ending-bg.png");
 loadSprite("victoryBgChampion", "versus-scene-champion-ending-bg.png");
+loadSprite("optionsMenuBg", "options-menu-bg.png");
 
 // ============================================================
 // PARALLAX BACKGROUND GENERATORS
@@ -1760,9 +1761,9 @@ scene("title", () => {
   let blink = 0;
 
   // Menu items
-  const MENU_LABELS = ["THE GAUNTLET", "THE WARZINE", "FF: CO-OP", "DIFFICULTY: NORMAL", "TUTORIAL"];
-  const ITEM_COUNT = 5;
-  const ITEM_YS = [230, 265, 310, 340, 370];
+  const MENU_LABELS = ["THE WARZINE", "THE GAUNTLET", "TUTORIAL", "OPCIONES"];
+  const ITEM_COUNT = 4;
+  const ITEM_YS = [240, 280, 320, 360];
   let menuItems = [];
   for (let i = 0; i < ITEM_COUNT; i++) {
     menuItems.push(add([
@@ -1795,8 +1796,6 @@ scene("title", () => {
     fixed(),
     z(10),
   ]);
-
-  let friendlyFireOn = false;
 
   // Controls
   const ctrlText = add([
@@ -1831,15 +1830,11 @@ scene("title", () => {
     blink += dt();
     ctrlText.opacity = 0.5 + Math.sin(blink * 0.3) * 0.3;
 
-    // Update labels
-    menuItems[2].text = "< FF: " + (friendlyFireOn ? "FRIENDLY FIRE" : "CO-OP") + " >";
-    menuItems[3].text = "< DIFFICULTY: " + DIFFICULTIES[gameDifficulty] + " >";
-
     // Cursor arrows
     p1Arrow.pos.y = ITEM_YS[cursorP1];
     p2Arrow.pos.y = ITEM_YS[cursorP2];
 
-    // Highlight items where either cursor is
+    // Highlight item where either cursor is
     for (let i = 0; i < ITEM_COUNT; i++) {
       menuItems[i].opacity = (i === cursorP1 || i === cursorP2) ? 1 : 0.4;
     }
@@ -1851,27 +1846,20 @@ scene("title", () => {
     if (touchKeys['j'] && !_lastTouchJ && !started) {
       started = true; sfxMenuSelect();
       gameFriendlyFire = friendlyFireOn;
-      if (cursorP1 === 0) go("versus", { initiatorPid: 1 });
-      else if (cursorP1 === 1) {
+      if (cursorP1 === 0) {
         let cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
         if (cleared.length >= 3) { localStorage.removeItem("warzine_cleared"); cleared = []; }
         go("select", { p1: true, p2: false, locked: cleared, storyMode: true });
       }
-      else if (cursorP1 === 4) go("tutorial");
+      else if (cursorP1 === 1) go("versus", { initiatorPid: 1 });
+      else if (cursorP1 === 2) go("tutorial");
+      else if (cursorP1 === 3) { started = false; go("options", { pid: 1 }); }
       else started = false;
     }
     _lastTouchJ = !!touchKeys['j'];
 
     if (touchKeys['up'] && !_lastTouchUp) { cursorP1 = (cursorP1 - 1 + ITEM_COUNT) % ITEM_COUNT; sfxMenuSelect(); }
     if (touchKeys['down'] && !_lastTouchDown) { cursorP1 = (cursorP1 + 1) % ITEM_COUNT; sfxMenuSelect(); }
-    if (touchKeys['left'] && !_lastTouchLeft) {
-      if (cursorP1 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
-      if (cursorP1 === 3) { gameDifficulty = (gameDifficulty + 2) % 3; sfxMenuSelect(); }
-    }
-    if (touchKeys['right'] && !_lastTouchRight) {
-      if (cursorP1 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
-      if (cursorP1 === 3) { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); }
-    }
     _lastTouchUp = !!touchKeys['up'];
     _lastTouchDown = !!touchKeys['down'];
     _lastTouchLeft = !!touchKeys['left'];
@@ -1883,25 +1871,24 @@ scene("title", () => {
   onKeyPress("s", () => { cursorP1 = (cursorP1 + 1) % ITEM_COUNT; sfxMenuSelect(); });
 
   onKeyPress("a", () => {
-    if (cursorP1 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
-    if (cursorP1 === 3) { gameDifficulty = (gameDifficulty + 2) % 3; sfxMenuSelect(); }
+    if (cursorP1 === 3) { sfxMenuSelect(); go("options", { pid: 1 }); }
   });
   onKeyPress("d", () => {
-    if (cursorP1 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
-    if (cursorP1 === 3) { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); }
+    if (cursorP1 === 3) { sfxMenuSelect(); go("options", { pid: 1 }); }
   });
 
   onKeyPress("j", () => {
     if (started) return;
     started = true; sfxMenuSelect();
     gameFriendlyFire = friendlyFireOn;
-    if (cursorP1 === 0) go("versus", { initiatorPid: 1 });
-    else if (cursorP1 === 1) {
+    if (cursorP1 === 0) {
       let cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
       if (cleared.length >= 3) { localStorage.removeItem("warzine_cleared"); cleared = []; }
       go("select", { p1: true, p2: false, locked: cleared, storyMode: true });
     }
-    else if (cursorP1 === 4) go("tutorial");
+    else if (cursorP1 === 1) go("versus", { initiatorPid: 1 });
+    else if (cursorP1 === 2) go("tutorial");
+    else if (cursorP1 === 3) { started = false; go("options", { pid: 1 }); }
     else started = false;
   });
 
@@ -1911,31 +1898,127 @@ scene("title", () => {
     onKeyPress("down", () => { cursorP2 = (cursorP2 + 1) % ITEM_COUNT; sfxMenuSelect(); });
 
     onKeyPress("left", () => {
-      if (cursorP2 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
-      if (cursorP2 === 3) { gameDifficulty = (gameDifficulty + 2) % 3; sfxMenuSelect(); }
+      if (cursorP2 === 3) { sfxMenuSelect(); go("options", { pid: 2 }); }
     });
     onKeyPress("right", () => {
-      if (cursorP2 === 2) { friendlyFireOn = !friendlyFireOn; sfxMenuSelect(); }
-      if (cursorP2 === 3) { gameDifficulty = (gameDifficulty + 1) % 3; sfxMenuSelect(); }
+      if (cursorP2 === 3) { sfxMenuSelect(); go("options", { pid: 2 }); }
     });
 
     onKeyPress("1", () => {
       if (started) return;
       started = true; sfxMenuSelect();
       gameFriendlyFire = friendlyFireOn;
-      if (cursorP2 === 0) go("versus", { initiatorPid: 2 });
-      else if (cursorP2 === 1) {
+      if (cursorP2 === 0) {
         let cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
         if (cleared.length >= 3) { localStorage.removeItem("warzine_cleared"); cleared = []; }
         go("select", { p1: false, p2: true, locked: cleared, storyMode: true });
       }
-      else if (cursorP2 === 4) go("tutorial");
+      else if (cursorP2 === 1) go("versus", { initiatorPid: 2 });
+      else if (cursorP2 === 2) go("tutorial");
+      else if (cursorP2 === 3) { started = false; go("options", { pid: 2 }); }
       else started = false;
     });
   }
 
   // Credits key (direct shortcut)
   onKeyPress("c", () => { if (!started) { sfxMenuSelect(); go("credits"); } });
+
+  // Paper texture toggle
+  onKeyPress("p", togglePaperTex);
+});
+
+// ============================================================
+// OPTIONS SCENE
+// ============================================================
+
+scene("options", (opts) => {
+  const pid = (opts && opts.pid) || 1;
+  stopMusic();
+  changeMusic("title");
+  add([sprite("optionsMenuBg"), fixed(), z(0)]);
+  add([sprite("paperTex"), opacity(0.15), z(100), fixed(), "paperTex"]).baseOpacity = 0.15;
+
+  add([
+    text("OPCIONES", { size: 22, font: "sans-serif" }),
+    pos(W / 2, 90), anchor("center"), color(INK), fixed(), z(10),
+  ]);
+
+  const OPTION_LABELS = [
+    () => "FF: " + (friendlyFireOn ? "FRIENDLY FIRE" : "CO-OP"),
+    () => "DIFFICULTY: " + DIFFICULTIES[gameDifficulty],
+  ];
+  const OPTION_COUNT = 2;
+  const OPTION_YS = [300, 340];
+
+  let cursor = 0;
+  let items = [];
+
+  for (let i = 0; i < OPTION_COUNT; i++) {
+    items.push(add([
+      text(OPTION_LABELS[i](), { size: 18, font: "sans-serif" }),
+      pos(W / 2, OPTION_YS[i]),
+      anchor("center"),
+      color(INK),
+      fixed(),
+      z(10),
+    ]));
+  }
+
+  function render() {
+    for (let i = 0; i < OPTION_COUNT; i++) {
+      items[i].text = OPTION_LABELS[i]();
+      items[i].opacity = i === cursor ? 1 : 0.4;
+    }
+  }
+
+  const arrow = add([
+    text(">", { size: 22, font: "sans-serif" }),
+    pos(W / 2 - 160, OPTION_YS[0]),
+    anchor("center"),
+    color(INK),
+    fixed(),
+    z(10),
+  ]);
+
+  function updateArrow() { arrow.pos.y = OPTION_YS[cursor]; }
+
+  function goBack() {
+    sfxMenuSelect();
+    go("title");
+  }
+
+  render();
+  updateArrow();
+
+  const navKey = pid === 1 ? "w" : "up";
+  const navKey2 = pid === 1 ? "s" : "down";
+  const backKey = pid === 1 ? "j" : "1";
+
+  onKeyPress(navKey, () => { cursor = (cursor - 1 + OPTION_COUNT) % OPTION_COUNT; sfxMenuSelect(); render(); updateArrow(); });
+  onKeyPress(navKey2, () => { cursor = (cursor + 1) % OPTION_COUNT; sfxMenuSelect(); render(); updateArrow(); });
+
+  // Both players can navigate with UP/DOWN arrows too
+  onKeyPress("up", () => { cursor = (cursor - 1 + OPTION_COUNT) % OPTION_COUNT; sfxMenuSelect(); render(); updateArrow(); });
+  onKeyPress("down", () => { cursor = (cursor + 1) % OPTION_COUNT; sfxMenuSelect(); render(); updateArrow(); });
+
+  onKeyPress("left", () => {
+    if (cursor === 0) friendlyFireOn = !friendlyFireOn;
+    if (cursor === 1) gameDifficulty = (gameDifficulty + 2) % 3;
+    sfxMenuSelect();
+    render();
+  });
+
+  onKeyPress("right", () => {
+    if (cursor === 0) friendlyFireOn = !friendlyFireOn;
+    if (cursor === 1) gameDifficulty = (gameDifficulty + 1) % 3;
+    sfxMenuSelect();
+    render();
+  });
+
+  onKeyPress(backKey, goBack);
+  onKeyPress("enter", goBack);
+  onKeyPress("space", goBack);
+  onKeyPress("escape", goBack);
 
   // Paper texture toggle
   onKeyPress("p", togglePaperTex);
@@ -1999,6 +2082,7 @@ const CHAR_LORE = {
 const DIFFICULTIES = ["EASY", "NORMAL", "HARD"];
 let gameDifficulty = 1; // 0=easy, 1=normal, 2=hard
 let gameFriendlyFire = false;
+let friendlyFireOn = false;
 
 scene("select", (opts) => {
   if (!opts) opts = {};
