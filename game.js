@@ -1976,7 +1976,7 @@ scene("options", (opts) => {
   function updateArrow() { arrow.pos.y = OPTION_YS[cursor]; }
 
   function doAction() {
-    if (cursor === 2) { sfxMenuSelect(); go("credits"); return; }
+    if (cursor === 2) { sfxMenuSelect(); go("credits", false, true); return; }
   }
 
   function changeValue(dir) {
@@ -3844,7 +3844,7 @@ scene("secretEnding", () => {
 // CREDITS SCENE
 // ============================================================
 
-scene("credits", (isCoop) => {
+scene("credits", (isCoop, fromOptions) => {
   changeMusic("title");
   add([rect(W, H), color(55, 55, 62), fixed(), z(0)]);
   add([sprite("paperTex"), opacity(0.15), fixed(), "paperTex"]).baseOpacity = 0.15;
@@ -3921,10 +3921,32 @@ scene("credits", (isCoop) => {
   let selected = 0;
   let optionObjs = [];
 
+  function backToOptions() {
+    sfxMenuSelect();
+    go("options", { pid: 1 });
+  }
+
   function showOptions() {
     if (optionsShown) return;
     optionsShown = true;
     ended = true;
+
+    if (fromOptions) {
+      const txt = add([
+        text("VOLVER A OPCIONES", { size: 22, font: "sans-serif" }),
+        pos(W / 2, H / 2 + 70),
+        anchor("center"),
+        color(WHITE),
+        fixed(),
+        z(20),
+      ]);
+      optionObjs.push(txt);
+      onKeyPress("j", backToOptions);
+      onKeyPress("enter", backToOptions);
+      onKeyPress("space", backToOptions);
+      onKeyPress("escape", backToOptions);
+      return;
+    }
 
     const cleared = JSON.parse(localStorage.getItem("warzine_cleared") || "[]");
     const allCleared = cleared.length >= 3;
@@ -4002,8 +4024,12 @@ scene("credits", (isCoop) => {
     }
   });
 
-  onKeyPress("c", () => { sfxMenuSelect(); showOptions(); });
-  onKeyPress("escape", () => { sfxMenuSelect(); showOptions(); });
+  if (fromOptions) {
+    onKeyPress("escape", backToOptions);
+  } else {
+    onKeyPress("c", () => { sfxMenuSelect(); showOptions(); });
+    onKeyPress("escape", () => { sfxMenuSelect(); showOptions(); });
+  }
   onKeyPress("p", togglePaperTex);
 });
 
