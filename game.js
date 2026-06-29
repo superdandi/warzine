@@ -2335,23 +2335,34 @@ scene("game", (p1Type, p2Type) => {
     parts.push(add([sprite("leyendaBg"), pos(0, 0), fixed(), z(200)]));
 
     if (tagline) {
-      parts.push(add([
+      const t = add([
         text(tagline, { size: 16, font: "sans-serif", width: 420, align: "center", lineSpacing: 8 }),
-        pos(W / 2, 158), anchor("center"), color(WHITE), opacity(0.5), fixed(), z(202),
-      ]));
+        pos(W / 2, 158), anchor("center"), color(WHITE), opacity(0), fixed(), z(202),
+      ]);
+      parts.push(t);
+      wait(0.05, () => { if (t.exists()) t.opacity = 0.5; });
     }
 
-    const startY = 250;
-    parts.push(add([
-      text(lines.join("\n"), { size: 28, font: "sans-serif", width: 420, align: "center", lineSpacing: 14 }),
-      pos(W / 2, startY), anchor("center"), color(WHITE), fixed(), z(202),
-    ]));
+    const lineH = 28 + 14; // font size + lineSpacing
+    const startY = 250 - ((lines.length - 1) * lineH) / 2;
+    const textObjs = [];
+    lines.forEach((line, i) => {
+      const t = add([
+        text(line, { size: 28, font: "sans-serif", width: 420, align: "center" }),
+        pos(W / 2, startY + i * lineH), anchor("center"), color(WHITE), opacity(0), fixed(), z(202),
+      ]);
+      parts.push(t);
+      textObjs.push(t);
+    });
+    textObjs.forEach((t, i) => wait(0.15 + i * 0.12, () => { if (t.exists()) t.opacity = 1; }));
 
     if (subtitle) {
-      parts.push(add([
+      const s = add([
         text(subtitle, { size: 16, font: "sans-serif", width: 420, align: "center", lineSpacing: 8 }),
-        pos(W / 2, 345), anchor("center"), color(WHITE), opacity(0.7), fixed(), z(202),
-      ]));
+        pos(W / 2, 345), anchor("center"), color(WHITE), opacity(0), fixed(), z(202),
+      ]);
+      parts.push(s);
+      wait(0.15 + lines.length * 0.12 + 0.1, () => { if (s.exists()) s.opacity = 0.7; });
     }
 
     const kp = onKeyPress(() => {
@@ -5534,7 +5545,7 @@ scene("tutorial", () => {
         const sy = H / 2 - (lines.length * 14) / 2;
         lines.forEach((line, i) => {
           const t = overlay.add([
-            text(line, { size: line === "" ? 8 : 15, font: "sans-serif" }),
+            text(line, { size: line === "" ? 8 : 16, font: "sans-serif" }),
             pos(W / 2, sy + i * 18),
             anchor("center"), color(INK), z(201), opacity(0),
           ]);
