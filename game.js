@@ -1920,9 +1920,6 @@ scene("title", () => {
     });
   }
 
-  // Credits key (direct shortcut)
-  onKeyPress("c", () => { if (!started) { sfxMenuSelect(); go("credits"); } });
-
   // Paper texture toggle
   onKeyPress("p", togglePaperTex);
 });
@@ -1938,24 +1935,20 @@ scene("options", (opts) => {
   add([sprite("optionsMenuBg"), fixed(), z(0)]);
   add([sprite("paperTex"), opacity(0.15), z(100), fixed(), "paperTex"]).baseOpacity = 0.15;
 
-  add([
-    text("OPCIONES", { size: 22, font: "sans-serif" }),
-    pos(W / 2, 90), anchor("center"), color(INK), fixed(), z(10),
-  ]);
-
   const OPTION_LABELS = [
     () => "FF: " + (friendlyFireOn ? "FRIENDLY FIRE" : "CO-OP"),
     () => "DIFFICULTY: " + DIFFICULTIES[gameDifficulty],
+    () => "CREDITOS",
   ];
-  const OPTION_COUNT = 2;
-  const OPTION_YS = [300, 340];
+  const OPTION_COUNT = 3;
+  const OPTION_YS = [195, 245, 295];
 
   let cursor = 0;
   let items = [];
 
   for (let i = 0; i < OPTION_COUNT; i++) {
     items.push(add([
-      text(OPTION_LABELS[i](), { size: 18, font: "sans-serif" }),
+      text(OPTION_LABELS[i](), { size: 22, font: "sans-serif" }),
       pos(W / 2, OPTION_YS[i]),
       anchor("center"),
       color(INK),
@@ -1972,8 +1965,8 @@ scene("options", (opts) => {
   }
 
   const arrow = add([
-    text(">", { size: 22, font: "sans-serif" }),
-    pos(W / 2 - 160, OPTION_YS[0]),
+    text(">", { size: 24, font: "sans-serif" }),
+    pos(W / 2 - 170, OPTION_YS[0]),
     anchor("center"),
     color(INK),
     fixed(),
@@ -1981,6 +1974,17 @@ scene("options", (opts) => {
   ]);
 
   function updateArrow() { arrow.pos.y = OPTION_YS[cursor]; }
+
+  function doAction() {
+    if (cursor === 2) { sfxMenuSelect(); go("credits"); return; }
+  }
+
+  function changeValue(dir) {
+    if (cursor === 0) friendlyFireOn = !friendlyFireOn;
+    if (cursor === 1) gameDifficulty = (gameDifficulty + dir + 3) % 3;
+    sfxMenuSelect();
+    render();
+  }
 
   function goBack() {
     sfxMenuSelect();
@@ -1990,37 +1994,30 @@ scene("options", (opts) => {
   render();
   updateArrow();
 
-  const navKey = pid === 1 ? "w" : "up";
-  const navKey2 = pid === 1 ? "s" : "down";
+  // Navigation
+  const navUp = pid === 1 ? "w" : "up";
+  const navDown = pid === 1 ? "s" : "down";
+  const navLeft = pid === 1 ? "a" : "left";
+  const navRight = pid === 1 ? "d" : "right";
   const backKey = pid === 1 ? "j" : "1";
 
-  onKeyPress(navKey, () => { cursor = (cursor - 1 + OPTION_COUNT) % OPTION_COUNT; sfxMenuSelect(); render(); updateArrow(); });
-  onKeyPress(navKey2, () => { cursor = (cursor + 1) % OPTION_COUNT; sfxMenuSelect(); render(); updateArrow(); });
+  onKeyPress(navUp, () => { cursor = (cursor - 1 + OPTION_COUNT) % OPTION_COUNT; sfxMenuSelect(); render(); updateArrow(); });
+  onKeyPress(navDown, () => { cursor = (cursor + 1) % OPTION_COUNT; sfxMenuSelect(); render(); updateArrow(); });
 
-  // Both players can navigate with UP/DOWN arrows too
+  // Both players can use arrow keys for navigation
   onKeyPress("up", () => { cursor = (cursor - 1 + OPTION_COUNT) % OPTION_COUNT; sfxMenuSelect(); render(); updateArrow(); });
   onKeyPress("down", () => { cursor = (cursor + 1) % OPTION_COUNT; sfxMenuSelect(); render(); updateArrow(); });
 
-  onKeyPress("left", () => {
-    if (cursor === 0) friendlyFireOn = !friendlyFireOn;
-    if (cursor === 1) gameDifficulty = (gameDifficulty + 2) % 3;
-    sfxMenuSelect();
-    render();
-  });
+  // Value change and confirm
+  onKeyPress(navLeft, () => changeValue(-1));
+  onKeyPress(navRight, () => changeValue(1));
+  onKeyPress("left", () => changeValue(-1));
+  onKeyPress("right", () => changeValue(1));
 
-  onKeyPress("right", () => {
-    if (cursor === 0) friendlyFireOn = !friendlyFireOn;
-    if (cursor === 1) gameDifficulty = (gameDifficulty + 1) % 3;
-    sfxMenuSelect();
-    render();
-  });
-
-  onKeyPress(backKey, goBack);
-  onKeyPress("enter", goBack);
-  onKeyPress("space", goBack);
+  onKeyPress(backKey, () => { if (cursor === 2) doAction(); else goBack(); });
+  onKeyPress("enter", () => { if (cursor === 2) doAction(); else goBack(); });
+  onKeyPress("space", () => { if (cursor === 2) doAction(); else goBack(); });
   onKeyPress("escape", goBack);
-
-  // Paper texture toggle
   onKeyPress("p", togglePaperTex);
 });
 
