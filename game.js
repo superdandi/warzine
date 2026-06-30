@@ -5779,11 +5779,21 @@ scene("tutorial", () => {
       p.punchTimer -= dt();
       if (p.punchHitbox && p.punchHitbox.exists()) {
         const dir = p.punchDir;
-        p.punchHitbox.pos = vec2(p.pos.x + dir * 30 * TO_SCALE, p.pos.y);
-        // Check crates
+        p.punchHitbox.pos = vec2(p.pos.x + dir * 28 * TF * TO_SCALE, p.pos.y - 24 * TF * TO_SCALE);
+        // Manual AABB overlap (bypasses isColliding frame-delay)
+        const hbW = p.punchIsSuper ? 50 * TO_SCALE : 26 * TO_SCALE;
+        const hbH = p.punchIsSuper ? 40 * TO_SCALE : 22 * TO_SCALE;
+        const hbx = p.punchHitbox.pos.x, hby = p.punchHitbox.pos.y;
+        function testHit(target) {
+          const b = target.worldArea().bbox();
+          // Test with anchor-centering (hb centered around pos) and without (hb top-left at pos)
+          const centered = hbx - hbW/2 < b.pos.x + b.width && hbx + hbW/2 > b.pos.x && hby - hbH/2 < b.pos.y + b.height && hby + hbH/2 > b.pos.y;
+          const uncentered = hbx < b.pos.x + b.width && hbx + hbW > b.pos.x && hby < b.pos.y + b.height && hby + hbH > b.pos.y;
+          return centered || uncentered;
+        }
         let hitSomething = false;
         get("crate").forEach(c => {
-          if (p.punchHitbox.isColliding(c) && (!c.superOnly || p.punchIsSuper)) {
+          if (testHit(c) && (!c.superOnly || p.punchIsSuper)) {
             if (c.hitTimer <= 0) {
               if (p.punchIsSuper) c.hp -= 75;
               else c.hp -= 15;
@@ -5798,7 +5808,7 @@ scene("tutorial", () => {
         });
         // Check enemies
         get("tutorialEnemy").forEach(e => {
-          if (p.punchHitbox.isColliding(e)) {
+          if (testHit(e)) {
             if (e.hitTimer <= 0) {
               const dmg = p.punchIsSuper ? 40 : 15;
               e.hp -= dmg;
